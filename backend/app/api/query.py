@@ -4,9 +4,10 @@ from flask import Blueprint, request, jsonify
 from app.models.dto import QueryIn, QueryOut
 from app.services.orchestrator import Orchestrator
 
-bp = Blueprint('query', __name__)
+query_bp = Blueprint("query", __name__)
 
-@bp.route('/query/demo', methods=['POST'])
+
+@query_bp.route("/query/demo", methods=["POST"])
 def query_demo():
     """
     演示路由：模拟 L1→L2→L3→Detail 的选择过程，并返回参数化 SQL。
@@ -17,5 +18,6 @@ def query_demo():
     svc = Orchestrator()
     # handle_query_demo 是异步方法，这里用同步方式调用
     import asyncio
+
     result = asyncio.run(svc.handle_query_demo(qin))
     return jsonify(result.dict())
