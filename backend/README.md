@@ -19,18 +19,23 @@
 - `requirements.txt`：Python 依赖
 - `.env.example`：环境变量示例（复制为 `.env` 后修改）
 
-## 快速开始（无 Docker）
+## 快速开始
 
-1. 创建虚拟环境并安装依赖：
+1. Make sure uv is installed
+
+   <https://docs.astral.sh/uv/getting-started/installation/>
+
+2. 创建虚拟环境并Sync依赖：
 
    ```bash
    cd backend
-   python -m venv .venv && source .venv/bin/activate  # Windows 使用 .venv\Scripts\activate
-   pip install -r requirements.txt
+   uv venv  # Create virtual environment if haven't
+   source .venv/bin/activate  # Windows 使用 .venv\Scripts\activate
+   uv sync
    cp .env.example .env  # 根据需要修改数据库/Redis/LLM配置
    ```
 
-2. 启动开发服务器：
+3. 启动开发服务器：
 
    ```bash
    uvicorn app.main:app --reload

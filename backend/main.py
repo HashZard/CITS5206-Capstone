@@ -1,4 +1,3 @@
-# -*- coding: utf-8 -*-
 # 主应用入口：装配 Flask 与路由
 from flask import Flask
 from app.api.query import bp as query_bp
