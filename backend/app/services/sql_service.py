@@ -3,6 +3,7 @@
 import asyncpg
 from typing import Any, List
 
+
 class SQLService:
     def __init__(self, dsn: str):
         self._dsn = dsn
@@ -10,7 +11,9 @@ class SQLService:
 
     async def init(self):
         if not self._pool:
-            self._pool = await asyncpg.create_pool(dsn=self._dsn, min_size=1, max_size=5)
+            self._pool = await asyncpg.create_pool(
+                dsn=self._dsn, min_size=1, max_size=5
+            )
 
     async def fetch(self, sql: str, params: List[Any]):
         await self.init()
