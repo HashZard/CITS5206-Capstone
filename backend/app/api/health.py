@@ -1,9 +1,9 @@
 # -*- coding: utf-8 -*-
 # 健康检查路由
-from fastapi import APIRouter
+from flask import Blueprint, jsonify
 
-router = APIRouter()
+bp = Blueprint('health', __name__)
 
-@router.get("/health")
-async def health():
-    return {"status": "ok"}
+@bp.route('/health', methods=['GET'])
+def health():
+    return jsonify({"status": "ok"})

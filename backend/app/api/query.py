@@ -1,15 +1,21 @@
 # -*- coding: utf-8 -*-
 # 查询相关路由（Demo：演示参数化 SQL 生成）
-from fastapi import APIRouter, Depends
+from flask import Blueprint, request, jsonify
 from app.models.dto import QueryIn, QueryOut
-from app.services.orchestrator import Orchestrator, get_orchestrator
+from app.services.orchestrator import Orchestrator
 
-router = APIRouter()
+bp = Blueprint('query', __name__)
 
-@router.post("/query/demo", response_model=QueryOut)
-async def query_demo(qin: QueryIn, svc: Orchestrator = Depends(get_orchestrator)):
+@bp.route('/query/demo', methods=['POST'])
+def query_demo():
     """
     演示路由：模拟 L1→L2→L3→Detail 的选择过程，并返回参数化 SQL。
     注意：此 Demo 不依赖真实 LLM 调用与数据库执行，仅用于前后端联调演示。
     """
-    return await svc.handle_query_demo(qin)
+    data = request.get_json()
+    qin = QueryIn(**data)
+    svc = Orchestrator()
+    # handle_query_demo 是异步方法，这里用同步方式调用
+    import asyncio
+    result = asyncio.run(svc.handle_query_demo(qin))
+    return jsonify(result.dict())

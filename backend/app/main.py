@@ -1,12 +1,14 @@
 # -*- coding: utf-8 -*-
-# 主应用入口：装配 FastAPI 与路由
-from fastapi import FastAPI
-from app.api.query import router as query_router
-from app.api.health import router as health_router
+# 主应用入口：装配 Flask 与路由
+from flask import Flask
+from app.api.query import bp as query_bp
+from app.api.health import bp as health_bp
 
-app = FastAPI(title="Geo LLM API", version="1.0.0")
+app = Flask(__name__)
 
-# 健康检查
-app.include_router(health_router, tags=["health"])
-# 正式 API 路径（不区分 v1）
-app.include_router(query_router, prefix="/api", tags=["query"])
+# 注册 Blueprint 路由
+app.register_blueprint(health_bp, url_prefix='/api')
+app.register_blueprint(query_bp, url_prefix='/api')
+
+if __name__ == '__main__':
+    app.run(host='0.0.0.0', port=8000, debug=True)
