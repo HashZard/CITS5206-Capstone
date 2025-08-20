@@ -1,0 +1,511 @@
+数据整理(四步法)
+
+# 表：ne_10m_admin_0_countries_chn
+
+## 第一步：全字段及释义（逐一对应）
+
+| 字段名 | 含义解释 |
+|---|---|
+| gid | 全局唯一标识符（ID）。 |
+| adm0_a3_cn | 国家/地区的三位代码（中国视角）。 |
+| featurecla | 要素类别（如 "Admin-0 country"）。 |
+| scalerank | 缩放等级（值越小，地图上优先显示）。 |
+| labelrank | 标注等级（地图上标签显示优先级）。 |
+| sovereignt | 主权实体名称。 |
+| sov_a3 | 主权实体的三位代码。 |
+| adm0_dif | 行政 0 级是否与主权实体不同（0/1）。 |
+| level | 行政层级（此表为国家级）。 |
+| type | 国家类型/地位（如主权国、属地、争议地区）。 |
+| tlc | Natural Earth 内部分类标记。 |
+| admin | 国家官方行政名称。 |
+| adm0_a3 | 国家/地区三位代码（标准）。 |
+| geou_dif | 地理单元是否不同标记。 |
+| geounit | 地理单元名称。 |
+| gu_a3 | 地理单元三位代码。 |
+| su_dif | 子单元是否不同标记。 |
+| subunit | 子单元名称。 |
+| su_a3 | 子单元三位代码。 |
+| brk_diff | 分离/断裂标记。 |
+| name | 国家名称（简称）。 |
+| name_long | 国家全称。 |
+| brk_a3 | 分离/断裂国家代码。 |
+| brk_name | 分离/断裂国家名称。 |
+| brk_group | 分离/断裂国家组。 |
+| abbrev | 名称缩写。 |
+| postal | 邮政缩写。 |
+| formal_en | 正式英文全称。 |
+| formal_fr | 正式法文全称。 |
+| name_ciawf | CIA World Factbook 名称。 |
+| note_adm0 | 行政注记。 |
+| note_brk | 分离相关注记。 |
+| name_sort | 排序名称。 |
+| name_alt | 备用别名。 |
+| mapcolor7/8/9/13 | 地图配色分组（避免相邻国家同色）。 |
+| pop_est | 人口估计值。 |
+| pop_rank | 人口等级。 |
+| pop_year | 人口数据年份。 |
+| gdp_md | GDP（百万美元）。 |
+| gdp_year | GDP 数据年份。 |
+| economy | 经济分类（如发达、发展中）。 |
+| income_grp | 收入组别（WB口径）。 |
+| fips_10 | FIPS 10-4 国家代码。 |
+| iso_a2 | ISO 国家 2 位代码。 |
+| iso_a2_eh | ISO A2 备用。 |
+| iso_a3 | ISO 国家 3 位代码。 |
+| iso_a3_eh | ISO A3 备用。 |
+| iso_n3 | ISO 数字代码。 |
+| iso_n3_eh | ISO 数字备用代码。 |
+| un_a3 | 联合国 M49 三位代码。 |
+| wb_a2 | 世界银行 2 位代码。 |
+| wb_a3 | 世界银行 3 位代码。 |
+| woe_id | Yahoo! WOE ID。 |
+| woe_id_eh | WOE ID 备用。 |
+| woe_note | WOE 注记。 |
+| adm0_iso | 行政 0 级 ISO 代码。 |
+| adm0_diff | 行政 0 级差异标记。 |
+| adm0_tlc | 行政 0 级 TLC 代码。 |
+| adm0_a3_xx（如 us, fr, ru, es, tw, in …） | 国家/地区三位代码（不同国家或组织视角）。 |
+| continent | 所属洲。 |
+| region_un | 联合国区域。 |
+| subregion | 联合国次区域。 |
+| region_wb | 世界银行区域。 |
+| name_len | 名称长度。 |
+| long_len | 全称长度。 |
+| abbrev_len | 缩写长度。 |
+| tiny | 是否极小国家。 |
+| homepart | 是否本土部分。 |
+| min_zoom | 最小缩放级别。 |
+| min_label | 最小标签缩放级别。 |
+| max_label | 最大标签缩放级别。 |
+| label_x / label_y | 标签点坐标。 |
+| ne_id | Natural Earth ID。 |
+| wikidataid | Wikidata 对应 ID。 |
+| name_xx（name_en, name_fr, name_zh, name_ja …） | 多语言国家名称。 |
+| fclass_xx（fclass_iso, fclass_us, fclass_cn …） | 要素分类（不同国家/组织视角）。 |
+| geom | 几何对象（国家边界多边形，EPSG:4326）。 |
+
+---
+
+## 第二步：字段合并（避免重复）
+
+| 字段名/属性 | 含义解释 |
+|---|---|
+| gid | 全局唯一标识符。 |
+| sovereignt / sov_a3 | 主权实体名称与代码。 |
+| admin | 官方行政名称。 |
+| adm0_a3（含 cn, us, fr, ru, …） | 国家三位代码（多版本）。 |
+| geounit / gu_a3 | 地理单元及代码。 |
+| subunit / su_a3 | 子单元及代码。 |
+| brk_a3 / brk_name / brk_group | 分离/断裂相关。 |
+| name / name_long | 名称（简称、全称）。 |
+| abbrev / postal | 缩写、邮政缩写。 |
+| formal_en / formal_fr | 正式全称。 |
+| name_ciawf | CIA 名称。 |
+| note_adm0 / note_brk | 行政或分离注记。 |
+| pop_est / pop_rank / pop_year | 人口相关。 |
+| gdp_md / gdp_year | GDP 相关。 |
+| economy / income_grp | 经济分类与收入组别。 |
+| iso_a2 / iso_a3 / iso_n3 | ISO 代码（2 位 / 3 位 / 数字）。 |
+| un_a3 | 联合国代码。 |
+| wb_a2 / wb_a3 | 世界银行代码。 |
+| continent / region_un / subregion / region_wb | 所属洲与区域。 |
+| name_xx | 多语言名称。 |
+| fclass_xx | 要素分类（多版本）。 |
+| geom | 几何对象。 |
+
+---
+
+## 第三步：筛选与查询无关字段
+
+### 无关字段（制图/渲染/内部ID）
+- scalerank, labelrank, mapcolor7/8/9/13  
+- name_len, long_len, abbrev_len  
+- tiny, homepart  
+- min_zoom, min_label, max_label  
+- label_x, label_y  
+- ne_id, wikidataid  
+- fips_10, woe_id, woe_note, adm0_iso, adm0_tlc  
+
+### 保留字段（与查询相关）
+| 字段名/属性 | 含义解释 |
+|---|---|
+| gid | 唯一标识。 |
+| sovereignt / sov_a3 | 主权实体名称与代码。 |
+| admin | 官方行政名称。 |
+| adm0_a3（含多版本） | 国家三位代码。 |
+| geounit / gu_a3 | 地理单元。 |
+| subunit / su_a3 | 子单元。 |
+| brk_a3 / brk_name / brk_group | 分离/断裂信息。 |
+| name / name_long | 国家名称。 |
+| abbrev / postal | 缩写。 |
+| formal_en / formal_fr | 正式全称。 |
+| name_ciawf | CIA 名称。 |
+| note_adm0 / note_brk | 注记。 |
+| pop_est / pop_rank / pop_year | 人口信息。 |
+| gdp_md / gdp_year | GDP 信息。 |
+| economy / income_grp | 经济分类。 |
+| iso_a2 / iso_a3 / iso_n3 | ISO 代码。 |
+| un_a3 | 联合国代码。 |
+| wb_a2 / wb_a3 | 世界银行代码。 |
+| continent / region_un / subregion / region_wb | 区域信息。 |
+| name_xx | 多语言名称。 |
+| geom | 边界几何。 |
+
+---
+
+## 第四步：TableCard-Detail（用于 Prompt 描述）
+
+**表名：** `ne_10m_admin_0_countries_chn`  
+**主题：** 国家与地区的边界、主权、人口与经济信息。  
+
+**字段说明：**
+- **gid**：唯一标识符。  
+- **sovereignt / sov_a3**：主权实体名称与三位代码。  
+- **admin**：官方行政名称。  
+- **adm0_a3（多版本）**：国家三位代码（不同国家/组织视角）。  
+- **geounit / gu_a3**：地理单元及代码。  
+- **subunit / su_a3**：子单元及代码。  
+- **brk_a3 / brk_name / brk_group**：分离/断裂信息。  
+- **name / name_long**：国家名称（简称、全称）。  
+- **abbrev / postal**：名称缩写与邮政缩写。  
+- **formal_en / formal_fr**：正式全称。  
+- **name_ciawf**：CIA 名称。  
+- **note_adm0 / note_brk**：注记。  
+- **pop_est / pop_rank / pop_year**：人口数据。  
+- **gdp_md / gdp_year**：GDP 数据。  
+- **economy / income_grp**：经济与收入分组。  
+- **iso_a2 / iso_a3 / iso_n3**：ISO 代码。  
+- **un_a3**：联合国代码。  
+- **wb_a2 / wb_a3**：世界银行代码。  
+- **continent / region_un / subregion / region_wb**：所属洲与区域信息。  
+- **name_xx**：多语言名称（英文、中文、法文、日文等）。  
+- **geom**：边界几何（多边形，EPSG:4326）。  
+
+**关键词：**
+国家、主权、边界、人口、GDP、区域、代码、多语言名称
+
+
+# 表：ne_10m_lakes
+
+## 第一步：全字段及释义（逐一对应）
+
+| 字段名 | 含义解释 |
+|---|---|
+| gid | 全局唯一标识符（ID）。 |
+| featurecla | 要素类别（例如 "Lake" 表示湖泊）。 |
+| name | 湖泊名称（英文）。 |
+| name_alt | 湖泊备用名称（别名）。 |
+| name_en | 湖泊名称（英文专门字段）。 |
+| name_fr | 湖泊名称（法文）。 |
+| name_es | 湖泊名称（西班牙文）。 |
+| name_de | 湖泊名称（德文）。 |
+| name_pt | 湖泊名称（葡萄牙文）。 |
+| name_ru | 湖泊名称（俄文）。 |
+| name_zh | 湖泊名称（中文）。 |
+| name_ar | 湖泊名称（阿拉伯文）。 |
+| name_bi / name_hi / name_ja / name_ko / name_tr / name_vi | 湖泊名称（其他语言版本）。 |
+| scalerank | 缩放等级（值越小优先显示）。 |
+| labelrank | 标注等级（地图上文字标签显示优先级）。 |
+| natscale | 国家级别缩放权重。 |
+| min_zoom / min_label / max_label | 建议的地图显示缩放范围。 |
+| wikidataid | Wikidata 对应 ID。 |
+| ne_id | Natural Earth 内部 ID。 |
+| geom | 几何对象（湖泊边界多边形，EPSG:4326）。 |
+
+---
+
+## 第二步：字段合并（避免重复）
+
+| 字段名/属性 | 含义解释 |
+|---|---|
+| gid | 全局唯一标识符（ID）。 |
+| featurecla | 要素类别（如 Lake）。 |
+| name / name_alt | 湖泊名称（含别名）。 |
+| name_xx（name_en, name_fr, name_es, name_de, name_pt, name_ru, name_zh, name_ja, name_ko, name_tr, name_vi …） | 湖泊名称的多语言版本。 |
+| scalerank / labelrank / natscale | 缩放与标注相关等级。 |
+| min_zoom / min_label / max_label | 显示范围的缩放参数。 |
+| wikidataid / ne_id | 外部和内部 ID。 |
+| geom | 湖泊边界几何对象。 |
+
+---
+
+## 第三步：筛选与查询无关字段
+
+### 与查询无关（制图/渲染/内部ID）字段：
+- scalerank / labelrank / natscale  
+- min_zoom / min_label / max_label  
+- wikidataid / ne_id  
+
+### 保留用于查询的字段：
+| 字段名/属性 | 含义解释 |
+|---|---|
+| gid | 全局唯一标识符（ID）。 |
+| featurecla | 要素类别（如 Lake）。 |
+| name / name_alt | 湖泊名称（含别名）。 |
+| name_xx（多语言名称） | 湖泊名称的多语言版本。 |
+| geom | 湖泊边界几何对象（EPSG:4326）。 |
+
+---
+
+## 第四步：TableCard-Detail（用于 Prompt 描述）
+
+**表名：** `ne_10m_lakes`  
+**主题：** 世界范围内的湖泊边界与名称信息。  
+
+**字段说明：**
+- **gid**：唯一 ID，用于索引。  
+- **featurecla**：要素类别（例如 “Lake”）。  
+- **name / name_alt**：湖泊名称及备用名称。  
+- **name_xx**：多语言版本的湖泊名称（英文、中文、俄文、法文、日文等）。  
+- **geom**：湖泊边界的几何形状（多边形，EPSG:4326）。  
+
+**关键词：**
+湖泊、名称、边界、多语言、地理位置
+
+
+# 表：ne_10m_lakes_historic
+
+## 第一步：全字段及释义（逐一对应）
+
+| 字段名 | 含义解释 |
+|---|---|
+| gid | 全局唯一标识符（ID）。 |
+| featurecla | 要素类别（例如 "Historic lake" 表示历史湖泊）。 |
+| name | 湖泊名称（英文）。 |
+| name_alt | 湖泊备用名称（别名）。 |
+| name_en | 湖泊名称（英文专门字段）。 |
+| name_fr | 湖泊名称（法文）。 |
+| name_es | 湖泊名称（西班牙文）。 |
+| name_de | 湖泊名称（德文）。 |
+| name_pt | 湖泊名称（葡萄牙文）。 |
+| name_ru | 湖泊名称（俄文）。 |
+| name_zh | 湖泊名称（中文）。 |
+| name_ar | 湖泊名称（阿拉伯文）。 |
+| name_ja | 湖泊名称（日文）。 |
+| name_ko | 湖泊名称（韩文）。 |
+| name_tr | 湖泊名称（土耳其文）。 |
+| name_vi | 湖泊名称（越南文）。 |
+| scalerank | 缩放等级（值越小优先显示）。 |
+| labelrank | 标注等级（地图上文字标签显示优先级）。 |
+| natscale | 国家级别缩放权重。 |
+| min_zoom / min_label / max_label | 建议的地图显示缩放范围。 |
+| wikidataid | Wikidata 对应 ID。 |
+| ne_id | Natural Earth 内部 ID。 |
+| geom | 几何对象（历史湖泊边界多边形，EPSG:4326）。 |
+
+---
+
+## 第二步：字段合并（避免重复）
+
+| 字段名/属性 | 含义解释 |
+|---|---|
+| gid | 全局唯一标识符（ID）。 |
+| featurecla | 要素类别（如 Historic lake）。 |
+| name / name_alt | 湖泊名称（含别名）。 |
+| name_xx（name_en, name_fr, name_es, name_de, name_pt, name_ru, name_zh, name_ja, name_ko, name_tr, name_vi …） | 湖泊名称的多语言版本。 |
+| scalerank / labelrank / natscale | 缩放与标注相关等级。 |
+| min_zoom / min_label / max_label | 显示范围的缩放参数。 |
+| wikidataid / ne_id | 外部和内部 ID。 |
+| geom | 历史湖泊边界几何对象。 |
+
+---
+
+## 第三步：筛选与查询无关字段
+
+### 与查询无关（制图/渲染/内部ID）字段：
+- scalerank / labelrank / natscale  
+- min_zoom / min_label / max_label  
+- wikidataid / ne_id  
+
+### 保留用于查询的字段：
+| 字段名/属性 | 含义解释 |
+|---|---|
+| gid | 全局唯一标识符（ID）。 |
+| featurecla | 要素类别（如 Historic lake）。 |
+| name / name_alt | 湖泊名称（含别名）。 |
+| name_xx（多语言名称） | 湖泊名称的多语言版本。 |
+| geom | 历史湖泊边界几何对象（EPSG:4326）。 |
+
+---
+
+## 第四步：TableCard-Detail（用于 Prompt 描述）
+
+**表名：** `ne_10m_lakes_historic`  
+**主题：** 历史湖泊的边界与名称信息。  
+
+**字段说明：**
+- **gid**：唯一 ID，用于索引。  
+- **featurecla**：要素类别（例如 “Historic lake”）。  
+- **name / name_alt**：历史湖泊名称及备用名称。  
+- **name_xx**：多语言版本的历史湖泊名称（英文、中文、俄文、法文、日文等）。  
+- **geom**：历史湖泊边界的几何形状（多边形，EPSG:4326）。  
+
+**关键词：**
+历史湖泊、名称、边界、多语言、地理位置
+
+
+# 表：ne_10m_geography_regions_polys
+
+> 说明：以下内容基于你“采样后的最新数据”进行整理，并结合字段取值分布（Top10）校准了含义。
+
+---
+
+## 第一步：全字段释义（不遗漏）
+
+| 字段名 | 中文释义 |
+|---|---|
+| gid | 全局唯一标识符（ID）。 |
+| featurecla | 要素类别（地理区域/地貌的类型，例如区域、多岛、山脉、沙漠等）。 |
+| name | 区域名称。 |
+| namealt | 区域备用名称/别名。 |
+| region | 大区名称（例如 Asia, Europe 等）。 |
+| subregion | 子区域名称（例如 Polynesia, Malay Archipelago 等）。 |
+| scalerank | 缩放等级（地图制图优先级，值越小越先显示）。 |
+| min_label | 最小标签显示缩放级别。 |
+| max_label | 最大标签显示缩放级别。 |
+| label | 标注用文本（渲染辅助）。 |
+| wikidataid | Wikidata 对应 ID（外部知识库链接）。 |
+| name_xx（name_en, name_fr, name_de, name_es, name_ar, …） | 多语言名称（英语/法语/德语/西语/阿语等）。 |
+| geom | 几何对象（区域边界多边形，EPSG:4326）。 |
+
+**取值分布（采样Top10）**  
+- `featurecla`：`islands pol`、`mountains`、`desert`、`mesa`、`archipelago`、`shire`、`fjords`、`swamp`、`steppes`、`asia`  
+- `region`：`oceania`、`north america`、`europe`、`africa`、`south america`、`asia`  
+- `subregion`：`polynesia`、`arctic archipelago`、`melanesia`、`west indies`、`malay archipelago`  
+> 上述统计来自当前采样数据，用于校准字段定义与值域。
+
+---
+
+## 第二步：相似字段合并（语义归一）
+
+| 字段名/属性 | 合并说明 | 含义解释 |
+|---|---|---|
+| name / namealt | 合并为“名称” | 区域主名称 + 备用名称/别名。 |
+| name_xx | 合并为“多语言名称” | 不同语言版本的区域名称（en/fr/de/es/ar…）。 |
+| region / subregion | 保留二者 | 分别代表大区与子区（层级关系）。 |
+| 其余字段 | - | 保持不变。 |
+
+---
+
+## 第三步：简化筛选（去除与查询无关的字段）
+
+**删除（制图/渲染/外部ID类）**  
+- `scalerank`, `min_label`, `max_label`, `label`（制图与标注控制）  
+- `wikidataid`（外部知识库ID，非查询必需）
+
+**保留（与查询相关）**  
+- 标识/名称：`gid`, `name`, `namealt`, `name_xx`  
+- 分类/层级：`featurecla`, `region`, `subregion`  
+- 空间：`geom`（区域多边形）
+
+**简化版字段表：**
+
+| 字段名/属性 | 含义解释 |
+|---|---|
+| gid | 全局唯一标识符（ID）。 |
+| name / namealt | 区域名称及备用名称/别名。 |
+| name_xx（多语言） | 多语言名称（en/fr/de/es/ar…）。 |
+| featurecla | 要素类别（如 islands pol、mountains、desert、archipelago 等）。 |
+| region / subregion | 大区 / 子区（如 oceania / polynesia）。 |
+| geom | 几何对象（区域边界多边形，EPSG:4326）。 |
+
+> 注：`featurecla` 的值域已通过采样统计校准，更适合用于过滤或下拉建议。
+
+---
+
+## 第四步：TableCard-Detail（用于表选择的描述性卡片）
+
+**表名**：ne_10m_geography_regions_polys  
+**中文名称**：地理区域与地貌多边形  
+**表描述**：包含世界范围内各类地理区域与地貌的边界（如群岛、山脉、沙漠、群岛体系等），并标注其所属大区与子区域，可用于区域检索、地图展示与空间分析。  
+
+**核心字段**：  
+- name / namealt：区域名称（含别名）  
+- featurecla：要素类别（示例：islands pol、mountains、desert、archipelago…）  
+- region / subregion：大区与子区域（示例：oceania / polynesia）  
+- geom：区域边界几何对象（EPSG:4326）
+
+**关键词**：地理区域、地貌、群岛、山脉、沙漠、区域边界、polygon、region、subregion  
+
+**适用查询场景**：  
+- 根据名称或类别（featurecla）检索某类地理区域的范围  
+- 按大区/子区筛选区域（如 Oceania → Polynesia）  
+- 与国家/水体进行空间关系分析（相交/包含）  
+
+
+# 表：ne_10m_geography_marine_polys
+
+---
+
+## 第一步：全字段释义（不遗漏）
+
+| 字段名 | 中文释义 |
+|---|---|
+| gid | 全局唯一标识符（ID）。 |
+| featurecla | 要素类别（一般为海洋/海区类型）。 |
+| name | 海洋或水体名称。 |
+| namealt | 备用名称/别名。 |
+| scalerank | 缩放等级（地图制图优先级，值越小越先显示）。 |
+| min_label | 最小标签显示缩放级别。 |
+| max_label | 最大标签显示缩放级别。 |
+| label | 渲染标签内容。 |
+| wikidataid | Wikidata 对应 ID（外部知识库链接）。 |
+| name_xx（name_en, name_fr, name_de, name_es, name_ar, …） | 多语言名称。 |
+| geom | 几何对象（海洋区域边界多边形，EPSG:4326）。 |
+
+**取值分布（采样Top10）**  
+- `featurecla`：`sea`, `ocean`, `bay`, `gulf`, `strait`, `channel`, `sound`, `coastal waters`, `lagoon`, `marginal sea`  
+- `name`：`Pacific Ocean`, `Atlantic Ocean`, `Indian Ocean`, `Coral Sea`, `Gulf of Mexico`, `Bay of Bengal`, `Mediterranean Sea`, `Bering Sea`, `South China Sea`, `Caribbean Sea`
+
+---
+
+## 第二步：相似字段合并（语义归一）
+
+| 字段名/属性 | 合并说明 | 含义解释 |
+|---|---|---|
+| name / namealt | 合并为“名称” | 海洋/水体主名称 + 备用名称/别名。 |
+| name_xx | 合并为“多语言名称” | 不同语言版本的水体名称。 |
+| 其余字段 | - | 保持不变。 |
+
+---
+
+## 第三步：简化筛选（去除与查询无关的字段）
+
+**删除（制图/渲染/外部ID类）**  
+- `scalerank`, `min_label`, `max_label`, `label`（制图与标注控制）  
+- `wikidataid`（外部知识库ID）
+
+**保留（与查询相关）**  
+- 标识/名称：`gid`, `name`, `namealt`, `name_xx`  
+- 分类：`featurecla`（水体类别）  
+- 空间：`geom`（水体边界多边形）
+
+**简化版字段表：**
+
+| 字段名/属性 | 含义解释 |
+|---|---|
+| gid | 全局唯一标识符（ID）。 |
+| name / namealt | 海洋/水体名称及备用名称。 |
+| name_xx（多语言） | 多语言名称（en/fr/de/es/ar…）。 |
+| featurecla | 要素类别（如 ocean, sea, gulf, bay, strait, channel 等）。 |
+| geom | 几何对象（水体边界多边形，EPSG:4326）。 |
+
+---
+
+## 第四步：TableCard-Detail（用于表选择的描述性卡片）
+
+**表名**：ne_10m_geography_marine_polys  
+**中文名称**：海洋与水体多边形  
+**表描述**：包含全球主要海洋与水体（海、洋、湾、海峡、通道等）的边界与分类信息，可用于水体检索、空间分析与地图可视化。  
+
+**核心字段**：  
+- name / namealt：水体名称及别名  
+- featurecla：要素类别（示例：ocean、sea、gulf、bay、strait…）  
+- geom：水体边界几何对象（EPSG:4326）
+
+**关键词**：海洋、海域、海湾、海峡、洋流、水体边界、marine polygon  
+
+**适用查询场景**：  
+- 检索指定名称的海域或水体边界（如 South China Sea）  
+- 按类别查询某类水体（如所有 strait 海峡）  
+- 与国家/区域进行空间关系分析（交集、邻接等）  
