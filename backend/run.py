@@ -5,6 +5,12 @@ from dotenv import load_dotenv
 # Load environment variables from .env file
 load_dotenv()
 
+# Read the configuration from .env (if not, use the default value)
+config_name = os.getenv("FLASK_CONFIG", "development")
+host = os.getenv("APP_HOST", "0.0.0.0")
+port = int(os.getenv("APP_PORT", 8000))
+debug = config_name == "development"
+
 # Call the application factory to create the Flask app instance
 app = create_app("development")
 

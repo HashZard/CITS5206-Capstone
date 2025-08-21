@@ -1,23 +1,46 @@
-# -*- coding: utf-8 -*-
-# 查询相关路由（Demo：演示参数化 SQL 生成）
 from flask import Blueprint, request, jsonify
-from app.models.dto import QueryIn, QueryOut
+from app.models.dto import QueryIn, QueryOut, PreviewOut
 from app.services.orchestrator import Orchestrator
 
-query_bp = Blueprint("query", __name__)
+query_bp = Blueprint("query", __name__, url_prefix="/api")
 
+def _err(code: str, msg: str, http=400, details=None):
+    return jsonify({"ok": False, "error": {"code": code, "message": msg, "details": details or {}}}), http
 
-@query_bp.route("/query/demo", methods=["POST"])
-def query_demo():
-    """
-    演示路由：模拟 L1→L2→L3→Detail 的选择过程，并返回参数化 SQL。
-    注意：此 Demo 不依赖真实 LLM 调用与数据库执行，仅用于前后端联调演示。
-    """
-    data = request.get_json()
-    qin = QueryIn(**data)
-    svc = Orchestrator()
-    # handle_query_demo 是异步方法，这里用同步方式调用
-    import asyncio
+@query_bp.route("/query", methods=["POST"])
+def query():
+    try:
+        payload = request.get_json(silent=True) or {}
+        qin = QueryIn(**payload)
+        qin.validate()
+    except (TypeError, ValueError) as e:
+        return _err("VALIDATION_ERROR", str(e), 400)
 
-    result = asyncio.run(svc.handle_query_demo(qin))
-    return jsonify(result.dict())
+    try:
+        svc = Orchestrator()
+        rows, meta = svc.handle_query(qin)
+        out = QueryOut(ok=True, data=rows, meta=meta)
+        return jsonify(out.__dict__), 200
+    except ValueError as e:
+        return _err("SEMANTIC_ERROR", str(e), 422)
+    except Exception as e:
+        return _err("INTERNAL_ERROR", str(e), 500)
+
+@query_bp.route("/query/preview", methods=["POST"])
+def query_preview():
+    try:
+        payload = request.get_json(silent=True) or {}
+        qin = QueryIn(**payload)
+        qin.validate()
+    except (TypeError, ValueError) as e:
+        return _err("VALIDATION_ERROR", str(e), 400)
+
+    try:
+        svc = Orchestrator()
+        sql = svc.preview_sql(qin)
+        out = PreviewOut(ok=True, sql=sql, warnings=[], meta={})
+        return jsonify(out.__dict__), 200
+    except ValueError as e:
+        return _err("SEMANTIC_ERROR", str(e), 422)
+    except Exception as e:
+        return _err("INTERNAL_ERROR", str(e), 500)

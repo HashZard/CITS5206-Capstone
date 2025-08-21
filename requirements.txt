@@ -1,0 +1,10 @@
+Flask>=3.1.1
+Flask-SQLAlchemy>=3.1.1
+Flask-Cors>=4.0.0
+python-dotenv>=1.0.1
+psycopg2-binary>=2.9.9
+pydantic>=2.11.7
+redis>=6.4.0
+geopandas>=1.1.1
+pandasql>=0.7.3
+geoalchemy2>=0.18.0
