@@ -43,4 +43,10 @@ from .tri_level_dto import (
     ImportResponse,
     ExportRequest,
     ExportResponse,
+    ClassificationRequest,
+    ClassificationResult,
+    ClassificationResponse,
+    AutoClassificationRequest,
+    CategoryRecommendationRequest,
+    CategoryRecommendationResponse,
 )

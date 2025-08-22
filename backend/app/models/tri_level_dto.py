@@ -320,3 +320,65 @@ class ExportResponse(BaseModel):
     exported_records: int = Field(..., description="导出记录数")
     file_size: Optional[int] = Field(None, description="文件大小（字节）")
     execution_time: Optional[float] = Field(None, description="导出耗时（秒）")
+
+
+# =========================
+# 分类服务 DTO
+# =========================
+
+class ClassificationRequest(BaseModel):
+    """数据分类请求"""
+    data_source: str = Field(..., description="数据源：table/file/content")
+    source_identifier: str = Field(..., description="源标识符：表名/文件路径/数据内容")
+    classification_type: str = Field(default="auto", description="分类类型：auto/manual/supervised")
+    target_levels: List[str] = Field(default=["l1", "l2", "l3"], description="目标分类层级")
+    confidence_threshold: float = Field(default=0.7, ge=0.0, le=1.0, description="置信度阈值")
+    max_categories: int = Field(default=10, ge=1, le=100, description="最大分类数量")
+    include_keywords: bool = Field(default=True, description="是否包含关键词提取")
+
+
+class ClassificationResult(BaseModel):
+    """单个分类结果"""
+    level: str = Field(..., description="分类层级：l1/l2/l3")
+    category_id: Optional[int] = Field(None, description="分类ID（如果存在）")
+    category_name: str = Field(..., description="分类名称")
+    confidence: float = Field(..., ge=0.0, le=1.0, description="置信度")
+    keywords: List[str] = Field(default_factory=list, description="相关关键词")
+    reasoning: Optional[str] = Field(None, description="分类依据")
+
+
+class ClassificationResponse(BaseModel):
+    """数据分类响应"""
+    success: bool = Field(..., description="是否成功")
+    message: str = Field(..., description="处理消息")
+    total_items: int = Field(..., description="处理项目总数")
+    classified_items: int = Field(..., description="成功分类项目数")
+    results: List[ClassificationResult] = Field(default_factory=list, description="分类结果列表")
+    suggested_mappings: Dict[str, List[ClassificationResult]] = Field(default_factory=dict, description="建议的层级映射")
+    execution_time: Optional[float] = Field(None, description="分类耗时（秒）")
+    statistics: Optional[Dict[str, Any]] = Field(None, description="分类统计信息")
+
+
+class AutoClassificationRequest(BaseModel):
+    """自动分类请求"""
+    table_name: str = Field(..., description="目标表名")
+    sample_size: int = Field(default=100, ge=10, le=1000, description="样本大小")
+    feature_columns: Optional[List[str]] = Field(None, description="特征列名（为空则自动检测）")
+    use_spatial_info: bool = Field(default=True, description="是否使用空间信息")
+    use_attribute_info: bool = Field(default=True, description="是否使用属性信息")
+
+
+class CategoryRecommendationRequest(BaseModel):
+    """类别推荐请求"""
+    description: str = Field(..., description="数据描述", min_length=10)
+    keywords: Optional[List[str]] = Field(None, description="关键词列表")
+    data_type: Optional[str] = Field(None, description="数据类型：spatial/tabular/mixed")
+    domain: Optional[str] = Field(None, description="应用领域")
+
+
+class CategoryRecommendationResponse(BaseModel):
+    """类别推荐响应"""
+    recommendations: List[ClassificationResult] = Field(default_factory=list, description="推荐结果")
+    existing_matches: List[Dict[str, Any]] = Field(default_factory=list, description="现有匹配项")
+    new_category_suggestions: List[Dict[str, Any]] = Field(default_factory=list, description="新类别建议")
+    confidence_summary: Dict[str, float] = Field(default_factory=dict, description="置信度汇总")
