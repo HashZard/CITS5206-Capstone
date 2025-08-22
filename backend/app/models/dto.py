@@ -1,22 +1,49 @@
-# -*- coding: utf-8 -*-
-# DTO：请求/响应模型定义（面向 API 契约）
-from pydantic import BaseModel, Field
-from typing import Any, Optional, List
+from dataclasses import dataclass, field
+from typing import List, Dict, Any, Optional
 
-class QueryIn(BaseModel):
-    """
-    输入：自然语言查询 + 可选参数（如半径、地名、limit）
-    """
-    query: str = Field(..., description="自然语言查询，例如 'rivers near Perth'")
-    extras: Optional[dict] = Field(default=None, description="可选参数，如 radius_m, region_name, limit")
-    session_id: Optional[str] = Field(default=None, description="会话标识")
+ALLOWED_TABLES = {
+    "l1_category",
+    "l2_card",
+    "l3_table",
+    "map_l1_l2",
+    "map_l2_l3",
+    "prompt_templates",
+}
 
-class QueryOut(BaseModel):
-    """
-    输出：缺参提示 或 参数化 SQL + 结果（GeoJSON/表格）
-    """
-    missing_info: Optional[List[str]] = None
+@dataclass
+class QueryIn:
+    table: str
+    columns: List[str]
+    filters: Dict[str, Any] = field(default_factory=dict)
+    limit: int = 100
+    offset: int = 0
+
+    def validate(self, limit_max: int = 10000):
+        if not self.table:
+            raise ValueError("table is required")
+        if self.table not in ALLOWED_TABLES:
+            raise ValueError(f"table '{self.table}' is not allowed")
+        if not isinstance(self.columns, list) or not self.columns:
+            raise ValueError("columns must be a non-empty list")
+        if any((c or "").strip() == "*" for c in self.columns):
+            raise ValueError("SELECT * is not allowed; list explicit columns")
+        if not (1 <= int(self.limit) <= limit_max):
+            raise ValueError(f"limit must be 1~{limit_max}")
+        if int(self.offset) < 0:
+            raise ValueError("offset must be >= 0")
+
+@dataclass
+class QueryOut:
+    ok: bool
+    data: List[Dict[str, Any]] = field(default_factory=list)
+    meta: Dict[str, Any] = field(default_factory=dict)
+    error: Optional[Dict[str, Any]] = None
+
+@dataclass
+class PreviewOut:
+    ok: bool
     sql: Optional[str] = None
-    params: Optional[List[Any]] = None
-    param_types: Optional[List[str]] = None
-    result: Optional[dict] = None
+    warnings: List[str] = field(default_factory=list)
+    meta: Dict[str, Any] = field(default_factory=dict)
+    error: Optional[Dict[str, Any]] = None
+
