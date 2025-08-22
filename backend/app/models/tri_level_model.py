@@ -10,6 +10,7 @@ from typing import Any, List, Optional
 
 from sqlalchemy import (
     ARRAY, 
+    Boolean,
     DateTime, 
     ForeignKey, 
     Integer, 
@@ -43,7 +44,9 @@ class L1Category(Base):
     description: Mapped[Optional[str]] = mapped_column(Text, comment="类别描述")
     dimension: Mapped[Optional[str]] = mapped_column(String(50), comment="维度类型，如 theme")
     keywords: Mapped[Optional[list[str]]] = mapped_column(ARRAY(String), comment="关键词数组")
-    weight: Mapped[Optional[int]] = mapped_column(Integer, default=0, comment="权重排序")
+    weight: Mapped[Optional[int]] = mapped_column(Integer, default=100, comment="权重排序")
+    active: Mapped[bool] = mapped_column(Boolean, default=True, comment="是否启用")
+    version: Mapped[int] = mapped_column(Integer, default=1, comment="版本号")
     
     # 时间戳字段
     created_at: Mapped[datetime] = mapped_column(DateTime, server_default=func.now(), comment="创建时间")
@@ -60,6 +63,7 @@ class L1Category(Base):
     __table_args__ = (
         Index('idx_l1_category_weight', 'weight'),
         Index('idx_l1_category_keywords', 'keywords', postgresql_using='gin'),
+        Index('idx_l1_category_active', 'active'),
     )
     
     def __repr__(self) -> str:
@@ -72,10 +76,13 @@ class L2Card(Base):
     
     # 主键和基础字段
     id: Mapped[int] = mapped_column(Integer, primary_key=True, autoincrement=True)
-    name: Mapped[str] = mapped_column(String(255), unique=True, nullable=False, comment="概述卡名称")
-    description_short: Mapped[Optional[str]] = mapped_column(Text, comment="简短描述")
+    name: Mapped[str] = mapped_column(String(255), nullable=False, comment="概述卡名称")
+    description_short: Mapped[str] = mapped_column(Text, nullable=False, comment="简短描述")
     keywords: Mapped[Optional[list[str]]] = mapped_column(ARRAY(String), comment="关键词数组")
-    weight: Mapped[Optional[int]] = mapped_column(Integer, default=0, comment="权重排序")
+    allowed_dimensions: Mapped[Optional[list[str]]] = mapped_column(ARRAY(String), comment="允许的维度")
+    weight: Mapped[Optional[int]] = mapped_column(Integer, default=100, comment="权重排序")
+    active: Mapped[bool] = mapped_column(Boolean, default=True, comment="是否启用")
+    version: Mapped[int] = mapped_column(Integer, default=1, comment="版本号")
     
     # 时间戳字段
     created_at: Mapped[datetime] = mapped_column(DateTime, server_default=func.now(), comment="创建时间")
@@ -97,6 +104,7 @@ class L2Card(Base):
     __table_args__ = (
         Index('idx_l2_card_weight', 'weight'),
         Index('idx_l2_card_keywords', 'keywords', postgresql_using='gin'),
+        Index('idx_l2_card_active', 'active'),
     )
     
     def __repr__(self) -> str:
@@ -112,15 +120,17 @@ class L3Table(Base):
 
     # 物理表标识
     table_name: Mapped[str] = mapped_column(String(255), unique=True, nullable=False, comment="实际表名")
-    display_name: Mapped[Optional[str]] = mapped_column(String(255), comment="显示名称")
-    summary: Mapped[Optional[str]] = mapped_column(Text, comment="表格摘要")
+    display_name: Mapped[str] = mapped_column(String(255), nullable=False, comment="显示名称")
+    summary: Mapped[str] = mapped_column(Text, nullable=False, comment="表格摘要")
 
     # 核心字段：可为 JSON 数组或字符串化数组，读取时兼容两种格式
-    core_fields: Mapped[Optional[Any]] = mapped_column(JSON, nullable=True, comment="核心字段列表")
+    core_fields: Mapped[Any] = mapped_column(JSON, nullable=False, comment="核心字段列表")
     keywords: Mapped[Optional[list[str]]] = mapped_column(ARRAY(String), comment="关键词数组")
     use_cases: Mapped[Optional[list[str]]] = mapped_column(ARRAY(String), comment="使用场景数组")
-    tablecard_detail_md: Mapped[Optional[str]] = mapped_column(Text, comment="详细描述（Markdown格式）")
+    tablecard_detail_md: Mapped[str] = mapped_column(Text, nullable=False, comment="详细描述（Markdown格式）")
     schema_ref: Mapped[Optional[str]] = mapped_column(String(255), comment="模式引用，如 schema:pg_catalog:ne_10m_lakes")
+    active: Mapped[bool] = mapped_column(Boolean, default=True, comment="是否启用")
+    version: Mapped[int] = mapped_column(Integer, default=1, comment="版本号")
     
     # 时间戳字段
     created_at: Mapped[datetime] = mapped_column(DateTime, server_default=func.now(), comment="创建时间")
@@ -137,6 +147,7 @@ class L3Table(Base):
     __table_args__ = (
         Index('idx_l3_table_name', 'table_name'),
         Index('idx_l3_table_keywords', 'keywords', postgresql_using='gin'),
+        Index('idx_l3_table_active', 'active'),
     )
     
     def __repr__(self) -> str:
@@ -302,6 +313,34 @@ class NeGeographyMarine(Base):
         return f"<NeGeographyMarine(name='{self.name}', featurecla='{self.featurecla}')>"
 
 
+class PromptTemplate(Base):
+    """Prompt 模板表 - prompt_templates"""
+    __tablename__ = 'prompt_templates'
+    
+    # 主键
+    id: Mapped[int] = mapped_column(Integer, primary_key=True, autoincrement=True)
+    
+    # 核心字段
+    stage: Mapped[str] = mapped_column(String(20), nullable=False, comment='模板阶段：L1/L2/L3/CLARIFY/SQL_GEN')
+    lang: Mapped[str] = mapped_column(String(10), default='zh', comment='语言：zh/en等')
+    system_text: Mapped[str] = mapped_column(Text, nullable=False, comment='系统提示文本')
+    context_tmpl: Mapped[str] = mapped_column(Text, nullable=False, comment='上下文模板，可含占位符如{{cards_json}}')
+    user_tmpl: Mapped[str] = mapped_column(Text, nullable=False, comment='用户模板')
+    json_schema: Mapped[Optional[str]] = mapped_column(Text, comment='期望的JSON结构')
+    
+    # 时间戳字段
+    updated_at: Mapped[datetime] = mapped_column(DateTime, server_default=func.now(), onupdate=func.now(), comment="更新时间")
+    
+    # 索引
+    __table_args__ = (
+        Index('idx_prompt_stage_lang', 'stage', 'lang'),
+        Index('idx_prompt_stage', 'stage'),
+    )
+    
+    def __repr__(self) -> str:
+        return f"<PromptTemplate(id={self.id}, stage='{self.stage}', lang='{self.lang}')>"
+
+
 # =========================
 # 工具函数
 # =========================
@@ -318,6 +357,7 @@ def get_all_model_classes():
         NeLakes,
         NeGeographyRegions,
         NeGeographyMarine,
+        PromptTemplate,
     ]
 
 

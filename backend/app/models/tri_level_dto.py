@@ -19,7 +19,9 @@ class L1CategoryBase(BaseModel):
     description: Optional[str] = Field(None, description="类别描述")
     dimension: Optional[str] = Field(None, description="维度类型，如 theme", max_length=50)
     keywords: Optional[List[str]] = Field(default_factory=list, description="关键词列表")
-    weight: Optional[int] = Field(default=0, description="权重排序")
+    weight: Optional[int] = Field(default=100, description="权重排序")
+    active: bool = Field(default=True, description="是否启用")
+    version: int = Field(default=1, description="版本号")
 
 
 class L1CategoryCreate(L1CategoryBase):
@@ -34,6 +36,8 @@ class L1CategoryUpdate(BaseModel):
     dimension: Optional[str] = Field(None, max_length=50)
     keywords: Optional[List[str]] = None
     weight: Optional[int] = None
+    active: Optional[bool] = None
+    version: Optional[int] = None
 
 
 class L1CategoryResponse(L1CategoryBase):
@@ -53,9 +57,12 @@ class L1CategoryResponse(L1CategoryBase):
 class L2CardBase(BaseModel):
     """L2 概述卡基础模型"""
     name: str = Field(..., description="概述卡名称", max_length=255)
-    description_short: Optional[str] = Field(None, description="简短描述")
+    description_short: str = Field(..., description="简短描述")
     keywords: Optional[List[str]] = Field(default_factory=list, description="关键词列表")
-    weight: Optional[int] = Field(default=0, description="权重排序")
+    allowed_dimensions: Optional[List[str]] = Field(default_factory=list, description="允许的维度")
+    weight: Optional[int] = Field(default=100, description="权重排序")
+    active: bool = Field(default=True, description="是否启用")
+    version: int = Field(default=1, description="版本号")
 
 
 class L2CardCreate(L2CardBase):
@@ -68,7 +75,10 @@ class L2CardUpdate(BaseModel):
     name: Optional[str] = Field(None, max_length=255)
     description_short: Optional[str] = None
     keywords: Optional[List[str]] = None
+    allowed_dimensions: Optional[List[str]] = None
     weight: Optional[int] = None
+    active: Optional[bool] = None
+    version: Optional[int] = None
 
 
 class L2CardResponse(L2CardBase):
@@ -88,13 +98,15 @@ class L2CardResponse(L2CardBase):
 class L3TableBase(BaseModel):
     """L3 表内核基础模型"""
     table_name: str = Field(..., description="实际表名", max_length=255)
-    display_name: Optional[str] = Field(None, description="显示名称", max_length=255)
-    summary: Optional[str] = Field(None, description="表格摘要")
-    core_fields: Optional[Any] = Field(None, description="核心字段列表（JSON格式）")
+    display_name: str = Field(..., description="显示名称", max_length=255)
+    summary: str = Field(..., description="表格摘要")
+    core_fields: Any = Field(..., description="核心字段列表（JSON格式）")
     keywords: Optional[List[str]] = Field(default_factory=list, description="关键词列表")
     use_cases: Optional[List[str]] = Field(default_factory=list, description="使用场景列表")
-    tablecard_detail_md: Optional[str] = Field(None, description="详细描述（Markdown格式）")
+    tablecard_detail_md: str = Field(..., description="详细描述（Markdown格式）")
     schema_ref: Optional[str] = Field(None, description="模式引用", max_length=255)
+    active: bool = Field(default=True, description="是否启用")
+    version: int = Field(default=1, description="版本号")
 
 
 class L3TableCreate(L3TableBase):
@@ -112,6 +124,8 @@ class L3TableUpdate(BaseModel):
     use_cases: Optional[List[str]] = None
     tablecard_detail_md: Optional[str] = None
     schema_ref: Optional[str] = Field(None, max_length=255)
+    active: Optional[bool] = None
+    version: Optional[int] = None
 
 
 class L3TableResponse(L3TableBase):
@@ -320,3 +334,41 @@ class ExportResponse(BaseModel):
     exported_records: int = Field(..., description="导出记录数")
     file_size: Optional[int] = Field(None, description="文件大小（字节）")
     execution_time: Optional[float] = Field(None, description="导出耗时（秒）")
+
+
+# =========================
+# Prompt 模板 DTO
+# =========================
+
+class PromptTemplateBase(BaseModel):
+    """Prompt 模板基础模型"""
+    stage: str = Field(..., description="模板阶段：L1/L2/L3/CLARIFY/SQL_GEN", max_length=20)
+    lang: str = Field(default="zh", description="语言：zh/en等", max_length=10)
+    system_text: str = Field(..., description="系统提示文本")
+    context_tmpl: str = Field(..., description="上下文模板，可含占位符如{{cards_json}}")
+    user_tmpl: str = Field(..., description="用户模板")
+    json_schema: Optional[str] = Field(None, description="期望的JSON结构")
+
+
+class PromptTemplateCreate(PromptTemplateBase):
+    """创建 Prompt 模板的请求模型"""
+    pass
+
+
+class PromptTemplateUpdate(BaseModel):
+    """更新 Prompt 模板的请求模型"""
+    stage: Optional[str] = Field(None, max_length=20)
+    lang: Optional[str] = Field(None, max_length=10)
+    system_text: Optional[str] = None
+    context_tmpl: Optional[str] = None
+    user_tmpl: Optional[str] = None
+    json_schema: Optional[str] = None
+
+
+class PromptTemplateResponse(PromptTemplateBase):
+    """Prompt 模板的响应模型"""
+    id: int
+    updated_at: datetime
+
+    class Config:
+        from_attributes = True

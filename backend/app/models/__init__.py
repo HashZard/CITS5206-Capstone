@@ -10,6 +10,7 @@ from .tri_level_model import (
     NeLakes,
     NeGeographyRegions,
     NeGeographyMarine,
+    PromptTemplate,
     get_all_model_classes,
     create_all_tables,
 )
@@ -43,4 +44,7 @@ from .tri_level_dto import (
     ImportResponse,
     ExportRequest,
     ExportResponse,
+    PromptTemplateCreate,
+    PromptTemplateUpdate,
+    PromptTemplateResponse,
 )
