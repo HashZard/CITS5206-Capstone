@@ -47,3 +47,21 @@ class PreviewOut:
     meta: Dict[str, Any] = field(default_factory=dict)
     error: Optional[Dict[str, Any]] = None
 
+@dataclass
+class DemoQueryIn:
+    query: str
+    extras: Dict[str, Any] = field(default_factory=dict)
+
+    def validate(self):
+        if not self.query or not self.query.strip():
+            raise ValueError("query is required and cannot be empty")
+
+@dataclass
+class DemoQueryOut:
+    ok: bool
+    sql: Optional[str] = None
+    params: Dict[str, Any] = field(default_factory=dict)
+    explanation: Optional[str] = None
+    meta: Dict[str, Any] = field(default_factory=dict)
+    error: Optional[Dict[str, Any]] = None
+
