@@ -13,7 +13,7 @@ services:
       - "5432:5432"
     volumes:
       - postgis_data:/var/lib/postgresql/data
-      - /Users/zeke/Uni/Capstone/capstone_map:/capstone_map
+      - ./data:/capstone_map
 
   pgadmin:
     image: dpage/pgadmin4:latest
