@@ -33,6 +33,20 @@ class QueryIn:
             raise ValueError("offset must be >= 0")
 
 @dataclass
+class NLQueryIn:
+    """Natural Language Query Input"""
+    query: str
+    limit: int = 100
+    table_context: Optional[Dict[str, Any]] = field(default_factory=dict)
+    include_metadata: bool = False
+
+    def validate(self, limit_max: int = 10000):
+        if not self.query or not self.query.strip():
+            raise ValueError("query is required and cannot be empty")
+        if not (1 <= int(self.limit) <= limit_max):
+            raise ValueError(f"limit must be 1~{limit_max}")
+
+@dataclass
 class QueryOut:
     ok: bool
     data: List[Dict[str, Any]] = field(default_factory=list)
@@ -45,5 +59,16 @@ class PreviewOut:
     sql: Optional[str] = None
     warnings: List[str] = field(default_factory=list)
     meta: Dict[str, Any] = field(default_factory=dict)
+    error: Optional[Dict[str, Any]] = None
+
+@dataclass
+class NLQueryOut:
+    """Natural Language Query Output"""
+    ok: bool
+    data: List[Dict[str, Any]] = field(default_factory=list)
+    meta: Dict[str, Any] = field(default_factory=dict)
+    generated_sql: Optional[str] = None
+    sql_params: Optional[Dict[str, Any]] = field(default_factory=dict)
+    table_suggestions: List[Dict[str, Any]] = field(default_factory=list)
     error: Optional[Dict[str, Any]] = None
 
