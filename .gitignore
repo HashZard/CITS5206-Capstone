@@ -22,4 +22,3 @@ wheels/
 
 # Env variables
 .env
-docker-compose.yml

@@ -2,6 +2,7 @@ from flask import Flask
 from .extensions import db
 from .api.health import health_bp
 from .api.query import query_bp
+from .api.schema import schema_bp
 from config import config
 
 
@@ -15,6 +16,7 @@ def create_app(config_name):
 
     # Register Blueprints
     app.register_blueprint(health_bp, url_prefix="/api")
+    app.register_blueprint(schema_bp, url_prefix="/api/schema")
     app.register_blueprint(query_bp, url_prefix="/api")
 
     return app
