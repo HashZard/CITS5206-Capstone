@@ -6,7 +6,7 @@ export type FooterProps = {
   year?: number;
 };
 
-export default function Footer({ className = "", brand = "GeoAnswering", year = new Date().getFullYear() }: FooterProps) {
+export default function Footer({ className = "", brand = "GeoQuery", year = new Date().getFullYear() }: FooterProps) {
   return (
     <footer role="contentinfo" className={`border-t border-border bg-background text-foreground/70 ${className}`}>
       <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 py-6 text-sm flex flex-col gap-3 md:flex-row md:items-center md:justify-between">

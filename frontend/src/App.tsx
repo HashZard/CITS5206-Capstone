@@ -7,16 +7,19 @@ import TopNav, { TopNavLink } from "@/components/layout/TopNav";
 import Footer from "@/components/layout/Footer";
 
 const links: TopNavLink[] = [
-  { label: "Dashboard" },      // -> /
-  { label: "Upload Data" },    // -> /upload
-  { label: "Saved Queries" },  // -> /history
-  { label: "Tutorials" },      // -> /tutorials
+  { label: "Home" },       // -> /
+  { label: "Dashboard" },  // -> /dashboard
+  { label: "History" },    // -> /history
+  { label: "Import" },     // -> /upload
+  { label: "Result" },     // -> /result
+  { label: "Tutorials" },  // -> /tutorials
+  { label: "About" },      // -> /about
 ];
 
 function App() {
   return (
     <div className="min-h-screen flex flex-col bg-gradient-to-br from-purple-600 to-blue-600">
-      <TopNav brand="GeoAnswering" links={links} />
+      <TopNav brand="GeoQuery" links={links} />
 
       <main className="flex-1 p-8">
         <div className="max-w-6xl mx-auto">
@@ -24,7 +27,7 @@ function App() {
           <div className="text-center mb-16">
             <div className="flex items-center justify-center mb-6">
               <MapPin className="w-12 h-12 text-white mr-3" />
-              <h1 className="text-5xl font-bold text-white">GeoAnswering</h1>
+              <h1 className="text-5xl font-bold text-white">GeoQuery</h1>
             </div>
             <p className="text-xl text-white/90 mb-2">Ask Your Map Anything</p>
             <p className="text-white/80 max-w-2xl mx-auto">
@@ -102,7 +105,7 @@ function App() {
         </div>
       </main>
 
-      <Footer brand="GeoAnswering" />
+      <Footer brand="GeoQuery" />
     </div>
   );
 }
