@@ -4,8 +4,18 @@ from app.services.orchestrator import Orchestrator
 
 query_bp = Blueprint("query", __name__)
 
+
 def _err(code: str, msg: str, http=400, details=None):
-    return jsonify({"ok": False, "error": {"code": code, "message": msg, "details": details or {}}}), http
+    return (
+        jsonify(
+            {
+                "ok": False,
+                "error": {"code": code, "message": msg, "details": details or {}},
+            }
+        ),
+        http,
+    )
+
 
 @query_bp.route("/query", methods=["POST"])
 def query():
@@ -25,6 +35,7 @@ def query():
         return _err("SEMANTIC_ERROR", str(e), 422)
     except Exception as e:
         return _err("INTERNAL_ERROR", str(e), 500)
+
 
 @query_bp.route("/query/preview", methods=["POST"])
 def query_preview():

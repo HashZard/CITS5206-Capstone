@@ -1,5 +1,4 @@
 import os
-# 注意: load_dotenv() 已在 run.py 中调用，此处无需重复加载
 
 
 class Config:

@@ -1,14 +1,23 @@
-# -*- coding: utf-8 -*-
 """
 三层架构数据服务层 (L1-L2-L3)
 用于查询和操作三层架构相关的表数据
 """
+
 from typing import List, Optional
 from app.extensions import db
 from app.models.three_level_models import (
-    L1Category, L2Card, L3Table, MapL1L2, MapL2L3, PromptTemplate,
-    rows_to_l1_categories, rows_to_l2_cards, rows_to_l3_tables,
-    rows_to_map_l1_l2, rows_to_map_l2_l3, rows_to_prompt_templates
+    L1Category,
+    L2Card,
+    L3Table,
+    MapL1L2,
+    MapL2L3,
+    PromptTemplate,
+    rows_to_l1_categories,
+    rows_to_l2_cards,
+    rows_to_l3_tables,
+    rows_to_map_l1_l2,
+    rows_to_map_l2_l3,
+    rows_to_prompt_templates,
 )
 
 
@@ -38,9 +47,10 @@ class ThreeLevelService:
         """
         with db.engine.connect() as conn:
             row = conn.execute(db.text(sql), {"id": category_id}).mappings().first()
-        
+
         if row:
             from app.models.three_level_models import dict_to_l1_category
+
             return dict_to_l1_category(dict(row))
         return None
 
@@ -113,15 +123,20 @@ class ThreeLevelService:
         WHERE table_name = :table_name AND active = true
         """
         with db.engine.connect() as conn:
-            row = conn.execute(db.text(sql), {"table_name": table_name}).mappings().first()
-        
+            row = (
+                conn.execute(db.text(sql), {"table_name": table_name})
+                .mappings()
+                .first()
+            )
+
         if row:
             from app.models.three_level_models import dict_to_l3_table
+
             return dict_to_l3_table(dict(row))
         return None
 
     @staticmethod
-    def get_prompt_template(stage: str, lang: str = 'en') -> Optional[PromptTemplate]:
+    def get_prompt_template(stage: str, lang: str = "en") -> Optional[PromptTemplate]:
         """获取指定阶段的提示模板"""
         sql = """
         SELECT id, stage, lang, system_text, context_tmpl, user_tmpl, 
@@ -132,13 +147,15 @@ class ThreeLevelService:
         LIMIT 1
         """
         with db.engine.connect() as conn:
-            row = conn.execute(db.text(sql), {
-                "stage": stage, 
-                "lang": lang
-            }).mappings().first()
-        
+            row = (
+                conn.execute(db.text(sql), {"stage": stage, "lang": lang})
+                .mappings()
+                .first()
+            )
+
         if row:
             from app.models.three_level_models import dict_to_prompt_template
+
             return dict_to_prompt_template(dict(row))
         return None
 
@@ -162,10 +179,11 @@ class ThreeLevelService:
         """
         pattern = f"%{keyword}%"
         with db.engine.connect() as conn:
-            rows = conn.execute(db.text(sql), {
-                "keyword": keyword,
-                "pattern": pattern
-            }).mappings().all()
+            rows = (
+                conn.execute(db.text(sql), {"keyword": keyword, "pattern": pattern})
+                .mappings()
+                .all()
+            )
         return rows_to_l3_tables([dict(row) for row in rows])
 
     @staticmethod
@@ -173,22 +191,16 @@ class ThreeLevelService:
         """获取完整的三层架构层次结构"""
         l1_categories = ThreeLevelService.get_all_l1_categories()
         result = []
-        
+
         for l1 in l1_categories:
             l2_cards = ThreeLevelService.get_l2_cards_by_l1(l1.id)
-            l1_data = {
-                "l1": l1,
-                "l2_cards": []
-            }
-            
+            l1_data = {"l1": l1, "l2_cards": []}
+
             for l2 in l2_cards:
                 l3_tables = ThreeLevelService.get_l3_tables_by_l2(l2.id)
-                l2_data = {
-                    "l2": l2,
-                    "l3_tables": l3_tables
-                }
+                l2_data = {"l2": l2, "l3_tables": l3_tables}
                 l1_data["l2_cards"].append(l2_data)
-            
+
             result.append(l1_data)
-        
+
         return {"hierarchy": result}

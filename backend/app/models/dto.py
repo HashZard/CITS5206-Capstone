@@ -10,6 +10,7 @@ ALLOWED_TABLES = {
     "prompt_templates",
 }
 
+
 @dataclass
 class QueryIn:
     table: str
@@ -32,12 +33,14 @@ class QueryIn:
         if int(self.offset) < 0:
             raise ValueError("offset must be >= 0")
 
+
 @dataclass
 class QueryOut:
     ok: bool
     data: List[Dict[str, Any]] = field(default_factory=list)
     meta: Dict[str, Any] = field(default_factory=dict)
     error: Optional[Dict[str, Any]] = None
+
 
 @dataclass
 class PreviewOut:
@@ -46,4 +49,3 @@ class PreviewOut:
     warnings: List[str] = field(default_factory=list)
     meta: Dict[str, Any] = field(default_factory=dict)
     error: Optional[Dict[str, Any]] = None
-

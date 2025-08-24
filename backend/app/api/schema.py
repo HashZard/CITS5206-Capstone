@@ -4,6 +4,7 @@ from app.services.sql_service import get_columns
 
 schema_bp = Blueprint("schema", __name__)
 
+
 @schema_bp.route("/tables", methods=["GET"])
 def list_tables():
     data = []

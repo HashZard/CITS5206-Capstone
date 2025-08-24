@@ -1,4 +1,3 @@
-# -*- coding: utf-8 -*-
 """
 三层架构数据模型 (L1-L2-L3)
 基于 initial_table.sql 的表结构设计
@@ -12,6 +11,7 @@ from dataclasses import dataclass
 @dataclass
 class L1Category:
     """L1 顶层类别数据模型"""
+
     id: int
     name: str
     description: Optional[str] = None
@@ -30,6 +30,7 @@ class L1Category:
 @dataclass
 class L2Card:
     """L2 概述卡数据模型"""
+
     id: int
     name: str
     description_short: str
@@ -50,6 +51,7 @@ class L2Card:
 @dataclass
 class L3Table:
     """L3 表内核数据模型"""
+
     id: int
     table_name: str
     display_name: str
@@ -73,6 +75,7 @@ class L3Table:
 @dataclass
 class MapL1L2:
     """L1 与 L2 的映射关系"""
+
     l1_id: int
     l2_id: int
     weight: int = 100
@@ -81,6 +84,7 @@ class MapL1L2:
 @dataclass
 class MapL2L3:
     """L2 与 L3 的映射关系"""
+
     l2_id: int
     l3_id: int
     weight: int = 100
@@ -89,9 +93,10 @@ class MapL2L3:
 @dataclass
 class PromptTemplate:
     """Prompt 模板数据模型"""
+
     id: int
     stage: str  # L1 | L2 | L3 | CLARIFY | SQL_GEN
-    lang: str = 'en'
+    lang: str = "en"
     system_text: str = ""
     context_tmpl: str = ""
     user_tmpl: str = ""
@@ -103,72 +108,69 @@ class PromptTemplate:
 def dict_to_l1_category(data: dict) -> L1Category:
     """将字典转换为 L1Category 对象"""
     return L1Category(
-        id=data['id'],
-        name=data['name'],
-        description=data.get('description'),
-        dimension=data.get('dimension'),
-        keywords=data.get('keywords', []),
-        weight=data.get('weight', 100),
-        active=data.get('active', True),
-        version=data.get('version', 1),
-        updated_at=data.get('updated_at')
+        id=data["id"],
+        name=data["name"],
+        description=data.get("description"),
+        dimension=data.get("dimension"),
+        keywords=data.get("keywords", []),
+        weight=data.get("weight", 100),
+        active=data.get("active", True),
+        version=data.get("version", 1),
+        updated_at=data.get("updated_at"),
     )
 
 
 def dict_to_l2_card(data: dict) -> L2Card:
     """将字典转换为 L2Card 对象"""
     return L2Card(
-        id=data['id'],
-        name=data['name'],
-        description_short=data['description_short'],
-        keywords=data.get('keywords', []),
-        allowed_dimensions=data.get('allowed_dimensions', []),
-        weight=data.get('weight', 100),
-        active=data.get('active', True),
-        version=data.get('version', 1),
-        updated_at=data.get('updated_at')
+        id=data["id"],
+        name=data["name"],
+        description_short=data["description_short"],
+        keywords=data.get("keywords", []),
+        allowed_dimensions=data.get("allowed_dimensions", []),
+        weight=data.get("weight", 100),
+        active=data.get("active", True),
+        version=data.get("version", 1),
+        updated_at=data.get("updated_at"),
     )
 
 
 def dict_to_l3_table(data: dict) -> L3Table:
     """将字典转换为 L3Table 对象"""
     # 处理 JSONB 字段
-    core_fields = data.get('core_fields', [])
+    core_fields = data.get("core_fields", [])
     if isinstance(core_fields, str):
         import json
+
         core_fields = json.loads(core_fields)
-    
+
     return L3Table(
-        id=data['id'],
-        table_name=data['table_name'],
-        display_name=data['display_name'],
-        summary=data['summary'],
+        id=data["id"],
+        table_name=data["table_name"],
+        display_name=data["display_name"],
+        summary=data["summary"],
         core_fields=core_fields,
-        keywords=data.get('keywords', []),
-        use_cases=data.get('use_cases', []),
-        tablecard_detail_md=data.get('tablecard_detail_md', ''),
-        schema_ref=data.get('schema_ref'),
-        active=data.get('active', True),
-        version=data.get('version', 1),
-        updated_at=data.get('updated_at')
+        keywords=data.get("keywords", []),
+        use_cases=data.get("use_cases", []),
+        tablecard_detail_md=data.get("tablecard_detail_md", ""),
+        schema_ref=data.get("schema_ref"),
+        active=data.get("active", True),
+        version=data.get("version", 1),
+        updated_at=data.get("updated_at"),
     )
 
 
 def dict_to_map_l1_l2(data: dict) -> MapL1L2:
     """将字典转换为 MapL1L2 对象"""
     return MapL1L2(
-        l1_id=data['l1_id'],
-        l2_id=data['l2_id'],
-        weight=data.get('weight', 100)
+        l1_id=data["l1_id"], l2_id=data["l2_id"], weight=data.get("weight", 100)
     )
 
 
 def dict_to_map_l2_l3(data: dict) -> MapL2L3:
     """将字典转换为 MapL2L3 对象"""
     return MapL2L3(
-        l2_id=data['l2_id'],
-        l3_id=data['l3_id'],
-        weight=data.get('weight', 100)
+        l2_id=data["l2_id"], l3_id=data["l3_id"], weight=data.get("weight", 100)
     )
 
 
@@ -186,15 +188,16 @@ def dict_to_map_l2_l3(data: dict) -> MapL2L3:
 def dict_to_prompt_template(data: dict) -> PromptTemplate:
     """将字典转换为 PromptTemplate 对象"""
     return PromptTemplate(
-        id=data['id'],                               # 主键ID
-        stage=data['stage'],                         # 阶段（如 L1/L2/L3/CLARIFY/SQL_GEN）
-        lang=data.get('lang', 'en'),                 # 语言（默认'en'）
-        system_text=data.get('system_text', ''),     # 系统提示文本
-        context_tmpl=data.get('context_tmpl', ''),   # 上下文模板
-        user_tmpl=data.get('user_tmpl', ''),         # 用户输入模板
-        json_schema=data.get('json_schema'),         # JSON Schema（可选）
-        updated_at=data.get('updated_at')            # 更新时间
+        id=data["id"],  # 主键ID
+        stage=data["stage"],  # 阶段（如 L1/L2/L3/CLARIFY/SQL_GEN）
+        lang=data.get("lang", "en"),  # 语言（默认'en'）
+        system_text=data.get("system_text", ""),  # 系统提示文本
+        context_tmpl=data.get("context_tmpl", ""),  # 上下文模板
+        user_tmpl=data.get("user_tmpl", ""),  # 用户输入模板
+        json_schema=data.get("json_schema"),  # JSON Schema（可选）
+        updated_at=data.get("updated_at"),  # 更新时间
     )
+
 
 # 三层架构批量转换函数
 def rows_to_l1_categories(rows: List[dict]) -> List[L1Category]:
