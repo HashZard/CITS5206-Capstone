@@ -1,4 +1,7 @@
 import os
+from dotenv import load_dotenv
+
+load_dotenv()
 
 
 class Config:
@@ -12,6 +15,19 @@ class Config:
     # Database configuration
     SQLALCHEMY_TRACK_MODIFICATIONS = False
     SQLALCHEMY_DATABASE_URI = os.environ.get("POSTGRES_DSN")
+
+    # LLM configuration
+    LLM_CONFIG = {
+        "default": "openai",
+        "openai": {
+            "api_key": os.getenv("OPENAI_API_KEY"),
+            "default_model": os.getenv("OPENAI_DEFAULT_MODEL"),
+        },
+        "gemini": {
+            "api_key": os.getenv("GEMINI_API_KEY"),
+            "default_model": os.getenv("GEMINI_DEFAULT_MODEL"),
+        },
+    }
 
 
 class DevelopmentConfig(Config):

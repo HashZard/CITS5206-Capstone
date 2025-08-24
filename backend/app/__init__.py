@@ -1,8 +1,8 @@
 from flask import Flask
-from .extensions import init_extensions
-from .api.query import query_bp
-from .api.schema import schema_bp
 from config import config
+from .extensions import init_extensions
+
+from app.services.llm_service import LLMService
 
 
 def create_app(config_name):
@@ -13,8 +13,17 @@ def create_app(config_name):
     # Initialize extensions using unified function
     init_extensions(app)
 
+    # Initialize LLM Service
+    llm_service = LLMService()
+    llm_service.init_app(app)
+
     # Register Blueprints
+    from .api.schema import schema_bp
+
     app.register_blueprint(schema_bp, url_prefix="/api/schema")
+
+    from .api.query import query_bp
+
     app.register_blueprint(query_bp, url_prefix="/api")
 
     return app
