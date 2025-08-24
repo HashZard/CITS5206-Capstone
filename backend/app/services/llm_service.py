@@ -1,9 +1,11 @@
 from abc import ABC, abstractmethod
+from functools import wraps
 from typing import Dict, Any, Optional, List
 from dataclasses import dataclass
 import openai
 from google import genai
 import logging
+import asyncio
 
 logger = logging.getLogger(__name__)
 
@@ -42,6 +44,46 @@ class LLMResponse:
     content: str
     model_used: str
     tokens_used: Optional[int] = None
+
+
+def async_to_sync(func):
+    """Async function to sync decorator"""
+
+    @wraps(func)
+    def wrapper(*args, **kwargs):
+        try:
+            loop = asyncio.get_event_loop()
+        except RuntimeError:
+            loop = asyncio.new_event_loop()
+            asyncio.set_event_loop(loop)
+
+        if loop.is_running():
+            # If there is a running event loop, create a new event loop
+            import threading
+
+            result = {}
+            exception = {}
+
+            def run_in_thread():
+                new_loop = asyncio.new_event_loop()
+                try:
+                    result["value"] = new_loop.run_until_complete(func(*args, **kwargs))
+                except Exception as e:
+                    exception["value"] = e
+                finally:
+                    new_loop.close()
+
+            thread = threading.Thread(target=run_in_thread)
+            thread.start()
+            thread.join()
+
+            if "value" in exception:
+                raise exception["value"]
+            return result["value"]
+        else:
+            return loop.run_until_complete(func(*args, **kwargs))
+
+    return wrapper
 
 
 class LLMProvider(ABC):
@@ -138,7 +180,7 @@ class LLMService:
         # Bind to app
         app.llm_service = self
 
-    async def generate(
+    async def generate_async(
         self, prompt: str, provider: Optional[str] = None, **kwargs
     ) -> LLMResponse:
         """Generate Text"""
@@ -149,6 +191,11 @@ class LLMService:
 
         request = LLMRequest(prompt=prompt, **kwargs)
         return await self.providers[provider].generate(request)
+
+    @async_to_sync
+    async def generate(self, *args, **kwargs) -> LLMResponse:
+        """Sync generate text (internal conversion to async call)"""
+        return await self.generate_async(*args, **kwargs)
 
     def list_providers(self) -> List[str]:
         """List Available Providers"""
