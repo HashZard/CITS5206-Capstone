@@ -45,8 +45,7 @@
 
 ## 演示接口
 
-- `GET /health`：健康检查
-- `POST /api/query/demo`：演示“参数化 SQL”输出（模拟，不依赖真实 LLM 与数据库）
+- `POST /api/query/demo`：演示"参数化 SQL"输出（模拟，不依赖真实 LLM 与数据库）
 
 **示例请求体：**
 

@@ -2,7 +2,7 @@ from flask import Blueprint, request, jsonify
 from app.models.dto import QueryIn, QueryOut, PreviewOut
 from app.services.orchestrator import Orchestrator
 
-query_bp = Blueprint("query", __name__, url_prefix="/api")
+query_bp = Blueprint("query", __name__)
 
 def _err(code: str, msg: str, http=400, details=None):
     return jsonify({"ok": False, "error": {"code": code, "message": msg, "details": details or {}}}), http

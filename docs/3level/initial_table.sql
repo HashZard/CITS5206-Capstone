@@ -60,7 +60,7 @@ CREATE TABLE map_l2_l3 (
 CREATE TABLE prompt_templates (
   id           SERIAL PRIMARY KEY,
   stage        TEXT NOT NULL,                 -- L1 | L2 | L3 | CLARIFY | SQL_GEN
-  lang         TEXT DEFAULT 'zh',             -- zh/en...
+  lang         TEXT DEFAULT 'en',             -- zh/en...
   system_text  TEXT NOT NULL,
   context_tmpl TEXT NOT NULL,                 -- 可含占位符，如 {{cards_json}}
   user_tmpl    TEXT NOT NULL,

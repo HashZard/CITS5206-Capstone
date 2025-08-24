@@ -2,7 +2,7 @@ from flask import Blueprint, jsonify
 from app.models.dto import ALLOWED_TABLES
 from app.services.sql_service import get_columns
 
-schema_bp = Blueprint("schema", __name__, url_prefix="/api/schema")
+schema_bp = Blueprint("schema", __name__)
 
 @schema_bp.route("/tables", methods=["GET"])
 def list_tables():
