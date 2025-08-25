@@ -1,11 +1,9 @@
 from abc import ABC, abstractmethod
-from functools import wraps
-from typing import Dict, Any, Optional, List
+from typing import Dict, Any, Optional, List, TypeVar
 from dataclasses import dataclass
-import openai
+from openai import NOT_GIVEN, NotGiven, OpenAI
 from google import genai
 import logging
-import asyncio
 
 logger = logging.getLogger(__name__)
 
@@ -17,7 +15,8 @@ Usage:
     from flask import current_app
 
     response = current_app.llm_service.generate(
-        prompt="Hello",
+        input="Hello",
+        text_format=ResultModel,
         model="gpt-4o-mini",
         provider="openai",
         temperature=0.7,
@@ -25,12 +24,15 @@ Usage:
     )
 """
 
+T = TypeVar("T")
+
 
 @dataclass
 class LLMRequest:
     """LLM Request Data Structure"""
 
-    prompt: str
+    input: str
+    text_format: type[T] | NotGiven = NOT_GIVEN
     model: Optional[str] = None
     temperature: Optional[float] = 0.7
     max_tokens: Optional[int] = 1000
@@ -46,46 +48,6 @@ class LLMResponse:
     tokens_used: Optional[int] = None
 
 
-def async_to_sync(func):
-    """Async function to sync decorator"""
-
-    @wraps(func)
-    def wrapper(*args, **kwargs):
-        try:
-            loop = asyncio.get_event_loop()
-        except RuntimeError:
-            loop = asyncio.new_event_loop()
-            asyncio.set_event_loop(loop)
-
-        if loop.is_running():
-            # If there is a running event loop, create a new event loop
-            import threading
-
-            result = {}
-            exception = {}
-
-            def run_in_thread():
-                new_loop = asyncio.new_event_loop()
-                try:
-                    result["value"] = new_loop.run_until_complete(func(*args, **kwargs))
-                except Exception as e:
-                    exception["value"] = e
-                finally:
-                    new_loop.close()
-
-            thread = threading.Thread(target=run_in_thread)
-            thread.start()
-            thread.join()
-
-            if "value" in exception:
-                raise exception["value"]
-            return result["value"]
-        else:
-            return loop.run_until_complete(func(*args, **kwargs))
-
-    return wrapper
-
-
 class LLMProvider(ABC):
     """LLM Provider Abstract Base Class"""
 
@@ -93,7 +55,7 @@ class LLMProvider(ABC):
         self.config = config
 
     @abstractmethod
-    async def generate(self, request: LLMRequest) -> LLMResponse:
+    def generate(self, request: LLMRequest) -> LLMResponse:
         pass
 
 
@@ -102,24 +64,29 @@ class OpenAIProvider(LLMProvider):
 
     def __init__(self, config: Dict[str, Any]):
         super().__init__(config)
-        self.client = openai.AsyncOpenAI(api_key=config["api_key"])
+        self.client = OpenAI(api_key=config["api_key"])
 
-    async def generate(self, request: LLMRequest) -> LLMResponse:
+    def generate(self, request: LLMRequest) -> LLMResponse:
         try:
-            messages = []
+            inputs = []
             if request.system_prompt:
-                messages.append({"role": "system", "content": request.system_prompt})
-            messages.append({"role": "user", "content": request.prompt})
+                inputs.append({"role": "system", "content": request.system_prompt})
+            inputs.append({"role": "user", "content": request.input})
 
-            response = await self.client.chat.completions.create(
+            response = self.client.responses.parse(
                 model=request.model or self.config["default_model"],
-                messages=messages,
+                input=inputs,
+                text_format=request.text_format,
                 temperature=request.temperature,
-                max_tokens=request.max_tokens,
+                max_output_tokens=request.max_tokens,
             )
 
             return LLMResponse(
-                content=response.choices[0].message.content,
+                content=(
+                    response.output_parsed
+                    if request.text_format is not NOT_GIVEN
+                    else response.output_text
+                ),
                 model_used=response.model,
                 tokens_used=response.usage.total_tokens if response.usage else None,
             )
@@ -135,20 +102,24 @@ class GeminiProvider(LLMProvider):
         super().__init__(config)
         self.client = genai.Client(api_key=str(config["api_key"]))
 
-    async def generate(self, request: LLMRequest) -> LLMResponse:
+    def generate(self, request: LLMRequest) -> LLMResponse:
         try:
-            response = await self.client.models.generate_content(
+            response = self.client.models.generate_content(
                 model=request.model,
-                contents=request.prompt,
+                contents=request.input,
             )
         except Exception as e:
             logger.error(f"Gemini API Error: {e}")
             raise
 
         return LLMResponse(
-            content=response.content,
-            model_used=response.model,
-            tokens_used=response.usage.total_tokens if response.usage else None,
+            content=response.text,
+            model_used=response.model_version,
+            tokens_used=(
+                response.usage_metadata.total_token_count
+                if response.usage_metadata
+                else None
+            ),
         )
 
 
@@ -173,15 +144,13 @@ class LLMService:
                 self.providers[provider_name] = GeminiProvider(provider_config)
 
         # Set Default Provider
-        self.default_provider = config.get(
-            "default", list(self.providers.keys())[0] if self.providers else None
-        )
+        self.default_provider = config.get("default", next(iter(self.providers), None))
 
         # Bind to app
         app.llm_service = self
 
-    async def generate_async(
-        self, prompt: str, provider: Optional[str] = None, **kwargs
+    def generate(
+        self, input: str, provider: Optional[str] = None, **kwargs
     ) -> LLMResponse:
         """Generate Text"""
         provider = provider or self.default_provider
@@ -189,13 +158,8 @@ class LLMService:
         if provider not in self.providers:
             raise ValueError(f"Unsupported Provider: {provider}")
 
-        request = LLMRequest(prompt=prompt, **kwargs)
-        return await self.providers[provider].generate(request)
-
-    @async_to_sync
-    async def generate(self, *args, **kwargs) -> LLMResponse:
-        """Sync generate text (internal conversion to async call)"""
-        return await self.generate_async(*args, **kwargs)
+        request = LLMRequest(input=input, **kwargs)
+        return self.providers[provider].generate(request)
 
     def list_providers(self) -> List[str]:
         """List Available Providers"""
