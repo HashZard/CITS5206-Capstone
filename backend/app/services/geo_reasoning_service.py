@@ -3,6 +3,12 @@ from typing import Any, Dict, Optional
 
 from app.services.three_level_service import ThreeLevelService
 from app.services.llm_service import LLMService
+"""
+Usage:
+    service = GeoReasoningService(llm_service, three_level_service)
+    user_input = "What are the characteristics of Lake Superior?"
+    response = service.process_user_question(user_input)
+"""
 
 
 class GeoReasoningService:
@@ -112,11 +118,11 @@ class GeoReasoningService:
             "  - reasons: array of strings\n"
             "Output Example:\n"
             "{\n"
-            "  \"l3_selected\": {\n"
+            "  \"l3_selected\": [{\n"
             "    \"id\": 5,\n"
             "    \"table_name\": \"ne_10m_lakes\",\n"
             "    \"display_name\": \"Global Lakes Data\"\n"
-            "  },\n"
+            "  }],\n"
             "  \"reasons\": [\"Contains fields name/name_alt, suitable for lake name queries\"]\n"
             "}\n")
         return prompt
@@ -205,13 +211,16 @@ class GeoReasoningService:
 
 		Expected to return dict with final_sql (sql+params), assumptions and notes.
 		"""
-        raise NotImplementedError("parse_sql_response not implemented")
+        response = self.parse_json_response(raw_text)
+        if "final_sql" not in response or "assumptions" not in response or "notes" not in response:
+            raise ValueError("Malformed SQL response")
+        return response
 
     # ----------------------------- Reasoning -----------------------------
     def start_geo_reasoning(
             self,
             user_question: str,
-            constraints: Optional[Dict[str, Any]] = None) -> str:
+            constraints: Optional[Dict[str, Any]] = None) -> Dict[str, Any]:
         """Steps (conceptual):
 		  1. Build L1 prompt and call LLM to obtain L1 ids.
 		  2. Build L2 prompt and call LLM to obtain L2 ids.
@@ -250,6 +259,7 @@ class GeoReasoningService:
         sql_prompt = self.build_sql_prompt(user_question, l3_selected,
                                            l3_schema, constraints)
         sql_response = self.llm.generate(sql_prompt)
-        sql_result = self.parse_sql_response(sql_response.content)
+        sql_result = self.parse_sql_response(
+            sql_response.content).get("final_sql")
 
         return sql_result
