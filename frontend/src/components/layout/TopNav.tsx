@@ -1,24 +1,38 @@
 import React, { useEffect, useMemo, useState } from "react";
 import { Menu, X, Sun, Moon, User } from "lucide-react";
 
+/** Allowed labels for the top navigation */
 export type TopNavLink = {
-  label: "Dashboard" | "Upload Data" | "Saved Queries" | "Tutorials";
+  label:
+    | "Home"
+    | "Dashboard"
+    | "History"
+    | "Import"
+    | "Result"
+    | "Tutorials"
+    | "About";
   onClick?: () => void;
 };
 
+/** Component props */
 export type TopNavProps = {
   brand?: string;
   links: TopNavLink[];
-  rightArea?: React.ReactNode; // custom right-side area (overrides default Theme+Avatar)
+  rightArea?: React.ReactNode; // optional custom right-side area
 };
 
+/** Label → path mapping used for naive client-side navigation */
 const LABEL_TO_PATH: Record<TopNavLink["label"], string> = {
-  "Dashboard": "/",
-  "Upload Data": "/upload",
-  "Saved Queries": "/history",   // per your request
-  "Tutorials": "/tutorials",
+  Home: "/",
+  Dashboard: "/dashboard", // now distinct from Home
+  History: "/history",
+  Import: "/upload",
+  Result: "/result",
+  Tutorials: "/tutorials",
+  About: "/about",
 };
 
+/** Track current pathname and update on browser navigation */
 function useActivePath() {
   const [path, setPath] = useState<string>(() => window.location.pathname);
   useEffect(() => {
@@ -29,6 +43,7 @@ function useActivePath() {
   return path;
 }
 
+/** Default right area: theme toggle + avatar placeholder */
 function DefaultRightArea() {
   return (
     <div className="flex items-center gap-3">
@@ -38,6 +53,7 @@ function DefaultRightArea() {
   );
 }
 
+/** Accessible theme toggle button that persists user preference */
 function ThemeToggle() {
   const [isDark, setIsDark] = useState<boolean>(() =>
     document.documentElement.classList.contains("dark")
@@ -55,11 +71,8 @@ function ThemeToggle() {
   }, [isDark]);
 
   useEffect(() => {
-    // hydrate from saved preference
     const saved = localStorage.getItem("theme");
-    if (saved === "dark") {
-      setIsDark(true);
-    }
+    if (saved === "dark") setIsDark(true);
   }, []);
 
   return (
@@ -74,6 +87,7 @@ function ThemeToggle() {
   );
 }
 
+/** Simple avatar placeholder button */
 function AvatarPlaceholder() {
   return (
     <button
@@ -86,7 +100,12 @@ function AvatarPlaceholder() {
   );
 }
 
-export default function TopNav({ brand = "GeoAnswering", links, rightArea }: TopNavProps) {
+/** Top navigation with responsive drawer */
+export default function TopNav({
+  brand = "GeoQuery",
+  links,
+  rightArea,
+}: TopNavProps) {
   const activePath = useActivePath();
   const [open, setOpen] = useState(false);
 
@@ -102,9 +121,10 @@ export default function TopNav({ brand = "GeoAnswering", links, rightArea }: Top
   const handleNavigate = (href: string, onClick?: () => void) => {
     if (onClick) {
       onClick();
+      setOpen(false);
       return;
     }
-    // naive client-side navigation (works without react-router)
+    // Naive client-side navigation (works without a router)
     if (window.location.pathname !== href) {
       window.history.pushState({}, "", href);
       window.dispatchEvent(new PopStateEvent("popstate"));
@@ -119,7 +139,7 @@ export default function TopNav({ brand = "GeoAnswering", links, rightArea }: Top
         aria-label="Top Navigation"
         role="navigation"
       >
-        {/* Left: Brand */}
+        {/* Brand */}
         <div className="flex items-center gap-2">
           <a
             href="/"
@@ -133,7 +153,7 @@ export default function TopNav({ brand = "GeoAnswering", links, rightArea }: Top
           </a>
         </div>
 
-        {/* Desktop Links */}
+        {/* Desktop links */}
         <div className="ml-6 hidden md:flex items-center gap-1">
           {items.map(({ label, href, onClick }) => {
             const active = activePath === href;
@@ -155,10 +175,12 @@ export default function TopNav({ brand = "GeoAnswering", links, rightArea }: Top
         {/* Spacer */}
         <div className="flex-1" />
 
-        {/* Right Area */}
-        <div className="hidden md:flex items-center">{rightArea ?? <DefaultRightArea />}</div>
+        {/* Right area */}
+        <div className="hidden md:flex items-center">
+          {rightArea ?? <DefaultRightArea />}
+        </div>
 
-        {/* Mobile Toggle */}
+        {/* Mobile toggle */}
         <button
           type="button"
           className="ml-2 inline-flex md:hidden items-center justify-center h-9 w-9 rounded-md border border-border"
@@ -170,7 +192,7 @@ export default function TopNav({ brand = "GeoAnswering", links, rightArea }: Top
         </button>
       </nav>
 
-      {/* Mobile Drawer */}
+      {/* Mobile drawer */}
       {open && (
         <div className="md:hidden border-t border-border bg-background">
           <div className="px-4 py-3 space-y-1">
@@ -199,3 +221,4 @@ export default function TopNav({ brand = "GeoAnswering", links, rightArea }: Top
     </header>
   );
 }
+
