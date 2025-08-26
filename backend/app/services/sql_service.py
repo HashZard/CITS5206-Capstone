@@ -4,21 +4,16 @@ import re
 from functools import lru_cache
 from typing import Any, Dict, Iterable, List, Mapping, MutableMapping, Sequence, Tuple
 from sqlalchemy import text
-from app.extensions import db
-from app.models.dto import ALLOWED_TABLES
+from ..extensions import db
+from ..models.dto import ALLOWED_TABLES
 
 
-# Check table/column name
-_VALID_IDENT_RE = re.compile(r"^[A-Za-z_][A-Za-z0-9_]*$")
 
-def _assert_valid_identifier(name: str) -> None:
-    """校验 SQL 标识符（表/列名），只允许字母、数字、下划线，且不能以数字开头"""
-    if not isinstance(name, str) or not _VALID_IDENT_RE.match(name):
+# Prevent invalid identifiers
+def quote_ident(name: str) -> str:
+    """For security reasons, double quotation marks are added to the verified identifiers."""
+    if not isinstance(name, str) or not re.match(r"^[A-Za-z_][A-Za-z0-9_]*$", name):
         raise ValueError(f"invalid identifier: {name!r}")
-
-def _quote_ident(name: str) -> str:
-    """为安全起见，对已校验的标识符加上双引号"""
-    _assert_valid_identifier(name)
     return f'"{name}"'
 
 
@@ -26,14 +21,12 @@ def _quote_ident(name: str) -> str:
 @lru_cache(maxsize=128)
 def get_columns(table: str) -> Iterable[str]:
     """
-    读取某表的所有列名, 结果会被 LRU 缓存
-    供 /tables 接口和 build_select_sql 的列校验使用
+    Read all the column names of a table, and the results will be cached by LRU
+    For column verification of /tables interface and build_select_sql
     """
     if table not in ALLOWED_TABLES:
-        # 与 DTO 的表白名单保持一致
+        # Be consistent with DTO's confession list
         raise ValueError(f"table '{table}' is not allowed")
-
-    _assert_valid_identifier(table)
 
     sql = """
     SELECT column_name
@@ -49,14 +42,16 @@ def get_columns(table: str) -> Iterable[str]:
 # Filter criteria construction
 _ALLOWED_OPS = {"=", "!=", ">", ">=", "<", "<=", "like", "ilike", "in", "is", "is not"}
 
-def _normalize_filter_value(op: str, val: Any):
-    """为不同操作符做参数预处理（如 IN 必须是序列; IS (NOT) NULL 不带值等）。"""
+def normalize_filter_value(op: str, val: Any):
+    """
+    Parameter preprocessing for different operators 
+    For example, IN must be a sequence; IS (NOT) NULL does not have a value, etc.).
+    """
     op = op.lower()
     if op in {"is", "is not"}:
-        # 仅允许 NULL/NOT NULL 语义
+        # Only NULL/NOT NULL semantics are allowed
         if val is None:
             return None
-        # 允许字符串 'null' 容错
         if isinstance(val, str) and val.strip().lower() == "null":
             return None
         raise ValueError("Only NULL is supported for IS / IS NOT")
@@ -64,22 +59,21 @@ def _normalize_filter_value(op: str, val: Any):
         if not isinstance(val, (list, tuple, set)) or len(val) == 0:
             raise ValueError("IN operator requires a non-empty list/tuple/set")
         return list(val)
-    # 其它操作符原样返回
+    # Other operators return as they are
     return val
 
 
 # Build WHERE and parameters
-def _build_where_and_params(
+def build_where_and_params(
     table: str,
     filters: Mapping[str, Any],
     valid_cols: Sequence[str],
 ) -> Tuple[str, Dict[str, Any]]:
     """
-    将 filters(dict)转换为 WHERE 子句，支持以下两种写法：
-      1) 简写：{"active": True, "name": "Alice"}
-         -> col = :p0 AND col = :p1
-      2) 显式：{"age": {"op": ">=", "value": 18}, "name": {"op":"ilike","value":"%al%"}}
-    仅支持 AND 连接；不支持 OR/嵌套。
+    Convert filters (dict) to a SQL WHERE clause. Supports two formats:
+      1) Shorthand: {"active": True, "name": "Alice"} → col = :p0 AND col = :p1
+      2) Explicit: {"age": {"op": ">=", "value": 18}, "name": {"op": "ilike", "value": "%al%"}}
+    Only AND conditions are supported; OR and nested expressions are not.
     """
     where_parts: List[str] = []
     params: Dict[str, Any] = {}
@@ -93,14 +87,14 @@ def _build_where_and_params(
     for col, raw in filters.items():
         if col not in valid:
             raise ValueError(f"unknown column in filters: {col!r}")
-        col_sql = _quote_ident(col)
+        col_sql = quote_ident(col)
 
-        # 统一成 {op, value}
+        # Unify into {op, value}
         if isinstance(raw, Mapping) and "op" in raw:
             op = str(raw.get("op", "")).lower()
             if op not in _ALLOWED_OPS:
                 raise ValueError(f"unsupported operator: {op!r}")
-            value = _normalize_filter_value(op, raw.get("value", None))
+            value = normalize_filter_value(op, raw.get("value", None))
 
             if op in {"is", "is not"}:
                 # IS [NOT] NULL
@@ -110,7 +104,7 @@ def _build_where_and_params(
             if op == "in":
                 # :p0, :p1, ...
                 placeholders = []
-                seq = list(value)  # 已在 _normalize_filter_value 校验
+                seq = list(value)  # It has been checked in normalise_filter_value
                 for v in seq:
                     pname = f"p{p_index}"; p_index += 1
                     params[pname] = v
@@ -118,13 +112,13 @@ def _build_where_and_params(
                 where_parts.append(f"{col_sql} IN ({', '.join(placeholders)})")
                 continue
 
-            # 其它二元操作
+            # Other binary operations
             pname = f"p{p_index}"; p_index += 1
             params[pname] = value
             where_parts.append(f"{col_sql} {op.upper()} :{pname}")
 
         else:
-            # 简写：默认等号
+            # Shorthand: equality
             pname = f"p{p_index}"; p_index += 1
             params[pname] = raw
             where_parts.append(f"{col_sql} = :{pname}")
@@ -142,19 +136,18 @@ def build_select_sql(
     offset: int,
 ) -> Tuple[str, Dict[str, Any]]:
     """
-    构建单表 SELECT 语句（参数化），并进行安全校验：
-      - 表名必须在 ALLOWED_TABLES
-      - 列名必须存在于该表
-      - 仅支持 AND 的过滤
-    返回 (sql, params)
+    Build a parameterized single-table SELECT statement with safety checks:
+      - Table name must be in ALLOWED_TABLES
+      - Column names must exist in the specified table
+      - Only AND filters are supported
+    Return (sql, params)
     """
     if table not in ALLOWED_TABLES:
         raise ValueError(f"table '{table}' is not allowed")
 
-    _assert_valid_identifier(table)
-    quoted_table = _quote_ident(table)
+    quoted_table = quote_ident(table)
 
-    # 校验列名并引用
+    # Check the list and quote
     table_cols = set(get_columns(table))
     if not columns or not isinstance(columns, (list, tuple)):
         raise ValueError("columns must be a non-empty list/tuple")
@@ -162,12 +155,12 @@ def build_select_sql(
     for c in columns:
         if c not in table_cols:
             raise ValueError(f"unknown column in columns: {c!r}")
-        quoted_cols.append(_quote_ident(c))
+        quoted_cols.append(quote_ident(c))
 
     # WHERE
-    where_sql, params = _build_where_and_params(table, filters or {}, list(table_cols))
+    where_sql, params = build_where_and_params(table, filters or {}, list(table_cols))
 
-    # LIMIT/OFFSET（数值化并兜底）
+    # LIMIT/OFFSET
     try:
         limit_val = int(limit)
         offset_val = int(offset)
@@ -187,13 +180,14 @@ def build_select_sql(
 # SQL execution and lightweight verification
 def validate_sql(sql: str) -> None:
     """
-    轻量 SQL 白名单校验：必须以 SELECT 开头，且不包含分号与高危关键字。
-    仅作为最后一道保险（核心安全仍依赖 build_select_sql 的构造）。
+    Lightweight SQL whitelist validation: 
+    must start with SELECT and must not contain semicolons or dangerous keywords.
+    Used only as a final safeguard (core security still relies on build_select_sql).
     """
     check = sql.strip().lower()
     if not check.startswith("select"):
         raise ValueError("only SELECT statements are allowed")
-    # 禁止多语句与危险关键字
+    # Prohibit multiple statements and dangerous keywords
     if ";" in check:
         raise ValueError("multiple statements are not allowed")
     banned = ["insert", "update", "delete", "drop", "alter", "grant", "revoke", "truncate"]
@@ -202,10 +196,10 @@ def validate_sql(sql: str) -> None:
 
 def execute(sql: str, params: Mapping[str, Any]) -> Tuple[List[Dict[str, Any]], Dict[str, Any]]:
     """
-    执行参数化 SQL, 返回 (rows, meta):
-      - rows: List[Dict]（已是字典映射）
-      - meta: {"rows": len(rows)}，并留给 orchestrator 填充 limit/offset
-    这里不额外做 COUNT(*)，避免二次查询；前端分页依据 limit/offset
+    Execute parameterized SQL and return (rows, meta):
+      - rows: List[Dict] (already mapped as dictionaries)
+      - meta: {"rows": len(rows)}; orchestrator will handle limit/offset
+    No additional COUNT(*) is performed to avoid a second query; frontend pagination is based on limit/offset.
     """
     validate_sql(sql)
     with db.engine.connect() as conn:

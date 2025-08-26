@@ -1,5 +1,5 @@
 from flask import Flask
-from config import config
+from backend.config import config
 from .extensions import init_extensions
 
 from app.services.llm_service import LLMService
