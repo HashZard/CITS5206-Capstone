@@ -207,4 +207,3 @@ def execute(sql: str, params: Mapping[str, Any]) -> Tuple[List[Dict[str, Any]], 
         rows = result.mappings().all()
     meta = {"rows": len(rows)}
     return [dict(r) for r in rows], meta
-
