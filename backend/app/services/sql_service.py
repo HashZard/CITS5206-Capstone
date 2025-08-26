@@ -6,7 +6,31 @@ from sqlalchemy import text
 from ..extensions import db
 from ..models.dto import ALLOWED_TABLES
 
+"""
+本模块提供一个单表 SQL 查询服务, 
+    接口函数：
+        run_sql(sql: str, params: dict | None = None) -> Dict[str, Any]
 
+    返回格式如下：
+        {
+            "ok": bool,         
+            "data": List[Dict],     
+            "meta": Dict,             
+            "error": str | None        
+        }
+
+    用法示例：
+        from backend.app.services import sql_service
+
+        sql = "SELECT id, name FROM l1_category WHERE active = true LIMIT 5 OFFSET 0"
+        resp = sql_service.run_sql(sql)
+
+        if resp["ok"]:
+            for row in resp["data"]:
+                print(row)
+        else:
+            print("查询失败:", resp["error"])
+"""
 
 # Prevent invalid identifiers
 def quote_ident(name: str) -> str:
@@ -206,3 +230,21 @@ def execute(sql: str, params: Mapping[str, Any]) -> Tuple[List[Dict[str, Any]], 
         rows = result.mappings().all()
     meta = {"rows": len(rows)}
     return [dict(r) for r in rows], meta
+
+# Interface
+def run_sql(sql: str, params: dict | None = None) -> Dict[str, Any]:
+    """
+    统一入口：验证 + 执行 SQL, 返回标准响应
+    返回格式：
+    {
+        "ok": bool,
+        "data": List[Dict],
+        "meta": Dict,
+        "error": str | None
+    }
+    """
+    try:
+        rows, meta = execute(sql, params or {})
+        return {"ok": True, "data": rows, "meta": meta, "error": None}
+    except Exception as e:
+        return {"ok": False, "data": [], "meta": {}, "error": str(e)}
