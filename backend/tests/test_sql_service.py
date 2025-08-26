@@ -75,7 +75,7 @@ class TestSqlService(unittest.TestCase):
         self.assertEqual(params["_limit"], 5)
         self.assertEqual(params["_offset"], 0)
 
-# Add setUp and tearDown if there more tests relied on ALLOWED_TABLES or get_columns
+# Add setUp and tearDown if there are more tests relied on ALLOWED_TABLES or get_columns
 
 if __name__ == "__main__":
     unittest.main()
