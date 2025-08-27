@@ -10,7 +10,7 @@ def create_app(config_name):
     app = Flask(__name__)
     app.config.from_object(config[config_name])
 
-    # Initialize Extensions Using Unified Function
+    # Initialize extensions using unified function
     init_extensions(app)
 
     # Initialize LLM Service
