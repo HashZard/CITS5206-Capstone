@@ -10,6 +10,7 @@ import UserPage from "@/pages/User";
 
 import { getStoredUser, setStoredUser, User } from "@/lib/auth";
 
+/** Top navigation links; TopNav will hide History for guests */
 const links: TopNavLink[] = [
   { label: "Home" },
   { label: "Dashboard" },
@@ -20,9 +21,11 @@ const links: TopNavLink[] = [
   { label: "About" },
 ];
 
+/** Homepage content extracted for conditional rendering */
 function HomeView() {
   return (
     <div className="max-w-6xl mx-auto">
+      {/* Hero */}
       <div className="text-center mb-16">
         <div className="flex items-center justify-center mb-6">
           <MapPin className="w-12 h-12 text-white mr-3" />
@@ -35,41 +38,39 @@ function HomeView() {
         </p>
       </div>
 
+      {/* Feature cards */}
       <div className="grid md:grid-cols-3 gap-8 max-w-6xl mx-auto">
         <div className="backdrop-blur-sm bg-white/10 border-white/20 hover:bg-white/15 transition-all duration-300 hover:scale-105 rounded-lg p-6">
           <div className="w-16 h-16 bg-white/20 rounded-full flex items-center justify-center mx-auto mb-4">
             <MapPin className="w-8 h-8 text-white" />
           </div>
           <h3 className="text-white text-xl text-center mb-1">Natural Language</h3>
-          <p className="text-white/70 text-center">
-            Ask questions in plain English.
-          </p>
+          <p className="text-white/70 text-center">Ask questions in plain English.</p>
         </div>
         <div className="backdrop-blur-sm bg-white/10 border-white/20 hover:bg-white/15 transition-all duration-300 hover:scale-105 rounded-lg p-6">
           <div className="w-16 h-16 bg-white/20 rounded-full flex items-center justify-center mx-auto mb-4">
             <BarChart3 className="w-8 h-8 text-white" />
           </div>
           <h3 className="text-white text-xl text-center mb-1">Smart Analytics</h3>
-          <p className="text-white/70 text-center">
-            Get instant insights and visualizations.
-          </p>
+          <p className="text-white/70 text-center">Get instant insights and visualizations.</p>
         </div>
         <div className="backdrop-blur-sm bg-white/10 border-white/20 hover:bg-white/15 transition-all duration-300 hover:scale-105 rounded-lg p-6">
           <div className="w-16 h-16 bg-white/20 rounded-full flex items-center justify-center mx-auto mb-4">
             <Globe className="w-8 h-8 text-white" />
           </div>
           <h3 className="text-white text-xl text-center mb-1">Interactive Maps</h3>
-          <p className="text-white/70 text-center">
-            Explore data with dynamic mapping.
-          </p>
+          <p className="text-white/70 text-center">Explore data with dynamic mapping.</p>
         </div>
       </div>
     </div>
   );
 }
 
+/** App shell with naive client-side routing and frontend-only auth */
 export default function App() {
+  // Track current path to switch views without a router
   const [path, setPath] = useState(() => window.location.pathname);
+  // Auth state persisted to localStorage (frontend-only)
   const [user, setUser] = useState<User | null>(() => getStoredUser());
 
   useEffect(() => {
@@ -78,6 +79,7 @@ export default function App() {
     return () => window.removeEventListener("popstate", onPop);
   }, []);
 
+  // Guard: guests cannot access /upload; redirect to /login
   useEffect(() => {
     if (!user && path === "/upload") {
       window.history.pushState({}, "", "/login");
@@ -87,6 +89,7 @@ export default function App() {
 
   const isAuthed = !!user;
 
+  /** Push-state navigation helper */
   const go = (to: string) => {
     if (window.location.pathname !== to) {
       window.history.pushState({}, "", to);
@@ -94,6 +97,7 @@ export default function App() {
     }
   };
 
+  /** Login success handler (frontend-only) */
   const handleLogin = (email: string) => {
     const next = { email };
     setUser(next);
@@ -101,6 +105,7 @@ export default function App() {
     go("/");
   };
 
+  /** Register success handler (frontend-only) */
   const handleRegister = (email: string) => {
     const next = { email };
     setUser(next);
@@ -108,12 +113,14 @@ export default function App() {
     go("/");
   };
 
+  /** Sign out handler */
   const handleLogout = () => {
     setUser(null);
     setStoredUser(null);
     go("/");
   };
 
+  /** Avatar behavior: guest → /login; authed → /user */
   const onAvatarClick = () => {
     if (!isAuthed) go("/login");
     else go("/user");
@@ -121,38 +128,37 @@ export default function App() {
 
   return (
     <div className="min-h-screen flex flex-col bg-gradient-to-br from-purple-600 to-blue-600">
-      <TopNav brand="GeoQuery" links={links} isAuthenticated={isAuthed} onAvatarClick={onAvatarClick} />
-      <main className="flex-1 p-8">
-        {path === "/login" && (
-          <Login
-            onLogin={handleLogin}
-            onGoRegister={() => go("/register")}
-          />
-        )}
-        {path === "/register" && (
-          <Register
-            onRegister={handleRegister}
-            onGoLogin={() => go("/login")}
-          />
-        )}
-        {path === "/user" && isAuthed && <UserPage email={user!.email} />}
-        {path === "/upload" && isAuthed && <ImportPage />}
-        {path !== "/login" && path !== "/register" && path !== "/user" && path !== "/upload" && <HomeView />}
+      {/* Top navigation: passes auth state, avatar and sign-out handlers */}
+      <TopNav
+        brand="GeoQuery"
+        links={links}
+        isAuthenticated={isAuthed}
+        onAvatarClick={onAvatarClick}
+        onSignOut={handleLogout}
+      />
 
-        {isAuthed && (
-          <div className="fixed bottom-4 right-4">
-            <button
-              onClick={handleLogout}
-              className="bg-white text-purple-700 font-medium py-2 px-4 rounded-md hover:bg-gray-100"
-              aria-label="Sign out"
-            >
-              Sign out
-            </button>
-          </div>
+      <main className="flex-1 p-8">
+        {/* Simple view switching based on pathname */}
+        {path === "/login" && (
+          <Login onLogin={handleLogin} onGoRegister={() => go("/register")} />
         )}
+
+        {path === "/register" && (
+          <Register onRegister={handleRegister} onGoLogin={() => go("/login")} />
+        )}
+
+        {path === "/user" && isAuthed && <UserPage email={user!.email} />}
+
+        {path === "/upload" && isAuthed && <ImportPage />}
+
+        {/* Fallback to homepage for other paths */}
+        {path !== "/login" &&
+          path !== "/register" &&
+          path !== "/user" &&
+          path !== "/upload" && <HomeView />}
       </main>
+
       <Footer brand="GeoQuery" />
     </div>
   );
 }
-
