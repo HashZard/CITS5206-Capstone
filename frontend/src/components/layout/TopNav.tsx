@@ -1,7 +1,6 @@
 import React, { useEffect, useMemo, useState } from "react";
 import { Menu, X, Sun, Moon, User } from "lucide-react";
 
-/** Allowed labels for the top navigation */
 export type TopNavLink = {
   label:
     | "Home"
@@ -14,17 +13,17 @@ export type TopNavLink = {
   onClick?: () => void;
 };
 
-/** Component props */
 export type TopNavProps = {
   brand?: string;
   links: TopNavLink[];
-  rightArea?: React.ReactNode; // optional custom right-side area
+  rightArea?: React.ReactNode;
+  isAuthenticated?: boolean;       // NEW: controls guest vs logged-in behavior
+  onAvatarClick?: () => void;      // NEW: hook to open login/register or user page
 };
 
-/** Label → path mapping used for naive client-side navigation */
 const LABEL_TO_PATH: Record<TopNavLink["label"], string> = {
   Home: "/",
-  Dashboard: "/dashboard", // now distinct from Home
+  Dashboard: "/dashboard",
   History: "/history",
   Import: "/upload",
   Result: "/result",
@@ -32,7 +31,6 @@ const LABEL_TO_PATH: Record<TopNavLink["label"], string> = {
   About: "/about",
 };
 
-/** Track current pathname and update on browser navigation */
 function useActivePath() {
   const [path, setPath] = useState<string>(() => window.location.pathname);
   useEffect(() => {
@@ -43,22 +41,10 @@ function useActivePath() {
   return path;
 }
 
-/** Default right area: theme toggle + avatar placeholder */
-function DefaultRightArea() {
-  return (
-    <div className="flex items-center gap-3">
-      <ThemeToggle />
-      <AvatarPlaceholder />
-    </div>
-  );
-}
-
-/** Accessible theme toggle button that persists user preference */
 function ThemeToggle() {
   const [isDark, setIsDark] = useState<boolean>(() =>
     document.documentElement.classList.contains("dark")
   );
-
   useEffect(() => {
     const root = document.documentElement;
     if (isDark) {
@@ -69,12 +55,10 @@ function ThemeToggle() {
       localStorage.setItem("theme", "light");
     }
   }, [isDark]);
-
   useEffect(() => {
     const saved = localStorage.getItem("theme");
     if (saved === "dark") setIsDark(true);
   }, []);
-
   return (
     <button
       type="button"
@@ -87,36 +71,43 @@ function ThemeToggle() {
   );
 }
 
-/** Simple avatar placeholder button */
-function AvatarPlaceholder() {
+function TopRightArea({ onAvatarClick }: { onAvatarClick?: () => void }) {
   return (
-    <button
-      type="button"
-      aria-label="User menu"
-      className="inline-flex items-center justify-center h-9 w-9 rounded-full border border-border bg-background"
-    >
-      <User className="h-4 w-4" />
-    </button>
+    <div className="flex items-center gap-3">
+      <ThemeToggle />
+      <button
+        type="button"
+        aria-label="User menu"
+        onClick={onAvatarClick}
+        className="inline-flex items-center justify-center h-9 w-9 rounded-full border border-border bg-background"
+      >
+        <User className="h-4 w-4" />
+      </button>
+    </div>
   );
 }
 
-/** Top navigation with responsive drawer */
 export default function TopNav({
   brand = "GeoQuery",
   links,
   rightArea,
+  isAuthenticated = false,
+  onAvatarClick,
 }: TopNavProps) {
   const activePath = useActivePath();
   const [open, setOpen] = useState(false);
 
-  const items = useMemo(
-    () =>
-      links.map((l) => ({
-        ...l,
-        href: LABEL_TO_PATH[l.label],
-      })),
-    [links]
-  );
+  const filtered = useMemo(() => {
+    return links
+      .filter((l) => (l.label === "History" ? isAuthenticated : true)) // hide History for guests
+      .map((l) => {
+        let href = LABEL_TO_PATH[l.label];
+        if (!isAuthenticated && l.label === "Import") {
+          href = "/login"; // guest clicking Import leads to login
+        }
+        return { ...l, href };
+      });
+  }, [links, isAuthenticated]);
 
   const handleNavigate = (href: string, onClick?: () => void) => {
     if (onClick) {
@@ -124,7 +115,6 @@ export default function TopNav({
       setOpen(false);
       return;
     }
-    // Naive client-side navigation (works without a router)
     if (window.location.pathname !== href) {
       window.history.pushState({}, "", href);
       window.dispatchEvent(new PopStateEvent("popstate"));
@@ -139,7 +129,6 @@ export default function TopNav({
         aria-label="Top Navigation"
         role="navigation"
       >
-        {/* Brand */}
         <div className="flex items-center gap-2">
           <a
             href="/"
@@ -153,9 +142,8 @@ export default function TopNav({
           </a>
         </div>
 
-        {/* Desktop links */}
         <div className="ml-6 hidden md:flex items-center gap-1">
-          {items.map(({ label, href, onClick }) => {
+          {filtered.map(({ label, href, onClick }) => {
             const active = activePath === href;
             return (
               <button
@@ -172,15 +160,12 @@ export default function TopNav({
           })}
         </div>
 
-        {/* Spacer */}
         <div className="flex-1" />
 
-        {/* Right area */}
         <div className="hidden md:flex items-center">
-          {rightArea ?? <DefaultRightArea />}
+          {rightArea ?? <TopRightArea onAvatarClick={onAvatarClick} />}
         </div>
 
-        {/* Mobile toggle */}
         <button
           type="button"
           className="ml-2 inline-flex md:hidden items-center justify-center h-9 w-9 rounded-md border border-border"
@@ -192,11 +177,10 @@ export default function TopNav({
         </button>
       </nav>
 
-      {/* Mobile drawer */}
       {open && (
         <div className="md:hidden border-t border-border bg-background">
           <div className="px-4 py-3 space-y-1">
-            {items.map(({ label, href, onClick }) => {
+            {filtered.map(({ label, href, onClick }) => {
               const active = activePath === href;
               return (
                 <button
@@ -211,9 +195,8 @@ export default function TopNav({
                 </button>
               );
             })}
-
             <div className="pt-2 flex items-center gap-3">
-              {rightArea ?? <DefaultRightArea />}
+              {rightArea ?? <TopRightArea onAvatarClick={onAvatarClick} />}
             </div>
           </div>
         </div>
@@ -221,4 +204,3 @@ export default function TopNav({
     </header>
   );
 }
-
