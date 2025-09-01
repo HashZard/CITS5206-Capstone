@@ -1,28 +1,28 @@
 import React, { useEffect, useState } from "react";
-import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { Input } from "@/components/ui/input";
 import { MapPin, BarChart3, Globe } from "lucide-react";
-
 import TopNav, { TopNavLink } from "@/components/layout/TopNav";
 import Footer from "@/components/layout/Footer";
-import ImportPage from "@/pages/Import"; // 新增导入页面
+
+import ImportPage from "@/pages/Import";
+import Login from "@/pages/Login";
+import Register from "@/pages/Register";
+import UserPage from "@/pages/User";
+
+import { getStoredUser, setStoredUser, User } from "@/lib/auth";
 
 const links: TopNavLink[] = [
-  { label: "Home" },       // -> /
-  { label: "Dashboard" },  // -> /dashboard
-  { label: "History" },    // -> /history
-  { label: "Import" },     // -> /upload
-  { label: "Result" },     // -> /result
-  { label: "Tutorials" },  // -> /tutorials
-  { label: "About" },      // -> /about
+  { label: "Home" },
+  { label: "Dashboard" },
+  { label: "History" },
+  { label: "Import" },
+  { label: "Result" },
+  { label: "Tutorials" },
+  { label: "About" },
 ];
 
-// 提取首页现有内容为一个组件，方便条件渲染
 function HomeView() {
   return (
     <div className="max-w-6xl mx-auto">
-      {/* Header Section */}
       <div className="text-center mb-16">
         <div className="flex items-center justify-center mb-6">
           <MapPin className="w-12 h-12 text-white mr-3" />
@@ -35,78 +35,42 @@ function HomeView() {
         </p>
       </div>
 
-      {/* Search Section */}
-      <div className="max-w-4xl mx-auto mb-16">
-        <div className="flex gap-4">
-          <Input
-            placeholder="Try: 'Show me population density in California'"
-            className="bg-white/90 backdrop-blur-sm border-0 rounded-lg px-6 py-4 text-gray-700 placeholder-gray-500 focus:ring-2 focus:ring-white/30 text-lg flex-1"
-          />
-          <Button className="bg-white text-purple-600 hover:bg-gray-50 font-medium px-8 py-4 text-lg transition-all duration-200 hover:scale-105">
-            Try Demo →
-          </Button>
-        </div>
-      </div>
-
-      {/* Feature Cards */}
       <div className="grid md:grid-cols-3 gap-8 max-w-6xl mx-auto">
-        <Card className="backdrop-blur-sm bg-white/10 border-white/20 hover:bg-white/15 transition-all duration-300 hover:scale-105">
-          <CardHeader className="text-center">
-            <div className="w-16 h-16 bg-white/20 rounded-full flex items-center justify-center mx-auto mb-4">
-              <MapPin className="w-8 h-8 text-white" />
-            </div>
-            <CardTitle className="text-white text-xl">Natural Language</CardTitle>
-            <CardDescription className="text-white/80">
-              Ask questions in plain English
-            </CardDescription>
-          </CardHeader>
-          <CardContent>
-            <p className="text-white/70 text-center">
-              Transform your questions into powerful geographic insights with our advanced natural language processing.
-            </p>
-          </CardContent>
-        </Card>
-
-        <Card className="backdrop-blur-sm bg-white/10 border-white/20 hover:bg-white/15 transition-all duration-300 hover:scale-105">
-          <CardHeader className="text-center">
-            <div className="w-16 h-16 bg-white/20 rounded-full flex items-center justify-center mx-auto mb-4">
-              <BarChart3 className="w-8 h-8 text-white" />
-            </div>
-            <CardTitle className="text-white text-xl">Smart Analytics</CardTitle>
-            <CardDescription className="text-white/80">
-              Get instant insights and visualizations
-            </CardDescription>
-          </CardHeader>
-          <CardContent>
-            <p className="text-white/70 text-center">
-              Analyze spatial data with intelligent algorithms that provide meaningful insights and beautiful visualizations.
-            </p>
-          </CardContent>
-        </Card>
-
-        <Card className="backdrop-blur-sm bg-white/10 border-white/20 hover:bg-white/15 transition-all duration-300 hover:scale-105">
-          <CardHeader className="text-center">
-            <div className="w-16 h-16 bg-white/20 rounded-full flex items-center justify-center mx-auto mb-4">
-              <Globe className="w-8 h-8 text-white" />
-            </div>
-            <CardTitle className="text-white text-xl">Interactive Maps</CardTitle>
-            <CardDescription className="text-white/80">
-              Explore data with dynamic mapping
-            </CardDescription>
-          </CardHeader>
-          <CardContent>
-            <p className="text-white/70 text-center">
-              Interact with your data through dynamic, responsive maps that bring geographic information to life.
-            </p>
-          </CardContent>
-        </Card>
+        <div className="backdrop-blur-sm bg-white/10 border-white/20 hover:bg-white/15 transition-all duration-300 hover:scale-105 rounded-lg p-6">
+          <div className="w-16 h-16 bg-white/20 rounded-full flex items-center justify-center mx-auto mb-4">
+            <MapPin className="w-8 h-8 text-white" />
+          </div>
+          <h3 className="text-white text-xl text-center mb-1">Natural Language</h3>
+          <p className="text-white/70 text-center">
+            Ask questions in plain English.
+          </p>
+        </div>
+        <div className="backdrop-blur-sm bg-white/10 border-white/20 hover:bg-white/15 transition-all duration-300 hover:scale-105 rounded-lg p-6">
+          <div className="w-16 h-16 bg-white/20 rounded-full flex items-center justify-center mx-auto mb-4">
+            <BarChart3 className="w-8 h-8 text-white" />
+          </div>
+          <h3 className="text-white text-xl text-center mb-1">Smart Analytics</h3>
+          <p className="text-white/70 text-center">
+            Get instant insights and visualizations.
+          </p>
+        </div>
+        <div className="backdrop-blur-sm bg-white/10 border-white/20 hover:bg-white/15 transition-all duration-300 hover:scale-105 rounded-lg p-6">
+          <div className="w-16 h-16 bg-white/20 rounded-full flex items-center justify-center mx-auto mb-4">
+            <Globe className="w-8 h-8 text-white" />
+          </div>
+          <h3 className="text-white text-xl text-center mb-1">Interactive Maps</h3>
+          <p className="text-white/70 text-center">
+            Explore data with dynamic mapping.
+          </p>
+        </div>
       </div>
     </div>
   );
 }
 
-function App() {
+export default function App() {
   const [path, setPath] = useState(() => window.location.pathname);
+  const [user, setUser] = useState<User | null>(() => getStoredUser());
 
   useEffect(() => {
     const onPop = () => setPath(window.location.pathname);
@@ -114,15 +78,81 @@ function App() {
     return () => window.removeEventListener("popstate", onPop);
   }, []);
 
+  useEffect(() => {
+    if (!user && path === "/upload") {
+      window.history.pushState({}, "", "/login");
+      window.dispatchEvent(new PopStateEvent("popstate"));
+    }
+  }, [user, path]);
+
+  const isAuthed = !!user;
+
+  const go = (to: string) => {
+    if (window.location.pathname !== to) {
+      window.history.pushState({}, "", to);
+      window.dispatchEvent(new PopStateEvent("popstate"));
+    }
+  };
+
+  const handleLogin = (email: string) => {
+    const next = { email };
+    setUser(next);
+    setStoredUser(next);
+    go("/");
+  };
+
+  const handleRegister = (email: string) => {
+    const next = { email };
+    setUser(next);
+    setStoredUser(next);
+    go("/");
+  };
+
+  const handleLogout = () => {
+    setUser(null);
+    setStoredUser(null);
+    go("/");
+  };
+
+  const onAvatarClick = () => {
+    if (!isAuthed) go("/login");
+    else go("/user");
+  };
+
   return (
     <div className="min-h-screen flex flex-col bg-gradient-to-br from-purple-600 to-blue-600">
-      <TopNav brand="GeoQuery" links={links} />
+      <TopNav brand="GeoQuery" links={links} isAuthenticated={isAuthed} onAvatarClick={onAvatarClick} />
       <main className="flex-1 p-8">
-        {path === "/upload" ? <ImportPage /> : <HomeView />}
+        {path === "/login" && (
+          <Login
+            onLogin={handleLogin}
+            onGoRegister={() => go("/register")}
+          />
+        )}
+        {path === "/register" && (
+          <Register
+            onRegister={handleRegister}
+            onGoLogin={() => go("/login")}
+          />
+        )}
+        {path === "/user" && isAuthed && <UserPage email={user!.email} />}
+        {path === "/upload" && isAuthed && <ImportPage />}
+        {path !== "/login" && path !== "/register" && path !== "/user" && path !== "/upload" && <HomeView />}
+
+        {isAuthed && (
+          <div className="fixed bottom-4 right-4">
+            <button
+              onClick={handleLogout}
+              className="bg-white text-purple-700 font-medium py-2 px-4 rounded-md hover:bg-gray-100"
+              aria-label="Sign out"
+            >
+              Sign out
+            </button>
+          </div>
+        )}
       </main>
       <Footer brand="GeoQuery" />
     </div>
   );
 }
 
-export default App;
