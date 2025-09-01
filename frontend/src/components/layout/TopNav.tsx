@@ -17,10 +17,12 @@ export type TopNavProps = {
   brand?: string;
   links: TopNavLink[];
   rightArea?: React.ReactNode;
-  isAuthenticated?: boolean;       // NEW: controls guest vs logged-in behavior
-  onAvatarClick?: () => void;      // NEW: hook to open login/register or user page
+  isAuthenticated?: boolean;
+  onAvatarClick?: () => void;
+  onSignOut?: () => void; // NEW: sign out handler
 };
 
+// Map labels to default paths
 const LABEL_TO_PATH: Record<TopNavLink["label"], string> = {
   Home: "/",
   Dashboard: "/dashboard",
@@ -31,6 +33,7 @@ const LABEL_TO_PATH: Record<TopNavLink["label"], string> = {
   About: "/about",
 };
 
+// Hook to track current path (syncs with history.pushState)
 function useActivePath() {
   const [path, setPath] = useState<string>(() => window.location.pathname);
   useEffect(() => {
@@ -41,6 +44,7 @@ function useActivePath() {
   return path;
 }
 
+// Theme toggle button (dark/light)
 function ThemeToggle() {
   const [isDark, setIsDark] = useState<boolean>(() =>
     document.documentElement.classList.contains("dark")
@@ -71,10 +75,29 @@ function ThemeToggle() {
   );
 }
 
-function TopRightArea({ onAvatarClick }: { onAvatarClick?: () => void }) {
+// Right side controls: theme toggle, sign out (if authed), user avatar
+function TopRightArea({
+  onAvatarClick,
+  onSignOut,
+  isAuthenticated,
+}: {
+  onAvatarClick?: () => void;
+  onSignOut?: () => void;
+  isAuthenticated?: boolean;
+}) {
   return (
     <div className="flex items-center gap-3">
       <ThemeToggle />
+      {isAuthenticated && onSignOut && (
+        <button
+          type="button"
+          onClick={onSignOut}
+          className="hidden sm:inline-flex items-center justify-center h-9 px-3 rounded-md border border-border bg-background hover:bg-accent text-sm font-medium"
+          aria-label="Sign out"
+        >
+          Sign out
+        </button>
+      )}
       <button
         type="button"
         aria-label="User menu"
@@ -87,28 +110,32 @@ function TopRightArea({ onAvatarClick }: { onAvatarClick?: () => void }) {
   );
 }
 
+// Main TopNav component
 export default function TopNav({
   brand = "GeoQuery",
   links,
   rightArea,
   isAuthenticated = false,
   onAvatarClick,
+  onSignOut,
 }: TopNavProps) {
   const activePath = useActivePath();
   const [open, setOpen] = useState(false);
 
+  // Filter links: hide History if not authenticated; Import goes to /login for guests
   const filtered = useMemo(() => {
     return links
-      .filter((l) => (l.label === "History" ? isAuthenticated : true)) // hide History for guests
+      .filter((l) => (l.label === "History" ? isAuthenticated : true))
       .map((l) => {
         let href = LABEL_TO_PATH[l.label];
         if (!isAuthenticated && l.label === "Import") {
-          href = "/login"; // guest clicking Import leads to login
+          href = "/login";
         }
         return { ...l, href };
       });
   }, [links, isAuthenticated]);
 
+  // Handle navigation (pushState)
   const handleNavigate = (href: string, onClick?: () => void) => {
     if (onClick) {
       onClick();
@@ -123,12 +150,16 @@ export default function TopNav({
   };
 
   return (
-    <header role="banner" className="sticky top-0 z-50 bg-background border-b border-border">
+    <header
+      role="banner"
+      className="sticky top-0 z-50 bg-background border-b border-border"
+    >
       <nav
         className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 h-14 flex items-center"
         aria-label="Top Navigation"
         role="navigation"
       >
+        {/* Brand name on the left */}
         <div className="flex items-center gap-2">
           <a
             href="/"
@@ -142,6 +173,7 @@ export default function TopNav({
           </a>
         </div>
 
+        {/* Desktop nav links */}
         <div className="ml-6 hidden md:flex items-center gap-1">
           {filtered.map(({ label, href, onClick }) => {
             const active = activePath === href;
@@ -150,7 +182,11 @@ export default function TopNav({
                 key={label}
                 onClick={() => handleNavigate(href, onClick)}
                 className={`px-3 py-2 rounded-md text-sm font-medium transition-colors
-                  ${active ? "bg-accent text-foreground" : "text-foreground/80 hover:bg-accent"}
+                  ${
+                    active
+                      ? "bg-accent text-foreground"
+                      : "text-foreground/80 hover:bg-accent"
+                  }
                 `}
                 aria-current={active ? "page" : undefined}
               >
@@ -162,10 +198,18 @@ export default function TopNav({
 
         <div className="flex-1" />
 
+        {/* Right side controls (desktop) */}
         <div className="hidden md:flex items-center">
-          {rightArea ?? <TopRightArea onAvatarClick={onAvatarClick} />}
+          {rightArea ?? (
+            <TopRightArea
+              onAvatarClick={onAvatarClick}
+              onSignOut={onSignOut}
+              isAuthenticated={isAuthenticated}
+            />
+          )}
         </div>
 
+        {/* Mobile menu toggle */}
         <button
           type="button"
           className="ml-2 inline-flex md:hidden items-center justify-center h-9 w-9 rounded-md border border-border"
@@ -177,6 +221,7 @@ export default function TopNav({
         </button>
       </nav>
 
+      {/* Mobile nav drawer */}
       {open && (
         <div className="md:hidden border-t border-border bg-background">
           <div className="px-4 py-3 space-y-1">
@@ -195,8 +240,31 @@ export default function TopNav({
                 </button>
               );
             })}
+            {/* Mobile right area (theme, sign out, avatar) */}
             <div className="pt-2 flex items-center gap-3">
-              {rightArea ?? <TopRightArea onAvatarClick={onAvatarClick} />}
+              {rightArea ?? (
+                <div className="flex items-center gap-3">
+                  <ThemeToggle />
+                  {isAuthenticated && onSignOut && (
+                    <button
+                      type="button"
+                      onClick={onSignOut}
+                      className="inline-flex items-center justify-center h-9 px-3 rounded-md border border-border bg-background hover:bg-accent text-sm font-medium"
+                      aria-label="Sign out"
+                    >
+                      Sign out
+                    </button>
+                  )}
+                  <button
+                    type="button"
+                    aria-label="User menu"
+                    onClick={onAvatarClick}
+                    className="inline-flex items-center justify-center h-9 w-9 rounded-full border border-border bg-background"
+                  >
+                    <User className="h-4 w-4" />
+                  </button>
+                </div>
+              )}
             </div>
           </div>
         </div>
@@ -204,3 +272,4 @@ export default function TopNav({
     </header>
   );
 }
+
