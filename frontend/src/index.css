@@ -4,50 +4,69 @@
 
 @layer base {
   :root {
-    --background: 0 0% 100%;
-    --foreground: 0 0% 15%;
-    --primary: 261 83% 58%;
+    --background: 84 11% 85%;        /* #dad7cd */
+    --foreground: 142 10% 20%;       /* dark text on light bg */
+
+    --primary: 142 29% 35%;          /* #3a5a40 */
     --primary-foreground: 0 0% 100%;
-    --gradient-start: 261 83% 58%;
-    --gradient-end: 251 91% 68%;
-    --card: 0 0% 100%;
-    --card-foreground: 0 0% 15%;
-    --popover: 0 0% 100%;
-    --popover-foreground: 0 0% 15%;
-    --secondary: 210 40% 96%;
-    --secondary-foreground: 0 0% 15%;
-    --muted: 210 40% 96%;
-    --muted-foreground: 0 0% 45%;
-    --accent: 210 40% 96%;
-    --accent-foreground: 0 0% 15%;
+
+    --gradient-start: 98 19% 63%;    /* #a3b18a */
+    --gradient-end: 155 12% 25%;     /* #344e41 */
+
+    --card: 84 11% 85%;              /* #dad7cd */
+    --card-foreground: 142 10% 20%;
+
+    --popover: 84 11% 85%;
+    --popover-foreground: 142 10% 20%;
+
+    --secondary: 98 19% 63%;         /* #a3b18a */
+    --secondary-foreground: 142 10% 20%;
+
+    --muted: 84 11% 85%;
+    --muted-foreground: 142 10% 30%;
+
+    --accent: 102 19% 50%;           /* #588157 */
+    --accent-foreground: 0 0% 100%;
+
     --destructive: 0 84% 60%;
     --destructive-foreground: 0 0% 100%;
-    --border: 214 31% 91%;
-    --input: 214 31% 91%;
-    --ring: 261 83% 58%;
+
+    --border: 98 10% 55%;            /* muted sage border */
+    --input: 98 10% 55%;
+
+    --ring: 142 29% 35%;             /* forest green ring */
     --radius: 0.75rem;
   }
 
   .dark {
-    --background: 224 71% 4%;
-    --foreground: 213 31% 91%;
-    --primary: 261 83% 58%;
+    --background: 155 12% 18%;       /* #344e41 */
+    --foreground: 84 11% 85%;        /* #dad7cd */
+
+    --primary: 142 29% 35%;          /* #3a5a40 */
     --primary-foreground: 0 0% 100%;
-    --card: 224 71% 4%;
-    --card-foreground: 213 31% 91%;
-    --popover: 224 71% 4%;
-    --popover-foreground: 213 31% 91%;
-    --secondary: 215 28% 17%;
-    --secondary-foreground: 213 31% 91%;
-    --muted: 215 28% 17%;
-    --muted-foreground: 217 11% 65%;
-    --accent: 215 28% 17%;
-    --accent-foreground: 213 31% 91%;
+
+    --card: 155 12% 25%;             /* deeper forest green */
+    --card-foreground: 84 11% 85%;
+
+    --popover: 155 12% 25%;
+    --popover-foreground: 84 11% 85%;
+
+    --secondary: 98 19% 63%;         /* sage green */
+    --secondary-foreground: 155 12% 18%;
+
+    --muted: 155 12% 25%;
+    --muted-foreground: 84 11% 85%;
+
+    --accent: 102 19% 50%;           /* #588157 */
+    --accent-foreground: 0 0% 100%;
+
     --destructive: 0 63% 31%;
-    --destructive-foreground: 213 31% 91%;
-    --border: 215 28% 17%;
-    --input: 215 28% 17%;
-    --ring: 261 83% 58%;
+    --destructive-foreground: 84 11% 85%;
+
+    --border: 155 12% 30%;
+    --input: 155 12% 30%;
+
+    --ring: 98 19% 63%;              /* sage ring */
   }
 
   body {
