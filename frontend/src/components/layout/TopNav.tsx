@@ -1,7 +1,6 @@
 import React, { useEffect, useMemo, useState } from "react";
 import { Menu, X, Sun, Moon, User } from "lucide-react";
 
-/** Allowed labels for the top navigation */
 export type TopNavLink = {
   label:
     | "Home"
@@ -14,17 +13,19 @@ export type TopNavLink = {
   onClick?: () => void;
 };
 
-/** Component props */
 export type TopNavProps = {
   brand?: string;
   links: TopNavLink[];
-  rightArea?: React.ReactNode; // optional custom right-side area
+  rightArea?: React.ReactNode;
+  isAuthenticated?: boolean;
+  onAvatarClick?: () => void;
+  onSignOut?: () => void; // NEW: sign out handler
 };
 
-/** Label → path mapping used for naive client-side navigation */
+// Map labels to default paths
 const LABEL_TO_PATH: Record<TopNavLink["label"], string> = {
   Home: "/",
-  Dashboard: "/dashboard", // now distinct from Home
+  Dashboard: "/dashboard",
   History: "/history",
   Import: "/upload",
   Result: "/result",
@@ -32,7 +33,7 @@ const LABEL_TO_PATH: Record<TopNavLink["label"], string> = {
   About: "/about",
 };
 
-/** Track current pathname and update on browser navigation */
+// Hook to track current path (syncs with history.pushState)
 function useActivePath() {
   const [path, setPath] = useState<string>(() => window.location.pathname);
   useEffect(() => {
@@ -43,22 +44,11 @@ function useActivePath() {
   return path;
 }
 
-/** Default right area: theme toggle + avatar placeholder */
-function DefaultRightArea() {
-  return (
-    <div className="flex items-center gap-3">
-      <ThemeToggle />
-      <AvatarPlaceholder />
-    </div>
-  );
-}
-
-/** Accessible theme toggle button that persists user preference */
+// Theme toggle button (dark/light)
 function ThemeToggle() {
   const [isDark, setIsDark] = useState<boolean>(() =>
     document.documentElement.classList.contains("dark")
   );
-
   useEffect(() => {
     const root = document.documentElement;
     if (isDark) {
@@ -69,12 +59,10 @@ function ThemeToggle() {
       localStorage.setItem("theme", "light");
     }
   }, [isDark]);
-
   useEffect(() => {
     const saved = localStorage.getItem("theme");
     if (saved === "dark") setIsDark(true);
   }, []);
-
   return (
     <button
       type="button"
@@ -87,44 +75,73 @@ function ThemeToggle() {
   );
 }
 
-/** Simple avatar placeholder button */
-function AvatarPlaceholder() {
+// Right side controls: theme toggle, sign out (if authed), user avatar
+function TopRightArea({
+  onAvatarClick,
+  onSignOut,
+  isAuthenticated,
+}: {
+  onAvatarClick?: () => void;
+  onSignOut?: () => void;
+  isAuthenticated?: boolean;
+}) {
   return (
-    <button
-      type="button"
-      aria-label="User menu"
-      className="inline-flex items-center justify-center h-9 w-9 rounded-full border border-border bg-background"
-    >
-      <User className="h-4 w-4" />
-    </button>
+    <div className="flex items-center gap-3">
+      <ThemeToggle />
+      {isAuthenticated && onSignOut && (
+        <button
+          type="button"
+          onClick={onSignOut}
+          className="hidden sm:inline-flex items-center justify-center h-9 px-3 rounded-md border border-border bg-background hover:bg-accent text-sm font-medium"
+          aria-label="Sign out"
+        >
+          Sign out
+        </button>
+      )}
+      <button
+        type="button"
+        aria-label="User menu"
+        onClick={onAvatarClick}
+        className="inline-flex items-center justify-center h-9 w-9 rounded-full border border-border bg-background"
+      >
+        <User className="h-4 w-4" />
+      </button>
+    </div>
   );
 }
 
-/** Top navigation with responsive drawer */
+// Main TopNav component
 export default function TopNav({
   brand = "GeoQuery",
   links,
   rightArea,
+  isAuthenticated = false,
+  onAvatarClick,
+  onSignOut,
 }: TopNavProps) {
   const activePath = useActivePath();
   const [open, setOpen] = useState(false);
 
-  const items = useMemo(
-    () =>
-      links.map((l) => ({
-        ...l,
-        href: LABEL_TO_PATH[l.label],
-      })),
-    [links]
-  );
+  // Filter links: hide History if not authenticated; Import goes to /login for guests
+  const filtered = useMemo(() => {
+    return links
+      .filter((l) => (l.label === "History" ? isAuthenticated : true))
+      .map((l) => {
+        let href = LABEL_TO_PATH[l.label];
+        if (!isAuthenticated && l.label === "Import") {
+          href = "/login";
+        }
+        return { ...l, href };
+      });
+  }, [links, isAuthenticated]);
 
+  // Handle navigation (pushState)
   const handleNavigate = (href: string, onClick?: () => void) => {
     if (onClick) {
       onClick();
       setOpen(false);
       return;
     }
-    // Naive client-side navigation (works without a router)
     if (window.location.pathname !== href) {
       window.history.pushState({}, "", href);
       window.dispatchEvent(new PopStateEvent("popstate"));
@@ -133,13 +150,16 @@ export default function TopNav({
   };
 
   return (
-    <header role="banner" className="sticky top-0 z-50 bg-background border-b border-border">
+    <header
+      role="banner"
+      className="sticky top-0 z-50 bg-background border-b border-border"
+    >
       <nav
         className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 h-14 flex items-center"
         aria-label="Top Navigation"
         role="navigation"
       >
-        {/* Brand */}
+        {/* Brand name on the left */}
         <div className="flex items-center gap-2">
           <a
             href="/"
@@ -153,16 +173,20 @@ export default function TopNav({
           </a>
         </div>
 
-        {/* Desktop links */}
+        {/* Desktop nav links */}
         <div className="ml-6 hidden md:flex items-center gap-1">
-          {items.map(({ label, href, onClick }) => {
+          {filtered.map(({ label, href, onClick }) => {
             const active = activePath === href;
             return (
               <button
                 key={label}
                 onClick={() => handleNavigate(href, onClick)}
                 className={`px-3 py-2 rounded-md text-sm font-medium transition-colors
-                  ${active ? "bg-accent text-foreground" : "text-foreground/80 hover:bg-accent"}
+                  ${
+                    active
+                      ? "bg-accent text-foreground"
+                      : "text-foreground/80 hover:bg-accent"
+                  }
                 `}
                 aria-current={active ? "page" : undefined}
               >
@@ -172,15 +196,20 @@ export default function TopNav({
           })}
         </div>
 
-        {/* Spacer */}
         <div className="flex-1" />
 
-        {/* Right area */}
+        {/* Right side controls (desktop) */}
         <div className="hidden md:flex items-center">
-          {rightArea ?? <DefaultRightArea />}
+          {rightArea ?? (
+            <TopRightArea
+              onAvatarClick={onAvatarClick}
+              onSignOut={onSignOut}
+              isAuthenticated={isAuthenticated}
+            />
+          )}
         </div>
 
-        {/* Mobile toggle */}
+        {/* Mobile menu toggle */}
         <button
           type="button"
           className="ml-2 inline-flex md:hidden items-center justify-center h-9 w-9 rounded-md border border-border"
@@ -192,11 +221,11 @@ export default function TopNav({
         </button>
       </nav>
 
-      {/* Mobile drawer */}
+      {/* Mobile nav drawer */}
       {open && (
         <div className="md:hidden border-t border-border bg-background">
           <div className="px-4 py-3 space-y-1">
-            {items.map(({ label, href, onClick }) => {
+            {filtered.map(({ label, href, onClick }) => {
               const active = activePath === href;
               return (
                 <button
@@ -211,9 +240,31 @@ export default function TopNav({
                 </button>
               );
             })}
-
+            {/* Mobile right area (theme, sign out, avatar) */}
             <div className="pt-2 flex items-center gap-3">
-              {rightArea ?? <DefaultRightArea />}
+              {rightArea ?? (
+                <div className="flex items-center gap-3">
+                  <ThemeToggle />
+                  {isAuthenticated && onSignOut && (
+                    <button
+                      type="button"
+                      onClick={onSignOut}
+                      className="inline-flex items-center justify-center h-9 px-3 rounded-md border border-border bg-background hover:bg-accent text-sm font-medium"
+                      aria-label="Sign out"
+                    >
+                      Sign out
+                    </button>
+                  )}
+                  <button
+                    type="button"
+                    aria-label="User menu"
+                    onClick={onAvatarClick}
+                    className="inline-flex items-center justify-center h-9 w-9 rounded-full border border-border bg-background"
+                  >
+                    <User className="h-4 w-4" />
+                  </button>
+                </div>
+              )}
             </div>
           </div>
         </div>
