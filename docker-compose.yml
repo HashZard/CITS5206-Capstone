@@ -3,6 +3,7 @@ version: "3.8"
 services:
   postgis:
     image: postgis/postgis:17-3.5
+    platform: linux/amd64
     container_name: postgis
     restart: unless-stopped
     environment:
