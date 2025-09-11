@@ -8,6 +8,7 @@ import Login from "@/pages/Login";
 import Register from "@/pages/Register";
 import UserPage from "@/pages/User";
 import GeoQueryResults from "@/pages/Result";
+import DashboardPage from "@/pages/Dashboard";
 
 import { getStoredUser, setStoredUser, User } from "@/lib/auth";
 
@@ -30,10 +31,10 @@ function HomeView({ onQuery }: { onQuery: (query: string) => void }) {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!query.trim()) return;
-    
+
     setIsLoading(true);
     // Simulate processing time
-    await new Promise(resolve => setTimeout(resolve, 500));
+    await new Promise((resolve) => setTimeout(resolve, 500));
     onQuery(query.trim());
     setIsLoading(false);
   };
@@ -42,7 +43,7 @@ function HomeView({ onQuery }: { onQuery: (query: string) => void }) {
     "Find the largest cities near rivers in Europe",
     "Show population density of coastal areas in Asia",
     "What are the highest mountains in South America?",
-    "Analyze forest coverage in tropical regions"
+    "Analyze forest coverage in tropical regions",
   ];
 
   const handleSuggestionClick = (suggestion: string) => {
@@ -53,7 +54,7 @@ function HomeView({ onQuery }: { onQuery: (query: string) => void }) {
     <div className="max-w-6xl mx-auto">
       {/* Hero */}
       <div className="text-center mb-12">
-        <div className="flex items-center justify-center mb-6">
+        <div className="flex itemscenter justify-center mb-6">
           <MapPin className="w-12 h-12 text-white mr-3" />
           <h1 className="text-5xl font-bold text-white">GeoQuery</h1>
         </div>
@@ -75,19 +76,19 @@ function HomeView({ onQuery }: { onQuery: (query: string) => void }) {
                     placeholder="Ask about geographic data, locations, demographics, climate patterns..."
                     className="w-full bg-transparent text-white placeholder-white/60 border-none outline-none resize-none px-4 py-3 text-lg leading-6 min-h-[3rem] max-h-32"
                     rows={1}
-                    style={{ 
-                      resize: 'none',
-                      overflow: 'hidden',
-                      height: 'auto',
-                      minHeight: '3rem'
+                    style={{
+                      resize: "none",
+                      overflow: "hidden",
+                      height: "auto",
+                      minHeight: "3rem",
                     }}
                     onInput={(e) => {
                       const target = e.target as HTMLTextAreaElement;
-                      target.style.height = 'auto';
-                      target.style.height = Math.min(target.scrollHeight, 128) + 'px';
+                      target.style.height = "auto";
+                      target.style.height = Math.min(target.scrollHeight, 128) + "px";
                     }}
                     onKeyDown={(e) => {
-                      if (e.key === 'Enter' && !e.shiftKey) {
+                      if (e.key === "Enter" && !e.shiftKey) {
                         e.preventDefault();
                         handleSubmit(e);
                       }
@@ -246,14 +247,30 @@ export default function App() {
 
         {path === "/upload" && isAuthed && <ImportPage />}
 
-        {path === "/result" && <GeoQueryResults query={userQuery || "What are the longest rivers in the world?"} results={[]} generationTime={0} />}
+        {path === "/result" && (() => {
+          const params = new URLSearchParams(window.location.search);
+          const qFromURL = params.get("q") || "";
+          const qFromStorage = sessionStorage.getItem("lastQuery") || "";
+          const finalQuery =
+            userQuery || qFromURL || qFromStorage || "What are the longest rivers in the world?";
+          return (
+            <GeoQueryResults
+              query={finalQuery}
+              results={[]}
+              generationTime={0}
+            />
+          );
+        })()}
+
+        {path === "/dashboard" && <DashboardPage />}
 
         {/* Default homepage */}
         {path !== "/login" &&
           path !== "/register" &&
           path !== "/user" &&
           path !== "/upload" &&
-          path !== "/result" && <HomeView onQuery={handleQuery} />}
+          path !== "/result" &&
+          path !== "/dashboard" && <HomeView onQuery={handleQuery} />}
       </main>
 
       <Footer brand="GeoQuery" />
