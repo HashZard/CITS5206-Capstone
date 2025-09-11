@@ -1,0 +1,18 @@
+[
+  {
+    "Query": "Show all historic lakes (case-insensitive match).",
+    "SQL": "SELECT * FROM ne_10m_lakes_historic WHERE LOWER(featurecla) = 'historic lake';"
+  },
+  {
+    "Query": "Visualize historic lakes that vanished before 1800.",
+    "SQL": "SELECT * FROM ne_10m_lakes_historic WHERE date LIKE '%1500%' OR date LIKE '%1600%' OR date LIKE '%1700%';"
+  },
+  {
+    "Query": "Map lakes that disappeared in the 20th century.",
+    "SQL": "SELECT * FROM ne_10m_lakes_historic WHERE date LIKE '%1900%' OR date LIKE '%195%' OR date LIKE '%196%' OR date LIKE '%197%' OR date LIKE '%198%' OR date LIKE '%199%';"
+  },
+  {
+    "Query": "Display historic lakes that disappeared between 1500 and 1800.",
+    "SQL": "SELECT * FROM ne_10m_lakes_historic WHERE date LIKE '%1500%' OR date LIKE '%1600%' OR date LIKE '%1700%';"
+  }
+]
