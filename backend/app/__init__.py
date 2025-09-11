@@ -29,4 +29,7 @@ def create_app(config_name):
     from .api.llm_test import llm_bp
     app.register_blueprint(llm_bp, url_prefix="/api/llm")
 
+    from .api.media import media_bp
+    app.register_blueprint(media_bp, url_prefix="/api/media")
+
     return app

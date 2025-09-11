@@ -159,6 +159,8 @@ def build_select_sql(
     filters: Mapping[str, Any] | None,
     limit: int,
     offset: int,
+    order_col: str | None = None,
+    order_dir: str | None = None,
 ) -> Tuple[str, Dict[str, Any]]:
     """
     Build a parameterized single-table SELECT statement with safety checks:
@@ -185,6 +187,16 @@ def build_select_sql(
     # WHERE
     where_sql, params = build_where_and_params(table, filters or {}, list(table_cols))
 
+    # ORDER BY
+    order_sql = ""
+    if order_col is not None:
+        if order_col not in table_cols:
+            raise ValueError(f"unknown column in order_by: {order_col!r}")
+        dir_norm = (order_dir or "asc").lower()
+        if dir_norm not in ("asc", "desc"):
+            raise ValueError("order_dir must be 'asc' or 'desc'")
+        order_sql = f' ORDER BY "{order_col}" {dir_norm.upper()}'
+
     # LIMIT/OFFSET
     try:
         limit_val = int(limit)
@@ -196,7 +208,7 @@ def build_select_sql(
     if offset_val < 0:
         raise ValueError("offset must be >= 0")
 
-    sql = f"SELECT {', '.join(quoted_cols)} FROM {quoted_table} {where_sql} LIMIT :_limit OFFSET :_offset"
+    sql = f"SELECT {', '.join(quoted_cols)} FROM {quoted_table} {where_sql} {order_sql} LIMIT :_limit OFFSET :_offset"
     params["_limit"] = limit_val
     params["_offset"] = offset_val
     return sql, params
