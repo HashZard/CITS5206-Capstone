@@ -1,12 +1,18 @@
 import dotenv
 import geopandas as gpd
 from sqlalchemy import create_engine
-import logging as logger
+import logging
 import os
 
 dotenv.load_dotenv()
 
+# Configure logging
+logging.basicConfig(
+    level=logging.INFO, format="[%(asctime)s] %(levelname)s in %(module)s: %(message)s"
+)
+logger = logging.getLogger(__name__)
 
+# Replace with your own path
 data_path = "/Users/zeke/Uni/CITS5206-Capstone/capstone_map/10m_cultural/10m_cultural/"
 
 
@@ -30,7 +36,7 @@ def data_import(file_name: str):
     # Write GeoDataFrame to database
     try:
         gdf.to_postgis(
-            name=file_name,
+            name=file_name.split(".")[0],
             con=engine,
             if_exists="replace",
             index=False,
@@ -42,4 +48,4 @@ def data_import(file_name: str):
 
 
 if __name__ == "__main__":
-    data_import("ne_10m_admin_2_counties_tomatch.shp")
+    data_import("ne_10m_admin_2_label_points_details.shp")
