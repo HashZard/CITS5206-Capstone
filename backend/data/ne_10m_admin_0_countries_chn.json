@@ -1,0 +1,302 @@
+[
+  {
+    "Query": "Visualize all high-income countries on a world map.",
+    "SQL": "SELECT formal_en, income_grp, geom FROM ne_10m_admin_0_countries_chn WHERE income_grp = 'High income';"
+  },
+  {
+    "Query": "Highlight countries in the \"\"South-Eastern Asia\"\" subregion on a map.",
+    "SQL": "SELECT formal_en, subregion, geom FROM ne_10m_admin_0_countries_chn WHERE subregion = 'South-Eastern Asia';"
+  },
+  {
+    "Query": "Display the top 10 most populous countries as large bubbles on a map.",
+    "SQL": "SELECT formal_en, pop_est, geom FROM ne_10m_admin_0_countries_chn ORDER BY pop_est DESC LIMIT 10;"
+  },
+  {
+    "Query": "Map countries with GDP over 1 trillion USD.",
+    "SQL": "SELECT formal_en, gdp_md_est, geom FROM ne_10m_admin_0_countries_chn WHERE gdp_md_est > 1000000;"
+  },
+  {
+    "Query": "Visualize countries with a \"\"Developing region\"\" economy.",
+    "SQL": "SELECT formal_en, economy, geom FROM ne_10m_admin_0_countries_chn WHERE economy LIKE '%Developing%';"
+  },
+  {
+    "Query": "Show all countries from the \"\"Europe\"\" UN region.",
+    "SQL": "SELECT formal_en, region_un, geom FROM ne_10m_admin_0_countries_chn WHERE region_un = 'Europe';"
+  },
+  {
+    "Query": "Map countries whose abbreviation starts with “A”.",
+    "SQL": "SELECT formal_en, name_abb, geom FROM ne_10m_admin_0_countries_chn WHERE name_abb LIKE 'A%';"
+  },
+  {
+    "Query": "Draw countries from the \"\"Americas\"\" continent.",
+    "SQL": "SELECT formal_en, continent, geom FROM ne_10m_admin_0_countries_chn WHERE continent = 'Americas';"
+  },
+  {
+    "Query": "Visualize GDP per capita on the global map.",
+    "SQL": "SELECT formal_en, gdp_md_est/pop_est*1000000 AS gdp_per_capita, geom FROM ne_10m_admin_0_countries_chn WHERE pop_est > 0;"
+  },
+  {
+    "Query": "Map only “Low income” countries.",
+    "SQL": "SELECT formal_en, income_grp, geom FROM ne_10m_admin_0_countries_chn WHERE income_grp = 'Low income';"
+  },
+  {
+    "Query": "Compare income groups spatially across Africa.",
+    "SQL": "SELECT formal_en, income_grp, geom FROM ne_10m_admin_0_countries_chn WHERE continent = 'Africa';"
+  },
+  {
+    "Query": "Show countries in Asia with both high GDP and population.",
+    "SQL": "SELECT formal_en, pop_est, gdp_md_est, geom FROM ne_10m_admin_0_countries_chn WHERE continent = 'Asia' AND pop_est > 50000000 AND gdp_md_est > 500000;"
+  },
+  {
+    "Query": "Highlight the 10 least populous countries in Oceania.",
+    "SQL": "SELECT formal_en, pop_est, geom FROM ne_10m_admin_0_countries_chn WHERE continent = 'Oceania' ORDER BY pop_est ASC LIMIT 10;"
+  },
+  {
+    "Query": "Visualize countries with missing GDP.",
+    "SQL": "SELECT formal_en, geom FROM ne_10m_admin_0_countries_chn WHERE gdp_md_est IS NULL;"
+  },
+  {
+    "Query": "Show countries in “Western Africa” with population over 20M.",
+    "SQL": "SELECT formal_en, pop_est, geom FROM ne_10m_admin_0_countries_chn WHERE subregion = 'Western Africa' AND pop_est > 20000000;"
+  },
+  {
+    "Query": "Create a thematic map grouped by UN region.",
+    "SQL": "SELECT formal_en, region_un, geom FROM ne_10m_admin_0_countries_chn;"
+  },
+  {
+    "Query": "Highlight countries with extreme population rank (1 or >200).",
+    "SQL": "SELECT formal_en, pop_rank, geom FROM ne_10m_admin_0_countries_chn WHERE pop_rank = 1 OR pop_rank > 200;"
+  },
+  {
+    "Query": "Show countries in the Southern Hemisphere (approx lat < 0).",
+    "SQL": "SELECT formal_en, ST_Y(ST_Centroid(geom)) AS latitude, geom FROM ne_10m_admin_0_countries_chn WHERE ST_Y(ST_Centroid(geom)) < 0;"
+  },
+  {
+    "Query": "Display countries with GDP per capita below $1,000.",
+    "SQL": "SELECT formal_en, gdp_md_est/pop_est*1000000 AS gdp_per_capita, geom FROM ne_10m_admin_0_countries_chn WHERE pop_est > 0 AND gdp_md_est/pop_est*1000000 < 1000;"
+  },
+  {
+    "Query": "Map only countries in UN region \"\"Asia-Pacific\"\".",
+    "SQL": "SELECT formal_en, region_un, geom FROM ne_10m_admin_0_countries_chn WHERE region_un = 'Asia-Pacific';"
+  },
+  {
+    "Query": "Show the northernmost country per continent.",
+    "SQL": "SELECT continent, formal_en, ST_YMax(geom) AS max_lat, geom FROM ne_10m_admin_0_countries_chn c WHERE NOT EXISTS (SELECT 1 FROM ne_10m_admin_0_countries_chn c2 WHERE c.continent = c2.continent AND ST_YMax(c2.geom) > ST_YMax(c.geom));"
+  },
+  {
+    "Query": "Filter all landlocked countries (manually tag or preprocessed).",
+    "SQL": "SELECT formal_en, geom FROM ne_10m_admin_0_countries_chn WHERE brk_name IN ('Afghanistan', 'Bolivia', 'Kazakhstan', ...);"
+  },
+  {
+    "Query": "Map all countries with abbreviations of exactly 2 letters.",
+    "SQL": "SELECT formal_en, name_abb, geom FROM ne_10m_admin_0_countries_chn WHERE LENGTH(name_abb) = 2;"
+  },
+  {
+    "Query": "Display all countries with area > 2 million sq. km.",
+    "SQL": "SELECT formal_en, area, geom FROM ne_10m_admin_0_countries_chn WHERE area > 2000000;"
+  },
+  {
+    "Query": "Show correlation of GDP and income group by continent.",
+    "SQL": "SELECT continent, income_grp, AVG(gdp_md_est) AS avg_gdp FROM ne_10m_admin_0_countries_chn GROUP BY continent, income_grp;"
+  },
+  {
+    "Query": "Visualize countries with over 100M population not in Asia.",
+    "SQL": "SELECT formal_en, pop_est, continent, geom FROM ne_10m_admin_0_countries_chn WHERE pop_est > 100000000 AND continent != 'Asia';"
+  },
+  {
+    "Query": "Map only countries in subregions containing the word \"\"Africa\"\".",
+    "SQL": "SELECT formal_en, subregion, geom FROM ne_10m_admin_0_countries_chn WHERE subregion LIKE '%Africa%';"
+  },
+  {
+    "Query": "Show countries in continents starting with \"\"A\"\".",
+    "SQL": "SELECT formal_en, continent, geom FROM ne_10m_admin_0_countries_chn WHERE continent LIKE 'A%';"
+  },
+  {
+    "Query": "Visualize only top 3 countries in GDP per UN region.",
+    "SQL": "SELECT formal_en, gdp_md_est, region_un, geom FROM (SELECT *, RANK() OVER (PARTITION BY region_un ORDER BY gdp_md_est DESC) AS rk FROM ne_10m_admin_0_countries_chn) sub WHERE rk <= 3;"
+  },
+  {
+    "Query": "Map all countries whose formal name contains “Kingdom”.",
+    "SQL": "SELECT formal_en, geom FROM ne_10m_admin_0_countries_chn WHERE formal_en ILIKE '%Kingdom%';"
+  },
+  {
+    "Query": "Visualize distribution of income group in Western Hemisphere.",
+    "SQL": "SELECT formal_en, income_grp, geom FROM ne_10m_admin_0_countries_chn WHERE ST_X(ST_Centroid(geom)) < 0;"
+  },
+  {
+    "Query": "Map the 5 smallest countries in each continent by area.",
+    "SQL": "SELECT formal_en, continent, area, geom FROM (SELECT *, RANK() OVER (PARTITION BY continent ORDER BY area ASC) AS rnk FROM ne_10m_admin_0_countries_chn) sub WHERE rnk <= 5;"
+  },
+  {
+    "Query": "Show all countries with population > 10M but income group is 'Low income'.",
+    "SQL": "SELECT formal_en, pop_est, income_grp, geom FROM ne_10m_admin_0_countries_chn WHERE pop_est > 10000000 AND income_grp = 'Low income';"
+  },
+  {
+    "Query": "Visualize countries in both 'Developing' economy and 'Upper middle income' group.",
+    "SQL": "SELECT formal_en, economy, income_grp, geom FROM ne_10m_admin_0_countries_chn WHERE economy LIKE '%Developing%' AND income_grp = 'Upper middle income';"
+  },
+  {
+    "Query": "Map countries in 'Asia' with the word 'Republic' in their name.",
+    "SQL": "SELECT formal_en, continent, geom FROM ne_10m_admin_0_countries_chn WHERE continent = 'Asia' AND formal_en ILIKE '%Republic%';"
+  },
+  {
+    "Query": "Create a world map of average population by income group.",
+    "SQL": "SELECT income_grp, AVG(pop_est) AS avg_pop FROM ne_10m_admin_0_countries_chn GROUP BY income_grp;"
+  },
+  {
+    "Query": "Map all countries with missing values in GDP or population.",
+    "SQL": "SELECT formal_en, gdp_md_est, pop_est, geom FROM ne_10m_admin_0_countries_chn WHERE gdp_md_est IS NULL OR pop_est IS NULL;"
+  },
+  {
+    "Query": "Map the top 3 most populous countries per income group.",
+    "SQL": "SELECT formal_en, income_grp, pop_est, geom FROM (SELECT *, RANK() OVER (PARTITION BY income_grp ORDER BY pop_est DESC) AS rnk FROM ne_10m_admin_0_countries_chn) sub WHERE rnk <= 3;"
+  },
+  {
+    "Query": "Visualize countries above the equator with GDP below median.",
+    "SQL": "WITH stats AS (SELECT percentile_cont(0.5) WITHIN GROUP (ORDER BY gdp_md_est) AS med FROM ne_10m_admin_0_countries_chn) SELECT formal_en, gdp_md_est, geom FROM ne_10m_admin_0_countries_chn, stats WHERE ST_Y(ST_Centroid(geom)) > 0 AND gdp_md_est < stats.med;"
+  },
+  {
+    "Query": "Show countries whose centroid is within 1000km of the equator.",
+    "SQL": "SELECT formal_en, geom FROM ne_10m_admin_0_countries_chn WHERE ABS(ST_Y(ST_Centroid(geom))) < 9.0;"
+  },
+  {
+    "Query": "Map countries with extreme area (top 5% largest).",
+    "SQL": "WITH threshold AS (SELECT percentile_cont(0.95) WITHIN GROUP (ORDER BY area) AS top_area FROM ne_10m_admin_0_countries_chn) SELECT formal_en, area, geom FROM ne_10m_admin_0_countries_chn, threshold WHERE area > threshold.top_area;"
+  },
+  {
+    "Query": "Visualize all countries with ‘Kingdom’ in their break name.",
+    "SQL": "SELECT formal_en, brk_name, geom FROM ne_10m_admin_0_countries_chn WHERE brk_name ILIKE '%Kingdom%';"
+  },
+  {
+    "Query": "Show countries that are both in 'Africa' and have GDP below 50B.",
+    "SQL": "SELECT formal_en, gdp_md_est, geom FROM ne_10m_admin_0_countries_chn WHERE continent = 'Africa' AND gdp_md_est < 50000;"
+  },
+  {
+    "Query": "Map countries whose centroid falls within -30° to +30° latitude.",
+    "SQL": "SELECT formal_en, geom FROM ne_10m_admin_0_countries_chn WHERE ST_Y(ST_Centroid(geom)) BETWEEN -30 AND 30;"
+  },
+  {
+    "Query": "Display countries with population between 5M and 20M for focused planning.",
+    "SQL": "SELECT formal_en, pop_est, geom FROM ne_10m_admin_0_countries_chn WHERE pop_est BETWEEN 5000000 AND 20000000;"
+  },
+  {
+    "Query": "Highlight countries with GDP greater than the average of their continent.",
+    "SQL": "WITH avg_gdp AS (SELECT continent, AVG(gdp_md_est) AS avg FROM ne_10m_admin_0_countries_chn GROUP BY continent) SELECT c.formal_en, c.gdp_md_est, c.continent, c.geom FROM ne_10m_admin_0_countries_chn c JOIN avg_gdp a ON c.continent = a.continent WHERE c.gdp_md_est > a.avg;"
+  },
+  {
+    "Query": "Show countries in ‘Americas’ whose centroid is west of the prime meridian.",
+    "SQL": "SELECT formal_en, continent, ST_X(ST_Centroid(geom)) AS lon, geom FROM ne_10m_admin_0_countries_chn WHERE continent = 'Americas' AND ST_X(ST_Centroid(geom)) < 0;"
+  },
+  {
+    "Query": "Map only countries that are both high-population and low-GDP.",
+    "SQL": "SELECT formal_en, pop_est, gdp_md_est, geom FROM ne_10m_admin_0_countries_chn WHERE pop_est > 100000000 AND gdp_md_est < 500000;"
+  },
+  {
+    "Query": "Create a map of countries with centroid within 1,000 km of the Greenwich meridian.",
+    "SQL": "SELECT formal_en, ST_X(ST_Centroid(geom)) AS lon, geom FROM ne_10m_admin_0_countries_chn WHERE ABS(ST_X(ST_Centroid(geom))) < 10;"
+  },
+  {
+    "Query": "Identify outlier countries with very low GDP per capita (< $500).",
+    "SQL": "SELECT formal_en, gdp_md_est/pop_est*1000000 AS gdp_pc, geom FROM ne_10m_admin_0_countries_chn WHERE pop_est > 0 AND gdp_md_est/pop_est*1000000 < 500;"
+  },
+  {
+    "Query": "Show only countries with names starting with “United”.",
+    "SQL": "SELECT formal_en, geom FROM ne_10m_admin_0_countries_chn WHERE formal_en ILIKE 'United%';"
+  },
+  {
+    "Query": "Map all countries that are in the top 10 GDP but not top 10 population.",
+    "SQL": "SELECT formal_en, gdp_md_est, pop_est, geom FROM ne_10m_admin_0_countries_chn WHERE formal_en IN (SELECT formal_en FROM ne_10m_admin_0_countries_chn ORDER BY gdp_md_est DESC LIMIT 10) AND formal_en NOT IN (SELECT formal_en FROM ne_10m_admin_0_countries_chn ORDER BY pop_est DESC LIMIT 10);"
+  },
+  {
+    "Query": "Visualize all countries whose name has more than three words.",
+    "SQL": "SELECT formal_en, geom FROM ne_10m_admin_0_countries_chn WHERE array_length(string_to_array(formal_en, ' '), 1) > 3;"
+  },
+  {
+    "Query": "Highlight countries with population rank between 50 and 100.",
+    "SQL": "SELECT formal_en, pop_rank, geom FROM ne_10m_admin_0_countries_chn WHERE pop_rank BETWEEN 50 AND 100;"
+  },
+  {
+    "Query": "Visualize the GDP distribution for subregions in Asia.",
+    "SQL": "SELECT subregion, AVG(gdp_md_est) AS avg_gdp FROM ne_10m_admin_0_countries_chn WHERE continent = 'Asia' GROUP BY subregion;"
+  },
+  {
+    "Query": "Map the countries that are both in the top 5 for GDP and for population.",
+    "SQL": "SELECT formal_en, gdp_md_est, pop_est, geom FROM ne_10m_admin_0_countries_chn WHERE formal_en IN (SELECT formal_en FROM ne_10m_admin_0_countries_chn ORDER BY gdp_md_est DESC LIMIT 5) AND formal_en IN (SELECT formal_en FROM ne_10m_admin_0_countries_chn ORDER BY pop_est DESC LIMIT 5);"
+  },
+  {
+    "Query": "Identify countries where area > 1M km² but population < 5M.",
+    "SQL": "SELECT formal_en, area, pop_est, geom FROM ne_10m_admin_0_countries_chn WHERE area > 1000000 AND pop_est < 5000000;"
+  },
+  {
+    "Query": "Visualize countries with the same name for formal_en and brk_name.",
+    "SQL": "SELECT formal_en, brk_name, geom FROM ne_10m_admin_0_countries_chn WHERE formal_en = brk_name;"
+  },
+  {
+    "Query": "Map UN regions where the average GDP per capita exceeds $10,000.",
+    "SQL": "SELECT region_un, AVG(gdp_md_est/pop_est*1000000) AS avg_gdp_pc FROM ne_10m_admin_0_countries_chn WHERE pop_est > 0 GROUP BY region_un HAVING AVG(gdp_md_est/pop_est*1000000) > 10000;"
+  },
+  {
+    "Query": "Show countries where abbreviation and break name start with same letter.",
+    "SQL": "SELECT formal_en, name_abb, brk_name, geom FROM ne_10m_admin_0_countries_chn WHERE LEFT(name_abb, 1) = LEFT(brk_name, 1);"
+  },
+  {
+    "Query": "Map countries whose names end with “stan”.",
+    "SQL": "SELECT formal_en, geom FROM ne_10m_admin_0_countries_chn WHERE formal_en ILIKE '%stan';"
+  },
+  {
+    "Query": "Highlight all countries in Eastern Hemisphere with low income.",
+    "SQL": "SELECT formal_en, income_grp, ST_X(ST_Centroid(geom)) AS lon, geom FROM ne_10m_admin_0_countries_chn WHERE income_grp = 'Low income' AND ST_X(ST_Centroid(geom)) > 0;"
+  },
+  {
+    "Query": "Display countries in Oceania with abbreviation starting with 'N'.",
+    "SQL": "SELECT formal_en, name_abb, geom FROM ne_10m_admin_0_countries_chn WHERE continent = 'Oceania' AND name_abb LIKE 'N%';"
+  },
+  {
+    "Query": "Show countries with high GDP per capita (> 50k) and low population (< 10M).",
+    "SQL": "SELECT formal_en, gdp_md_est/pop_est*1000000 AS gdp_pc, pop_est, geom FROM ne_10m_admin_0_countries_chn WHERE pop_est > 0 AND gdp_md_est/pop_est*1000000 > 50000 AND pop_est < 10000000;"
+  },
+  {
+    "Query": "Visualize countries with break name containing \"\"Republic\"\" or \"\"Kingdom\"\".",
+    "SQL": "SELECT formal_en, brk_name, geom FROM ne_10m_admin_0_countries_chn WHERE brk_name ILIKE '%Republic%' OR brk_name ILIKE '%Kingdom%';"
+  },
+  {
+    "Query": "Map top 5 GDP countries per subregion with population > 10M.",
+    "SQL": "SELECT formal_en, subregion, gdp_md_est, geom FROM (SELECT *, RANK() OVER (PARTITION BY subregion ORDER BY gdp_md_est DESC) AS rnk FROM ne_10m_admin_0_countries_chn WHERE pop_est > 10000000) sub WHERE rnk <= 5;"
+  },
+  {
+    "Query": "Show countries with extreme outlier population (e.g., >1.5B or <100K).",
+    "SQL": "SELECT formal_en, pop_est, geom FROM ne_10m_admin_0_countries_chn WHERE pop_est > 1500000000 OR pop_est < 100000;"
+  },
+  {
+    "Query": "Map countries whose income group and economy do not match (e.g., “High income” but “Developing”).",
+    "SQL": "SELECT formal_en, income_grp, economy, geom FROM ne_10m_admin_0_countries_chn WHERE income_grp = 'High income' AND economy LIKE '%Developing%';"
+  },
+  {
+    "Query": "Display countries in 'Asia' or 'Africa' with missing income group.",
+    "SQL": "SELECT formal_en, continent, income_grp, geom FROM ne_10m_admin_0_countries_chn WHERE continent IN ('Asia', 'Africa') AND income_grp IS NULL;"
+  },
+  {
+    "Query": "Show all countries in the southern hemisphere with area > 1M km².",
+    "SQL": "SELECT formal_en, area, geom FROM ne_10m_admin_0_countries_chn WHERE area > 1000000 AND ST_Y(ST_Centroid(geom)) < 0;"
+  },
+  {
+    "Query": "Identify countries where break name is longer than formal name.",
+    "SQL": "SELECT formal_en, brk_name, geom FROM ne_10m_admin_0_countries_chn WHERE LENGTH(brk_name) > LENGTH(formal_en);"
+  },
+  {
+    "Query": "Map countries within ±20° of the equator (low-latitude zone).",
+    "SQL": "SELECT formal_en, ST_Y(ST_Centroid(geom)) AS lat, geom FROM ne_10m_admin_0_countries_chn WHERE ST_Y(ST_Centroid(geom)) BETWEEN -20 AND 20;"
+  },
+  {
+    "Query": "Map countries with very high population density (>1000 people/km²).",
+    "SQL": "SELECT formal_en, pop_est/area AS pop_density, geom FROM ne_10m_admin_0_countries_chn WHERE area > 0 AND pop_est/area > 1000;"
+  },
+  {
+    "Query": "Identify countries with abbreviation matching last 3 letters of formal name.",
+    "SQL": "SELECT formal_en, name_abb, geom FROM ne_10m_admin_0_countries_chn WHERE RIGHT(formal_en, 3) = name_abb;"
+  },
+  {
+    "Query": "Highlight countries with both population and GDP in the bottom 10%.",
+    "SQL": "WITH thresholds AS (SELECT percentile_cont(0.1) WITHIN GROUP (ORDER BY gdp_md_est) AS gdp_cutoff, percentile_cont(0.1) WITHIN GROUP (ORDER BY pop_est) AS pop_cutoff FROM ne_10m_admin_0_countries_chn) SELECT c.formal_en, c.pop_est, c.gdp_md_est, c.geom FROM ne_10m_admin_0_countries_chn c, thresholds t WHERE c.pop_est < t.pop_cutoff AND c.gdp_md_est < t.gdp_cutoff;"
+  }
+]
