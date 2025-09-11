@@ -10,6 +10,11 @@ ALLOWED_TABLES = {
     "prompt_templates",
 }
 
+ALLOWED_SPATIAL_TABLES = {
+    "ne_10m_geography_marine_polys",
+    "ne_10m_geography_regions_polys",
+}
+
 
 @dataclass
 class QueryIn:
