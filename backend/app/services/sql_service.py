@@ -23,7 +23,14 @@ Return format:
 Usage example:
     from backend.app.services import sql_service
 
-    sql = "SELECT id, name FROM l1_category WHERE active = true LIMIT 5 OFFSET 0"
+    sql, params = sql_service.build_select_sql(
+        table="l1_category",
+        columns=["id","name"],
+        filters={"active": True},
+        limit=5, offset=0,
+        geometry_column="geom", 
+        srid=4326
+    )
     resp = sql_service.run_sql(sql)
 
     if resp["ok"]:
@@ -161,12 +168,24 @@ def build_select_sql(
     offset: int,
     order_col: str | None = None,
     order_dir: str | None = None,
+    geometry_column: str | None = None,
+    srid: int = 4326
 ) -> Tuple[str, Dict[str, Any]]:
     """
     Build a parameterized single-table SELECT statement with safety checks:
       - Table name must be in ALLOWED_TABLES
       - Column names must exist in the specified table
       - Only AND filters are supported
+    
+    Spatial support:
+      - If `geometry_column` is provided (e.g. "geom"), the SELECT list will
+        automatically append:
+          ST_AsGeoJSON(ST_Transform("<geometry_column>", <srid>))::json AS geometry
+        so each row includes a GeoJSON Geometry under key "geometry".
+      - Do NOT include "geometry" in `columns` yourself; it is a derived alias.
+      - `geometry_column` must be an actual column in the table, otherwise a
+        ValueError is raised.
+      - `srid` defaults to 4326 (WGS84) and is sanitized via `int(srid)`.
     Return (sql, params)
     """
     if table not in ALLOWED_TABLES:
@@ -183,6 +202,13 @@ def build_select_sql(
         if c not in table_cols:
             raise ValueError(f"unknown column in columns: {c!r}")
         quoted_cols.append(quote_ident(c))
+    
+    if geometry_column is not None:
+        if geometry_column not in table_cols:
+            raise ValueError(f"unknown geometry column: {geometry_column!r}")
+        quoted_cols.append(
+            f"ST_AsGeoJSON(ST_Transform({quote_ident(geometry_column)}, {int(srid)}))::json AS geometry"
+        )
 
     # WHERE
     where_sql, params = build_where_and_params(table, filters or {}, list(table_cols))

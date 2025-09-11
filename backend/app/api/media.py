@@ -3,10 +3,11 @@ from flask import Blueprint, request, jsonify
 from typing import Dict, Any, List, Tuple
 
 from ..services.sql_service import build_select_sql, execute, get_columns
+from app.utils.geojson import rows_to_feature_collection
 
 media_bp = Blueprint("media", __name__, url_prefix="/api/media")
 
-DEFAULT_LIMIT = 50  # 兜底；前端未传时使用
+DEFAULT_LIMIT = 50 
 
 # 统一的查询封装
 def run_query(
@@ -17,6 +18,8 @@ def run_query(
     offset: int,
     order_col: str | None,
     order_dir: str | None,
+    geometry_column: str | None = None,
+    srid: int = 4326    
 ) -> Tuple[List[Dict[str, Any]], Dict[str, Any], str, Dict[str, Any]]:
     sql, params = build_select_sql(
         table=table,
@@ -26,6 +29,8 @@ def run_query(
         offset=offset,
         order_col=order_col,
         order_dir=order_dir,
+        geometry_column=geometry_column, 
+        srid=srid                      
     )
     rows, meta = execute(sql, params)
     meta = {**meta, "limit": limit, "offset": offset, "order_col": order_col, "order_dir": order_dir}
@@ -35,7 +40,7 @@ def run_query(
 @media_bp.route("/overview", methods=["POST"])
 def overview():
     """
-    请求体（结构化、无规则解析）示例：
+    请求体示例：
     {
       "filters": {
         "entityType": "l2_mountain",         // 必填：表名（单表）
@@ -77,6 +82,9 @@ def overview():
     limit = int(f.get("limit") or DEFAULT_LIMIT)
     offset = int(f.get("offset") or 0)
 
+    geometry_column = f.get("geometry_column") 
+    srid = int(f.get("srid") or 4326)         
+
     rows, meta, sql, params = run_query(
         table=table,
         columns=columns,
@@ -85,15 +93,21 @@ def overview():
         offset=offset,
         order_col=order_col,
         order_dir=order_dir,
+        geometry_column=geometry_column, 
+        srid=srid                         
     )
 
-    # limit==1 → 仅概览；>1 → 概览 + cards（按返回列组织）
+    # limit==1 → 仅overview；>1 → overview + cards（按返回列组织）
     data: Dict[str, Any] = {
         "overview": {"items": len(rows)},
         "meta": meta,
         "sql_preview": sql,
         "sql_params": params,
+        "rows": rows
     }
+
+    if rows and "geometry" in rows[0]:
+        data["geojson"] = rows_to_feature_collection(rows, geom_field="geometry")
 
     if limit > 1:
         # metrics_fields：如果前端想指定哪些作为卡片指标，可提交 "metric_fields": [...]
@@ -152,7 +166,10 @@ def export_json():
     payload = request.get_json(silent=True) or {}
     rows = payload.get("rows")
     if rows is not None:
-        return jsonify({"ok": True, "data": {"rows": rows, "count": len(rows)}}), 200
+        data = {"rows": rows, "count": len(rows)}
+        if rows and isinstance(rows, list) and isinstance(rows[0], dict) and "geometry" in rows[0]:
+            data["geojson"] = rows_to_feature_collection(rows, geom_field="geometry")
+        return jsonify({"ok": True, "data": data}), 200
 
     f = payload.get("filters") or {}
     table = (f.get("entityType") or "").strip()
@@ -179,6 +196,9 @@ def export_json():
     limit = int(f.get("limit") or DEFAULT_LIMIT)
     offset = int(f.get("offset") or 0)
 
+    geometry_column = f.get("geometry_column")
+    srid = int(f.get("srid") or 4326)
+
     rows, meta, sql, params = run_query(
         table=table,
         columns=columns,
@@ -187,8 +207,20 @@ def export_json():
         offset=offset,
         order_col=order_col,
         order_dir=order_dir,
+        geometry_column=geometry_column, 
+        srid=srid
     )
 
-    return jsonify({"ok": True, "data": {"rows": rows, "count": len(rows), "meta": meta, "sql_preview": sql}}), 200
+    data = {
+        "rows": rows,
+        "count": len(rows),
+        "meta": meta,
+        "sql_preview": sql,
+    }
+
+    if rows and "geometry" in rows[0]:
+        data["geojson"] = rows_to_feature_collection(rows, geom_field="geometry")
+
+    return jsonify({"ok": True, "data": data}), 200
 
 
