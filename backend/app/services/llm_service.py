@@ -52,7 +52,7 @@ def async_to_sync(func):
     @wraps(func)
     def wrapper(*args, **kwargs):
         try:
-            loop = asyncio.get_event_loop()
+            loop = asyncio.get_running_loop()
         except RuntimeError:
             loop = asyncio.new_event_loop()
             asyncio.set_event_loop(loop)
@@ -110,6 +110,15 @@ class OpenAIProvider(LLMProvider):
             if request.system_prompt:
                 messages.append({"role": "system", "content": request.system_prompt})
             messages.append({"role": "user", "content": request.prompt})
+            # Debug print: full request
+            print("\n===== LLM Request (OpenAI) =====")
+            print({
+                "model": request.model or self.config.get("default_model"),
+                "temperature": request.temperature,
+                "max_tokens": request.max_tokens,
+                "system_prompt": request.system_prompt,
+                "prompt": request.prompt,
+            })
 
             response = await self.client.chat.completions.create(
                 model=request.model or self.config["default_model"],
@@ -117,6 +126,14 @@ class OpenAIProvider(LLMProvider):
                 temperature=request.temperature,
                 max_tokens=request.max_tokens,
             )
+            # Debug print: raw response
+            try:
+                print("===== LLM Response (OpenAI) =====")
+                print(response)
+                print("===== LLM Response Content =====")
+                print(getattr(response.choices[0].message, "content", None))
+            except Exception:
+                pass
 
             return LLMResponse(
                 content=response.choices[0].message.content,
@@ -137,6 +154,15 @@ class GeminiProvider(LLMProvider):
 
     async def generate(self, request: LLMRequest) -> LLMResponse:
         try:
+            # Debug print: full request
+            print("\n===== LLM Request (Gemini) =====")
+            print({
+                "model": request.model or self.config.get("default_model"),
+                "temperature": request.temperature,
+                "max_tokens": request.max_tokens,
+                "system_prompt": request.system_prompt,
+                "prompt": request.prompt,
+            })
             response = await self.client.models.generate_content(
                 model=request.model,
                 contents=request.prompt,
@@ -145,8 +171,17 @@ class GeminiProvider(LLMProvider):
             logger.error(f"Gemini API Error: {e}")
             raise
 
+        # Debug print: raw response
+        try:
+            print("===== LLM Response (Gemini) =====")
+            print(response)
+            print("===== LLM Response Content =====")
+            print(getattr(response, "content", None))
+        except Exception:
+            pass
+
         return LLMResponse(
-            content=response.content,
+            content=getattr(response, "content", ""),
             model_used=response.model,
             tokens_used=response.usage.total_tokens if response.usage else None,
         )
