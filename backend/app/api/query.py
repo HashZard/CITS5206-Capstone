@@ -1,6 +1,5 @@
 from flask import Blueprint, request, jsonify, current_app
 from app.models.dto import QueryIn, QueryOut, PreviewOut
-from app.services.orchestrator import Orchestrator
 from app.services.geo_reasoning_service import GeoReasoningService
 from app.services.three_level_service import ThreeLevelService
 
@@ -53,7 +52,7 @@ def _build_reason_sql(qin: QueryIn) -> tuple[str, dict]:
     return sql, params
 
 
-@query_bp.route("/query/reason/preview", methods=["POST"])
+@query_bp.route("/query/preview", methods=["POST"])
 def geo_reason_preview():
     try:
         payload = request.get_json(silent=True) or {}
@@ -70,7 +69,7 @@ def geo_reason_preview():
         return _err("INTERNAL_ERROR", str(e), 500)
 
 
-@query_bp.route("/query/reason", methods=["POST"])
+@query_bp.route("/query", methods=["POST"])
 def geo_reason():
     try:
         payload = request.get_json(silent=True) or {}
