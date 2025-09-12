@@ -1,11 +1,11 @@
 from __future__ import annotations
 import json
 from functools import lru_cache
-from typing import Any, Dict, Iterable, List, Mapping, MutableMapping, Sequence, Tuple
-from backend.app.utils.geojson import rows_to_feature_collection
+from typing import Any, Dict, Iterable, List, Mapping, Tuple
+from app.utils.geojson import rows_to_feature_collection
 from sqlalchemy import text
 from ..extensions import db
-from ..models.dto import ALLOWED_TABLES
+from app.models.dto import ALLOWED_TABLES
 """
 This module provides a single-table SQL query service.
 

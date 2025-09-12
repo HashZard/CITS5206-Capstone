@@ -123,12 +123,12 @@ def geo_reason_mock():
         qin.validate()
 
         # Read from mock.json
-        with open("mock.json", "r") as f:
+        with open("backend/app/api/mock.json", "r") as f:
             mock_data = json.load(f)
         reasons = [
-            f"L1 Selected: {mock_data['l1']['selected'][0]['name']}，Reason：{mock_data['l1']['reasons'][0]}",
-            f"L2 Selected: {mock_data['l2']['selected'][0]['name']}，Reason：{mock_data['l2']['reasons'][0]}",
-            f"L3 Selected: {mock_data['l3']['selected']['display_name']}，Reason：{mock_data['l3']['reasons'][0]}"
+            f"L1 Selected: {mock_data['l1']['selected'][0]['name']}, Reason: {mock_data['l1']['reasons'][0]}",
+            f"L2 Selected: {mock_data['l2']['selected'][0]['name']}, Reason: {mock_data['l2']['reasons'][0]}",
+            f"L3 Selected: {mock_data['l3']['selected']['display_name']}, Reason: {mock_data['l3']['reasons'][0]}"
         ]
         sql = mock_data['sql']['final_sql']['sql']
     except RuntimeError as e:
