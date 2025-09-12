@@ -37,7 +37,7 @@
     },
     "sql": {
         "final_sql": {
-            "sql": "SELECT name, income_grp, pop_est FROM public.ne_10m_admin_0_countries_chn WHERE income_grp IS NOT NULL AND pop_est IS NOT NULL ORDER BY income_grp, pop_est DESC LIMIT 3",
+            "sql": "SELECT name, income_grp, pop_est, geom FROM public.ne_10m_admin_0_countries_chn WHERE income_grp IS NOT NULL AND pop_est IS NOT NULL ORDER BY income_grp, pop_est DESC LIMIT 3",
             "params": {}
         },
         "assumptions": [
