@@ -120,7 +120,7 @@ def run_sql(sql: str, params: dict | None = None) -> Dict[str, Any]:
     except Exception as e:
         return {
             "ok": False,
-            "data": json.dumps({}),
+            "data": {},
             "meta": {},
             "error": str(e)
         }
