@@ -123,7 +123,9 @@ def geo_reason_mock():
         qin.validate()
 
         # Read from mock.json
-        with open("backend/app/api/mock.json", "r") as f:
+        import os
+        mock_path = os.path.join(os.path.dirname(__file__), "mock.json")
+        with open(mock_path, "r") as f:
             mock_data = json.load(f)
         reasons = [
             f"L1 Selected: {mock_data['l1']['selected'][0]['name']}, Reason: {mock_data['l1']['reasons'][0]}",
