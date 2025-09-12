@@ -24,6 +24,7 @@ class QueryIn:
 class QueryOut:
     ok: bool
     data: List[Dict[str, Any]] = field(default_factory=list)
+    reasons: List[str] = field(default_factory=list)
     meta: Dict[str, Any] = field(default_factory=dict)
     error: Optional[Dict[str, Any]] = None
 
@@ -32,6 +33,7 @@ class QueryOut:
 class PreviewOut:
     ok: bool
     sql: Optional[str] = None
+    reasons: List[str] = field(default_factory=list)
     warnings: List[str] = field(default_factory=list)
     meta: Dict[str, Any] = field(default_factory=dict)
     error: Optional[Dict[str, Any]] = None

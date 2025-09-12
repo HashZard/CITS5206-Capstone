@@ -1,3 +1,4 @@
+from typing import Any
 from flask import Blueprint, request, jsonify, current_app
 from app.models.dto import QueryIn, QueryOut, PreviewOut
 from app.services.geo_reasoning_service import GeoReasoningService
@@ -20,7 +21,7 @@ def _err(code: str, msg: str, http=400, details=None):
     )
 
 
-def _build_reason_sql(qin: QueryIn) -> tuple[str, dict]:
+def _build_reason_sql(qin: QueryIn) -> tuple[str, dict[str, Any], list[str]]:
     question = (qin.question or "").strip()
     if not question:
         raise ValueError("'question' is required")
@@ -34,7 +35,7 @@ def _build_reason_sql(qin: QueryIn) -> tuple[str, dict]:
 
     geo_service = GeoReasoningService(llm_service=llm_service,
                                       three_level_service=ThreeLevelService())
-    final_sql = geo_service.start_geo_reasoning(question, constraints)
+    final_sql, reasons = geo_service.start_geo_reasoning(question, constraints)
 
     if not isinstance(final_sql, dict) or "sql" not in final_sql:
         raise ValueError(
@@ -49,7 +50,7 @@ def _build_reason_sql(qin: QueryIn) -> tuple[str, dict]:
     if not isinstance(params, dict):
         raise ValueError("SQL params must be an object")
 
-    return sql, params
+    return sql, params, reasons
 
 
 @query_bp.route("/query/preview", methods=["POST"])
@@ -58,8 +59,15 @@ def geo_reason_preview():
         payload = request.get_json(silent=True) or {}
         qin = QueryIn(**payload)
         qin.validate()
-        sql, _params = _build_reason_sql(qin)
-        out = PreviewOut(ok=True, sql=sql, warnings=[], meta={})
+        sql, params, reasons = _build_reason_sql(qin)
+        sql_with_params = sql
+        for k, v in params.items():
+            sql_with_params = sql_with_params.replace(f":{k}", repr(v))
+        out = PreviewOut(ok=True,
+                         sql=sql_with_params,
+                         reasons=reasons,
+                         warnings=[],
+                         meta={})
         return jsonify(out.__dict__), 200
     except RuntimeError as e:
         return _err("SERVICE_UNAVAILABLE", str(e), 503)
@@ -75,7 +83,7 @@ def geo_reason():
         payload = request.get_json(silent=True) or {}
         qin = QueryIn(**payload)
         qin.validate()
-        sql, params = _build_reason_sql(qin)
+        sql, params, reasons = _build_reason_sql(qin)
     except RuntimeError as e:
         return _err("SERVICE_UNAVAILABLE", str(e), 503)
     except ValueError as e:
@@ -90,7 +98,10 @@ def geo_reason():
         resu = sql_service.run_sql(sql, params)
         if not resu.get("ok"):
             return _err("INTERNAL_ERROR", str(resu.get("error")), 500)
-        out = QueryOut(ok=True, data=resu.get("data"), meta=resu.get("meta"))
+        out = QueryOut(ok=True,
+                       data=resu.get("data"),
+                       meta=resu.get("meta"),
+                       reasons=reasons)
         return jsonify(out.__dict__), 200
     except Exception as e:
         return _err("INTERNAL_ERROR", str(e), 500)

@@ -1,5 +1,5 @@
 import json
-from typing import Any, Dict, Optional
+from typing import Any, Dict, Optional, Tuple, List
 
 from app.services.three_level_service import ThreeLevelService
 from app.services.llm_service import LLMService
@@ -138,9 +138,10 @@ class GeoReasoningService:
 
     # ----------------------------- Reasoning -----------------------------
     def start_geo_reasoning(
-            self,
-            user_question: str,
-            constraints: Optional[Dict[str, Any]] = None) -> Dict[str, Any]:
+        self,
+        user_question: str,
+        constraints: Optional[Dict[str, Any]] = None
+    ) -> Tuple[Dict[str, Any], List[str]]:
         """Steps (conceptual):
 		  1. Build L1 prompt and call LLM to obtain L1 ids.
 		  2. Build L2 prompt and call LLM to obtain L2 ids.
@@ -148,7 +149,7 @@ class GeoReasoningService:
 		  4. Build SQL prompt (with chosen L3 schema) and call LLM to generate SQL.
 
 		Returns:
-			final_sql
+			final_sql, reasons
 		"""
 
         l1_list = self.three_level.get_all_l1_categories()
@@ -182,4 +183,6 @@ class GeoReasoningService:
         sql_result = self.parse_sql_response(
             sql_response.content).get("final_sql")
 
-        return sql_result
+        # Placeholder for future use
+        reasons = []
+        return sql_result, reasons
