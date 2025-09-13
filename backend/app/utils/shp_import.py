@@ -13,7 +13,7 @@ logging.basicConfig(
 logger = logging.getLogger(__name__)
 
 # Replace with your own path
-data_path = "/Users/zeke/Uni/CITS5206-Capstone/capstone_map/10m_cultural/10m_cultural/"
+data_path = "/Users/zeke/Uni/CITS5206-Capstone/capstone_map/10m_physical/"
 
 
 def data_import(file_name: str):
@@ -40,6 +40,7 @@ def data_import(file_name: str):
             con=engine,
             if_exists="replace",
             index=False,
+            schema="ne_data",
         )
         logger.info("Successfully wrote data to database!")
     except Exception as e:
@@ -48,4 +49,8 @@ def data_import(file_name: str):
 
 
 if __name__ == "__main__":
-    data_import("ne_10m_admin_2_label_points_details.shp")
+    # import all shapefiles in the directory
+    for file in os.listdir(data_path):
+        if file.endswith(".shp"):
+            logger.info(f"Importing {file}...")
+            data_import(file)
