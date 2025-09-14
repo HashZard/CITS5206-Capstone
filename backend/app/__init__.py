@@ -13,10 +13,6 @@ def create_app(config_name):
     # Initialize extensions using unified function
     init_extensions(app)
 
-    # Initialize LLM Service
-    llm_service = LLMService()
-    llm_service.init_app(app)
-
     # Register Blueprints
     from .api.schema import schema_bp
 
@@ -27,6 +23,7 @@ def create_app(config_name):
     app.register_blueprint(query_bp, url_prefix="/api")
 
     from .api.llm_test import llm_bp
+
     app.register_blueprint(llm_bp, url_prefix="/api/llm")
 
     return app
