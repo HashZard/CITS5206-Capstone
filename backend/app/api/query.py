@@ -10,14 +10,12 @@ query_bp = Blueprint("query", __name__)
 
 def _err(code: str, msg: str, http=400, details=None):
     return (
-        jsonify({
-            "ok": False,
-            "error": {
-                "code": code,
-                "message": msg,
-                "details": details or {}
-            },
-        }),
+        jsonify(
+            {
+                "ok": False,
+                "error": {"code": code, "message": msg, "details": details or {}},
+            }
+        ),
         http,
     )
 
@@ -30,17 +28,11 @@ def _build_reason_sql(qin: QueryIn) -> tuple[str, dict[str, Any], list[str]]:
     # Optional constraints can be passed in the future
     constraints = None
 
-    llm_service = getattr(current_app, "llm_service", None)
-    if llm_service is None:
-        raise RuntimeError("LLM service is not initialized")
-
-    geo_service = GeoReasoningService(llm_service=llm_service,
-                                      three_level_service=ThreeLevelService())
+    geo_service = GeoReasoningService(three_level_service=ThreeLevelService())
     final_sql, reasons = geo_service.start_geo_reasoning(question, constraints)
 
     if not isinstance(final_sql, dict) or "sql" not in final_sql:
-        raise ValueError(
-            "GeoReasoningService returned invalid final_sql format")
+        raise ValueError("GeoReasoningService returned invalid final_sql format")
 
     sql = (final_sql.get("sql") or "").strip()
     params = final_sql.get("params") or {}
@@ -64,11 +56,9 @@ def geo_reason_preview():
         sql_with_params = sql
         for k, v in params.items():
             sql_with_params = sql_with_params.replace(f":{k}", repr(v))
-        out = PreviewOut(ok=True,
-                         sql=sql_with_params,
-                         reasons=reasons,
-                         warnings=[],
-                         meta={})
+        out = PreviewOut(
+            ok=True, sql=sql_with_params, reasons=reasons, warnings=[], meta={}
+        )
         return jsonify(out.__dict__), 200
     except RuntimeError as e:
         return _err("SERVICE_UNAVAILABLE", str(e), 503)
@@ -102,11 +92,13 @@ def geo_reason():
         resu = sql_service.run_sql(sql, params)
         if not resu.get("ok"):
             return _err("INTERNAL_ERROR", str(resu.get("error")), 500)
-        out = QueryOut(ok=True,
-                       data=resu.get("data"),
-                       sql=sql_with_params,
-                       meta=resu.get("meta"),
-                       reasons=reasons)
+        out = QueryOut(
+            ok=True,
+            data=resu.get("data"),
+            sql=sql_with_params,
+            meta=resu.get("meta"),
+            reasons=reasons,
+        )
         return jsonify(out.__dict__), 200
     except Exception as e:
         return _err("INTERNAL_ERROR", str(e), 500)
@@ -124,15 +116,16 @@ def geo_reason_mock():
 
         # Read from mock.json
         import os
+
         mock_path = os.path.join(os.path.dirname(__file__), "mock.json")
         with open(mock_path, "r") as f:
             mock_data = json.load(f)
         reasons = [
             f"L1 Selected: {mock_data['l1']['selected'][0]['name']}, Reason: {mock_data['l1']['reasons'][0]}",
             f"L2 Selected: {mock_data['l2']['selected'][0]['name']}, Reason: {mock_data['l2']['reasons'][0]}",
-            f"L3 Selected: {mock_data['l3']['selected']['display_name']}, Reason: {mock_data['l3']['reasons'][0]}"
+            f"L3 Selected: {mock_data['l3']['selected']['display_name']}, Reason: {mock_data['l3']['reasons'][0]}",
         ]
-        sql = mock_data['sql']['final_sql']['sql']
+        sql = mock_data["sql"]["final_sql"]["sql"]
     except RuntimeError as e:
         return _err("SERVICE_UNAVAILABLE", str(e), 503)
     except ValueError as e:
@@ -147,11 +140,13 @@ def geo_reason_mock():
         resu = sql_service.run_sql(sql, params={})
         if not resu.get("ok"):
             return _err("INTERNAL_ERROR", str(resu.get("error")), 500)
-        out = QueryOut(ok=True,
-                       data=resu.get("data"),
-                       sql=sql,
-                       meta=resu.get("meta"),
-                       reasons=reasons)
+        out = QueryOut(
+            ok=True,
+            data=resu.get("data"),
+            sql=sql,
+            meta=resu.get("meta"),
+            reasons=reasons,
+        )
         return jsonify(out.__dict__), 200
     except Exception as e:
         return _err("INTERNAL_ERROR", str(e), 500)
