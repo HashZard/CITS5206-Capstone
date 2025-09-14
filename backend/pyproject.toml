@@ -19,4 +19,5 @@ dependencies = [
     "asyncpg>=0.30.0",
     "openai==1.107.2",
     "google-genai==1.36.0",
+    "pytest>=8.4.2",
 ]
