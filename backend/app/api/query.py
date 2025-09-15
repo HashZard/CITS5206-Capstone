@@ -1,6 +1,6 @@
 from flask import Blueprint, request, jsonify
 from app.models.dto import QueryIn, QueryOut, PreviewOut
-from app.services.orchestrator import Orchestrator
+from app.services import sql_service
 
 query_bp = Blueprint("query", __name__)
 
@@ -27,8 +27,11 @@ def query():
         return _err("VALIDATION_ERROR", str(e), 400)
 
     try:
-        svc = Orchestrator()
-        rows, meta = svc.handle_query(qin)
+        sql, params = sql_service.build_select_sql(
+            qin.table, qin.columns, qin.filters, qin.limit, qin.offset
+        )
+        rows, meta = sql_service.execute(sql, params)
+        meta = {**meta, "limit": qin.limit, "offset": qin.offset}
         out = QueryOut(ok=True, data=rows, meta=meta)
         return jsonify(out.__dict__), 200
     except ValueError as e:
@@ -47,8 +50,9 @@ def query_preview():
         return _err("VALIDATION_ERROR", str(e), 400)
 
     try:
-        svc = Orchestrator()
-        sql = svc.preview_sql(qin)
+        sql, _ = sql_service.build_select_sql(
+            qin.table, qin.columns, qin.filters, qin.limit, qin.offset
+        )
         out = PreviewOut(ok=True, sql=sql, warnings=[], meta={})
         return jsonify(out.__dict__), 200
     except ValueError as e:
