@@ -1,6 +1,9 @@
-from flask import Blueprint, request, jsonify
+import json
+from typing import Any
+from flask import Blueprint, request, jsonify, current_app
 from app.models.dto import QueryIn, QueryOut, PreviewOut
-from app.services import sql_service
+from app.services.geo_reasoning_service import GeoReasoningService
+from app.services.three_level_service import ThreeLevelService
 
 query_bp = Blueprint("query", __name__)
 
@@ -17,45 +20,133 @@ def _err(code: str, msg: str, http=400, details=None):
     )
 
 
-@query_bp.route("/query", methods=["POST"])
-def query():
+def _build_reason_sql(qin: QueryIn) -> tuple[str, dict[str, Any], list[str]]:
+    question = (qin.question or "").strip()
+    if not question:
+        raise ValueError("'question' is required")
+
+    # Optional constraints can be passed in the future
+    constraints = None
+
+    geo_service = GeoReasoningService(three_level_service=ThreeLevelService())
+    final_sql, reasons = geo_service.start_geo_reasoning(question, constraints)
+
+    if not isinstance(final_sql, dict) or "sql" not in final_sql:
+        raise ValueError("GeoReasoningService returned invalid final_sql format")
+
+    sql = (final_sql.get("sql") or "").strip()
+    params = final_sql.get("params") or {}
+
+    if not sql or not sql.lower().startswith("select"):
+        raise ValueError("Generated SQL must be a SELECT statement")
+
+    if not isinstance(params, dict):
+        raise ValueError("SQL params must be an object")
+
+    return sql, params, reasons
+
+
+@query_bp.route("/query/preview", methods=["POST"])
+def geo_reason_preview():
     try:
         payload = request.get_json(silent=True) or {}
         qin = QueryIn(**payload)
         qin.validate()
-    except (TypeError, ValueError) as e:
-        return _err("VALIDATION_ERROR", str(e), 400)
-
-    try:
-        sql, params = sql_service.build_select_sql(
-            qin.table, qin.columns, qin.filters, qin.limit, qin.offset
+        sql, params, reasons = _build_reason_sql(qin)
+        sql_with_params = sql
+        for k, v in params.items():
+            sql_with_params = sql_with_params.replace(f":{k}", repr(v))
+        out = PreviewOut(
+            ok=True, sql=sql_with_params, reasons=reasons, warnings=[], meta={}
         )
-        rows, meta = sql_service.execute(sql, params)
-        meta = {**meta, "limit": qin.limit, "offset": qin.offset}
-        out = QueryOut(ok=True, data=rows, meta=meta)
         return jsonify(out.__dict__), 200
+    except RuntimeError as e:
+        return _err("SERVICE_UNAVAILABLE", str(e), 503)
     except ValueError as e:
-        return _err("SEMANTIC_ERROR", str(e), 422)
+        return _err("VALIDATION_ERROR", str(e), 400)
     except Exception as e:
         return _err("INTERNAL_ERROR", str(e), 500)
 
 
-@query_bp.route("/query/preview", methods=["POST"])
-def query_preview():
+@query_bp.route("/query", methods=["POST"])
+def geo_reason():
     try:
         payload = request.get_json(silent=True) or {}
         qin = QueryIn(**payload)
         qin.validate()
-    except (TypeError, ValueError) as e:
+        sql, params, reasons = _build_reason_sql(qin)
+        sql_with_params = sql
+        for k, v in params.items():
+            sql_with_params = sql_with_params.replace(f":{k}", repr(v))
+    except RuntimeError as e:
+        return _err("SERVICE_UNAVAILABLE", str(e), 503)
+    except ValueError as e:
         return _err("VALIDATION_ERROR", str(e), 400)
+    except Exception as e:
+        return _err("INTERNAL_ERROR", str(e), 500)
 
     try:
-        sql, _ = sql_service.build_select_sql(
-            qin.table, qin.columns, qin.filters, qin.limit, qin.offset
+        # Lazy import to avoid circular import of sql_service earlier
+        from app.services import sql_service
+
+        resu = sql_service.run_sql(sql, params)
+        if not resu.get("ok"):
+            return _err("INTERNAL_ERROR", str(resu.get("error")), 500)
+        out = QueryOut(
+            ok=True,
+            data=resu.get("data"),
+            sql=sql_with_params,
+            meta=resu.get("meta"),
+            reasons=reasons,
         )
-        out = PreviewOut(ok=True, sql=sql, warnings=[], meta={})
         return jsonify(out.__dict__), 200
+    except Exception as e:
+        return _err("INTERNAL_ERROR", str(e), 500)
+
+
+# Mock implementation for testing
+# User question -> fixed SQL + fixed reasons
+# User question is 'Map the top 3 most populous countries per income group.'
+@query_bp.route("/query/mock", methods=["POST"])
+def geo_reason_mock():
+    try:
+        payload = request.get_json(silent=True) or {}
+        qin = QueryIn(**payload)
+        qin.validate()
+
+        # Read from mock.json
+        import os
+
+        mock_path = os.path.join(os.path.dirname(__file__), "mock.json")
+        with open(mock_path, "r") as f:
+            mock_data = json.load(f)
+        reasons = [
+            f"L1 Selected: {mock_data['l1']['selected'][0]['name']}, Reason: {mock_data['l1']['reasons'][0]}",
+            f"L2 Selected: {mock_data['l2']['selected'][0]['name']}, Reason: {mock_data['l2']['reasons'][0]}",
+            f"L3 Selected: {mock_data['l3']['selected']['display_name']}, Reason: {mock_data['l3']['reasons'][0]}",
+        ]
+        sql = mock_data["sql"]["final_sql"]["sql"]
+    except RuntimeError as e:
+        return _err("SERVICE_UNAVAILABLE", str(e), 503)
     except ValueError as e:
-        return _err("SEMANTIC_ERROR", str(e), 422)
+        return _err("VALIDATION_ERROR", str(e), 400)
+    except Exception as e:
+        return _err("INTERNAL_ERROR", str(e), 500)
+
+    try:
+        # Lazy import to avoid circular import of sql_service earlier
+        from app.services import sql_service
+
+        resu = sql_service.run_sql(sql, params={})
+        if not resu.get("ok"):
+            return _err("INTERNAL_ERROR", str(resu.get("error")), 500)
+        out = QueryOut(
+            ok=True,
+            data=resu.get("data"),
+            sql=sql,
+            meta=resu.get("meta"),
+            reasons=reasons,
+        )
+        return jsonify(out.__dict__), 200
     except Exception as e:
         return _err("INTERNAL_ERROR", str(e), 500)

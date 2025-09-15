@@ -1,0 +1,53 @@
+{
+    "l1": {
+        "selected": [
+            {
+                "id": 1,
+                "name": "Administrative Boundaries / Countries"
+            }
+        ],
+        "reasons": [
+            "The question pertains to countries and their populations, which directly relates to administrative boundaries and attributes of countries.",
+            "Mapping populous countries by income group involves demographic data, aligning with the population aspect in this category."
+        ]
+    },
+    "l2": {
+        "selected": [
+            {
+                "id": 1,
+                "name": "Country Boundaries & Attributes"
+            }
+        ],
+        "reasons": [
+            "The question pertains to mapping countries based on their population, which falls under the category of country boundaries and attributes.",
+            "This category includes information about population, which is essential for determining the most populous countries within different income groups."
+        ]
+    },
+    "l3": {
+        "selected": {
+            "id": 1,
+            "table_name": "ne_10m_admin_0_countries_chn",
+            "display_name": "Country/Region Boundary Data"
+        },
+        "reasons": [
+            "The table contains population estimates for countries, which is necessary to identify the most populous countries.",
+            "It includes GDP information, which may be relevant for categorizing countries into different income groups.",
+            "The table is suitable for statistical queries, making it appropriate for mapping countries by population and income."
+        ]
+    },
+    "sql": {
+        "final_sql": {
+            "sql": "SELECT name, income_grp, pop_est, geom FROM public.ne_10m_admin_0_countries_chn WHERE income_grp IS NOT NULL AND pop_est IS NOT NULL ORDER BY income_grp, pop_est DESC LIMIT 3",
+            "params": {}
+        },
+        "assumptions": [
+            "The income group is defined in the 'income_grp' column.",
+            "Population estimates are in the 'pop_est' column.",
+            "Only countries with non-null income groups and population estimates are included."
+        ],
+        "notes": [
+            "The SQL provided will return the top 3 most populous countries for each income group.",
+            "If the income groups have fewer than 3 countries, it will return as many as available."
+        ]
+    }
+}

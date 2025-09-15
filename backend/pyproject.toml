@@ -5,8 +5,8 @@ description = "Capstone Project backend"
 readme = "README.md"
 requires-python = ">=3.13"
 dependencies = [
-    "flask>=3.1.1",
-    "pydantic>=2.11.7",
+    "flask==3.1.2",
+    "pydantic==2.11.8",
     "redis>=6.4.0",
     "geopandas>=1.1.1",
     "pandasql>=0.7.3",
@@ -17,6 +17,12 @@ dependencies = [
     "geoalchemy2>=0.18.0",
     "python-dotenv>=1.0.1",
     "asyncpg>=0.30.0",
-    "openai>=1.101.0",
-    "google-genai>=1.31.0",
+    "openai==1.107.2",
+    "google-genai==1.36.0",
+    "pytest>=8.4.2",
+]
+
+[dependency-groups]
+dev = [
+    "black>=25.1.0",
 ]

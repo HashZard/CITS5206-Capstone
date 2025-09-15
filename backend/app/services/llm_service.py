@@ -1,6 +1,6 @@
 from abc import ABC, abstractmethod
 from functools import wraps
-from typing import Dict, Any, Optional, List
+from typing import Dict, Any, List
 from dataclasses import dataclass
 import openai
 from google import genai
@@ -14,14 +14,15 @@ LLM Service
 This service is used to generate text using the LLM model for backend service.
 
 Usage:
-    from flask import current_app
+    from app.extensions import llm_service
 
-    response = current_app.llm_service.generate(
-        prompt="Hello",
+    response = llm_service.generate(
+        message="Hello",
         model="gpt-4o-mini",
         provider="openai",
         temperature=0.7,
         system_prompt="You are a helpful assistant.",
+        max_tokens=1000,
     )
 """
 
@@ -30,11 +31,11 @@ Usage:
 class LLMRequest:
     """LLM Request Data Structure"""
 
-    prompt: str
-    model: Optional[str] = None
-    temperature: Optional[float] = 0.7
-    max_tokens: Optional[int] = 1000
-    system_prompt: Optional[str] = None
+    message: str
+    model: str | None = None
+    temperature: float | None = None
+    system_prompt: str | None = None
+    max_tokens: int | None = 1000
 
 
 @dataclass
@@ -43,7 +44,7 @@ class LLMResponse:
 
     content: str
     model_used: str
-    tokens_used: Optional[int] = None
+    tokens_used: int | None = None
 
 
 def async_to_sync(func):
@@ -108,35 +109,18 @@ class OpenAIProvider(LLMProvider):
         try:
             messages = []
             if request.system_prompt:
-                messages.append({"role": "system", "content": request.system_prompt})
-            messages.append({"role": "user", "content": request.prompt})
-            # Debug print: full request
-            print("\n===== LLM Request (OpenAI) =====")
-            print({
-                "model": request.model or self.config.get("default_model"),
-                "temperature": request.temperature,
-                "max_tokens": request.max_tokens,
-                "system_prompt": request.system_prompt,
-                "prompt": request.prompt,
-            })
+                messages.append({"role": "developer", "content": request.system_prompt})
+            messages.append({"role": "user", "content": request.message})
 
-            response = await self.client.chat.completions.create(
+            response = await self.client.responses.create(
+                input=messages,
                 model=request.model or self.config["default_model"],
-                messages=messages,
-                temperature=request.temperature,
-                max_tokens=request.max_tokens,
+                temperature=request.temperature if request.temperature else None,
+                max_output_tokens=request.max_tokens,
             )
-            # Debug print: raw response
-            try:
-                print("===== LLM Response (OpenAI) =====")
-                print(response)
-                print("===== LLM Response Content =====")
-                print(getattr(response.choices[0].message, "content", None))
-            except Exception:
-                pass
 
             return LLMResponse(
-                content=response.choices[0].message.content,
+                content=response.output_text,
                 model_used=response.model,
                 tokens_used=response.usage.total_tokens if response.usage else None,
             )
@@ -156,16 +140,18 @@ class GeminiProvider(LLMProvider):
         try:
             # Debug print: full request
             print("\n===== LLM Request (Gemini) =====")
-            print({
-                "model": request.model or self.config.get("default_model"),
-                "temperature": request.temperature,
-                "max_tokens": request.max_tokens,
-                "system_prompt": request.system_prompt,
-                "prompt": request.prompt,
-            })
+            print(
+                {
+                    "model": request.model or self.config.get("default_model"),
+                    "temperature": request.temperature,
+                    "max_tokens": request.max_tokens,
+                    "system_prompt": request.system_prompt,
+                    "prompt": request.message,
+                }
+            )
             response = await self.client.models.generate_content(
                 model=request.model,
-                contents=request.prompt,
+                contents=request.message,
             )
         except Exception as e:
             logger.error(f"Gemini API Error: {e}")
@@ -198,6 +184,14 @@ class LLMService:
 
     def init_app(self, app):
         """Initialize Flask Application"""
+        if "llm_service" in app.extensions:
+            raise RuntimeError(
+                "A 'LLMService' instance has already been registered on this Flask app."
+                " Import and use that instance instead."
+            )
+
+        app.extensions["llm_service"] = self
+
         config = app.config.get("LLM_CONFIG", {})
 
         # Initialize Providers
@@ -212,11 +206,8 @@ class LLMService:
             "default", list(self.providers.keys())[0] if self.providers else None
         )
 
-        # Bind to app
-        app.llm_service = self
-
     async def generate_async(
-        self, prompt: str, provider: Optional[str] = None, **kwargs
+        self, message: str, provider: str | None = None, **kwargs
     ) -> LLMResponse:
         """Generate Text"""
         provider = provider or self.default_provider
@@ -224,7 +215,7 @@ class LLMService:
         if provider not in self.providers:
             raise ValueError(f"Unsupported Provider: {provider}")
 
-        request = LLMRequest(prompt=prompt, **kwargs)
+        request = LLMRequest(message=message, **kwargs)
         return await self.providers[provider].generate(request)
 
     @async_to_sync

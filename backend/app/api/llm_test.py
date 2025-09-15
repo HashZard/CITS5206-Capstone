@@ -1,6 +1,8 @@
 # api/llm_routes.py
-from flask import Blueprint, request, jsonify, current_app
+from flask import Blueprint, request, jsonify
 import logging
+
+from app.extensions import llm_service
 
 logger = logging.getLogger(__name__)
 
@@ -14,14 +16,17 @@ def generate():
     try:
         data = request.get_json()
 
-        if not data or "prompt" not in data:
-            return jsonify({"success": False, "error": "prompt field is required"}), 400
+        if not data or "message" not in data:
+            return (
+                jsonify({"success": False, "error": "message field is required"}),
+                400,
+            )
 
-        response = current_app.llm_service.generate(
-            prompt=data["prompt"],
+        response = llm_service.generate(
+            message=data["message"],
             model=data.get("model"),
             provider=data.get("provider"),
-            temperature=data.get("temperature", 0.7),
+            temperature=data.get("temperature"),
             max_tokens=data.get("max_tokens", 1000),
             system_prompt=data.get("system_prompt"),
         )
@@ -43,12 +48,12 @@ def generate():
 def list_providers():
     """List available providers"""
     try:
-        providers = current_app.llm_service.list_providers()
+        providers = llm_service.list_providers()
         return jsonify(
             {
                 "success": True,
                 "providers": providers,
-                "default": current_app.llm_service.default_provider,
+                "default": llm_service.default_provider,
             }
         )
     except Exception as e:

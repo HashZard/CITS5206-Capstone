@@ -1,12 +1,12 @@
 from __future__ import annotations
 import json
-from typing import Any, Dict, List, Optional, Tuple
+from typing import Any, Dict, List, Tuple
 
-from flask import current_app
+from app.extensions import db
+from app.extensions import llm_service
 
 from app.services.three_level_service import ThreeLevelService
 from app.services.llm_service import LLMResponse
-from app.extensions import db
 
 
 class RoutingService:
@@ -19,6 +19,7 @@ class RoutingService:
     def _parse_json_safely(self, text: str):
         """容错解析：去除 ```json 代码块、截取花括号范围，避免模型输出包裹导致的解析失败。"""
         import json as _json
+
         s = (text or "").strip()
         # 去除围栏 ``` 或 ```json
         if s.startswith("```"):
@@ -31,18 +32,23 @@ class RoutingService:
         # 截取第一个 { 到最后一个 }
         start = s.find("{")
         end = s.rfind("}")
-        candidate = s[start : end + 1] if start != -1 and end != -1 and end > start else s
+        candidate = (
+            s[start : end + 1] if start != -1 and end != -1 and end > start else s
+        )
         return _json.loads(candidate)
 
     # -------- Step builders --------
-    def _build_step1_prompt(self, user_question: str, l1_list: List[Dict[str, Any]]) -> Tuple[str, str]:
+    def _build_step1_prompt(
+        self, user_question: str, l1_list: List[Dict[str, Any]]
+    ) -> Tuple[str, str]:
         system = (
             "You are an assistant that routes a user question into a 3-level taxonomy.\n"
             "Task: Select the most relevant L1 categories for the question. Output JSON only."
         )
         user = (
             "User question:\n" + user_question + "\n\n"
-            "Available L1 categories (list of L1Category objects):\n" + json.dumps(l1_list, ensure_ascii=False)
+            "Available L1 categories (list of L1Category objects):\n"
+            + json.dumps(l1_list, ensure_ascii=False)
             + "\n\nInstructions:\n"
             "- Pick 1–2 L1 categories that best match the intent.\n"
             "- Explain briefly why they match.\n"
@@ -50,14 +56,17 @@ class RoutingService:
         )
         return system, user
 
-    def _build_step2_prompt(self, user_question: str, l2_list: List[Dict[str, Any]]) -> Tuple[str, str]:
+    def _build_step2_prompt(
+        self, user_question: str, l2_list: List[Dict[str, Any]]
+    ) -> Tuple[str, str]:
         system = (
             "You are an assistant that continues classification into the 3-level taxonomy.\n"
             "Task: From the given L2 categories, select the most relevant ones. Output JSON only."
         )
         user = (
             "User question:\n" + user_question + "\n\n"
-            "Available L2 categories (list of L2Card objects):\n" + json.dumps(l2_list, ensure_ascii=False)
+            "Available L2 categories (list of L2Card objects):\n"
+            + json.dumps(l2_list, ensure_ascii=False)
             + "\n\nInstructions:\n"
             "- Pick 1–2 L2 categories that best match the intent.\n"
             "- Explain briefly why they match.\n"
@@ -65,14 +74,17 @@ class RoutingService:
         )
         return system, user
 
-    def _build_step3_prompt(self, user_question: str, l3_list: List[Dict[str, Any]]) -> Tuple[str, str]:
+    def _build_step3_prompt(
+        self, user_question: str, l3_list: List[Dict[str, Any]]
+    ) -> Tuple[str, str]:
         system = (
             "You are an assistant that continues classification into the 3-level taxonomy.\n"
             "Task: From the given L3 tables, select exactly one L3 table that best fits the question."
         )
         user = (
             "User question:\n" + user_question + "\n\n"
-            "Available L3 tables (list of L3Table objects):\n" + json.dumps(l3_list, ensure_ascii=False)
+            "Available L3 tables (list of L3Table objects):\n"
+            + json.dumps(l3_list, ensure_ascii=False)
             + "\n\nInstructions:\n"
             "- Choose exactly one L3 table.\n"
             "- Explain briefly why it matches.\n"
@@ -125,8 +137,12 @@ class RoutingService:
         user = (
             "User question:\n" + user_question + "\n\n"
             "Chosen L3:\n" + json.dumps(l3_selected, ensure_ascii=False) + "\n\n"
-            "Full schema of the chosen L3 table:\n" + json.dumps(l3_schema, ensure_ascii=False) + "\n\n"
-            "Optional constraints (JSON):\n" + json.dumps(constraints, ensure_ascii=False) + "\n\n"
+            "Full schema of the chosen L3 table:\n"
+            + json.dumps(l3_schema, ensure_ascii=False)
+            + "\n\n"
+            "Optional constraints (JSON):\n"
+            + json.dumps(constraints, ensure_ascii=False)
+            + "\n\n"
             "Instructions:\n"
             "- Understand the intent (lookup / filter / aggregate / spatial).\n"
             "- Generate parameterized SQL for PostgreSQL/PostGIS with named params (:q,:iso,:lng,:lat,:meters,:limit).\n"
@@ -152,7 +168,7 @@ class RoutingService:
             for x in l1_objs
         ]
         s1_sys, s1_user = self._build_step1_prompt(user_question, l1_list)
-        r1: LLMResponse = current_app.llm_service.generate(prompt=s1_user, system_prompt=s1_sys)
+        r1: LLMResponse = llm_service.generate(message=s1_user, system_prompt=s1_sys)
         d1 = self._parse_json_safely(r1.content)
         l1_ids = [int(i["id"]) for i in d1.get("l1_selected", [])]
 
@@ -173,7 +189,7 @@ class RoutingService:
                 ]
             )
         s2_sys, s2_user = self._build_step2_prompt(user_question, l2_all)
-        r2: LLMResponse = current_app.llm_service.generate(prompt=s2_user, system_prompt=s2_sys)
+        r2: LLMResponse = llm_service.generate(message=s2_user, system_prompt=s2_sys)
         d2 = self._parse_json_safely(r2.content)
         l2_ids = [int(i["id"]) for i in d2.get("l2_selected", [])]
 
@@ -196,7 +212,7 @@ class RoutingService:
                 ]
             )
         s3_sys, s3_user = self._build_step3_prompt(user_question, l3_all)
-        r3: LLMResponse = current_app.llm_service.generate(prompt=s3_user, system_prompt=s3_sys)
+        r3: LLMResponse = llm_service.generate(message=s3_user, system_prompt=s3_sys)
         d3 = self._parse_json_safely(r3.content)
         l3_selected = d3.get("l3_selected") or {}
         table_name = l3_selected.get("table_name")
@@ -206,8 +222,10 @@ class RoutingService:
         # Step4: SQL
         l3_schema = self._fetch_table_schema_dict(table_name)
         constraints = {"limit": limit}
-        s4_sys, s4_user = self._build_step4_prompt(user_question, l3_selected, l3_schema, constraints)
-        r4: LLMResponse = current_app.llm_service.generate(prompt=s4_user, system_prompt=s4_sys)
+        s4_sys, s4_user = self._build_step4_prompt(
+            user_question, l3_selected, l3_schema, constraints
+        )
+        r4: LLMResponse = llm_service.generate(message=s4_user, system_prompt=s4_sys)
         d4 = self._parse_json_safely(r4.content)
 
         return {
@@ -224,5 +242,3 @@ class RoutingService:
                 "step4": d4,
             },
         }
-
-
