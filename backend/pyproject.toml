@@ -26,3 +26,6 @@ dependencies = [
 dev = [
     "black>=25.1.0",
 ]
+
+[tool.setuptools.packages.find]
+where = ["app"]

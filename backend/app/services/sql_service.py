@@ -84,7 +84,7 @@ def execute(
     """
     Execute parameterized SQL and return (rows, meta):
       - rows: List[Dict] (already mapped as dictionaries)
-      - meta: {"rows": len(rows)}; orchestrator will handle limit/offset
+      - meta: {"rows": len(rows)}; limit/offset handled by caller
     No additional COUNT(*) is performed to avoid a second query; frontend pagination is based on limit/offset.
     """
     validate_sql(sql)

@@ -1,0 +1,464 @@
+{
+  "l1": [
+    {
+      "name": "Administrative Boundaries",
+      "description": "Countries, subnational units, boundary lines, labels, and recognition status.",
+      "keywords": [
+        "country",
+        "admin",
+        "boundary",
+        "sovereignty",
+        "labels"
+      ],
+      "l2": [
+        {
+          "name": "Boundary Lines",
+          "description": "International boundary lines and disputed areas.",
+          "keywords": [
+            "boundary",
+            "lines",
+            "disputed"
+          ],
+          "l3": [
+            "ne_10m_admin_0_boundary_lines_disputed_areas",
+            "ne_10m_admin_0_boundary_lines_land",
+            "ne_10m_admin_0_boundary_lines_map_units",
+            "ne_10m_admin_0_boundary_lines_maritime_indicator",
+            "ne_10m_admin_0_disputed_areas"
+          ]
+        },
+        {
+          "name": "Country Boundaries & Units",
+          "description": "Country boundaries, sovereignty, and mapping units/subunits.",
+          "keywords": [
+            "country",
+            "sovereignty",
+            "units",
+            "subunits"
+          ],
+          "l3": [
+            "ne_10m_admin_0_countries_chn",
+            "ne_10m_admin_0_map_subunits",
+            "ne_10m_admin_0_map_units",
+            "ne_10m_admin_0_sovereignty"
+          ]
+        },
+        {
+          "name": "Labels & Reference",
+          "description": "Names, label points, seams, scale ranks, and groupings.",
+          "keywords": [
+            "labels",
+            "names",
+            "seams",
+            "scale"
+          ],
+          "l3": [
+            "ne_10m_admin_0_label_points",
+            "ne_10m_admin_0_names",
+            "ne_10m_admin_0_pacific_groupings",
+            "ne_10m_admin_0_scale_rank",
+            "ne_10m_admin_0_scale_rank_minor_islands",
+            "ne_10m_admin_0_seams",
+            "ne_10m_land_ocean_label_points",
+            "ne_10m_minor_islands_label_points"
+          ]
+        },
+        {
+          "name": "Other Administrative",
+          "description": "Other administrative datasets.",
+          "keywords": [
+            "administrative"
+          ],
+          "l3": [
+            "ne_10m_admin_0_antarctic_claim_limit_lines",
+            "ne_10m_admin_0_antarctic_claims"
+          ]
+        },
+        {
+          "name": "Subnational Boundaries",
+          "description": "First- and second-level administrative boundaries.",
+          "keywords": [
+            "admin1",
+            "admin2",
+            "states",
+            "provinces",
+            "counties"
+          ],
+          "l3": [
+            "ne_10m_admin_1_label_points",
+            "ne_10m_admin_1_label_points_details",
+            "ne_10m_admin_1_seams",
+            "ne_10m_admin_1_states_provinces",
+            "ne_10m_admin_1_states_provinces_lakes",
+            "ne_10m_admin_1_states_provinces_lines",
+            "ne_10m_admin_1_states_provinces_scale_rank",
+            "ne_10m_admin_2_counties",
+            "ne_10m_admin_2_counties_lakes",
+            "ne_10m_admin_2_counties_lines",
+            "ne_10m_admin_2_counties_scale_rank",
+            "ne_10m_admin_2_counties_scale_rank_minor_islands",
+            "ne_10m_admin_2_counties_to_match",
+            "ne_10m_admin_2_label_points",
+            "ne_10m_admin_2_label_points_details"
+          ]
+        }
+      ]
+    },
+    {
+      "name": "Base Layers",
+      "description": "Land/ocean base layers and scale rank references.",
+      "keywords": [
+        "land",
+        "ocean",
+        "base",
+        "scale rank"
+      ],
+      "l2": [
+        {
+          "name": "Land/Ocean & Scale Rank",
+          "description": "Land/ocean base layers and scale rank references.",
+          "keywords": [
+            "land",
+            "ocean",
+            "scale"
+          ],
+          "l3": [
+            "ne_10m_land",
+            "ne_10m_land_ocean_seams",
+            "ne_10m_land_scale_rank",
+            "ne_10m_ocean",
+            "ne_10m_ocean_scale_rank"
+          ]
+        }
+      ]
+    },
+    {
+      "name": "Coastlines & Shorelines",
+      "description": "Global coastlines and shoreline references for mapping.",
+      "keywords": [
+        "coastline",
+        "shoreline",
+        "coast",
+        "islands"
+      ],
+      "l2": [
+        {
+          "name": "Coastlines & Minor Islands",
+          "description": "Global coastlines and minor islands.",
+          "keywords": [
+            "coastline",
+            "islands"
+          ],
+          "l3": [
+            "ne_10m_coastline",
+            "ne_10m_minor_islands",
+            "ne_10m_minor_islands_coastline"
+          ]
+        }
+      ]
+    },
+    {
+      "name": "Environment & Protected Areas",
+      "description": "Parks and protected areas datasets.",
+      "keywords": [
+        "parks",
+        "protected",
+        "environment"
+      ],
+      "l2": [
+        {
+          "name": "Parks & Protected Lands",
+          "description": "Parks and protected areas.",
+          "keywords": [
+            "parks",
+            "protected"
+          ],
+          "l3": [
+            "ne_10m_parks_and_protected_lands_area",
+            "ne_10m_parks_and_protected_lands_line",
+            "ne_10m_parks_and_protected_lands_point",
+            "ne_10m_parks_and_protected_lands_scale_rank"
+          ]
+        }
+      ]
+    },
+    {
+      "name": "Geographic Regions and Landforms",
+      "description": "Regions and landform boundaries and classifications.",
+      "keywords": [
+        "region",
+        "landform",
+        "archipelago",
+        "mountain",
+        "desert"
+      ],
+      "l2": [
+        {
+          "name": "Regions & Landforms",
+          "description": "Geographic regions and landform polygons.",
+          "keywords": [
+            "region",
+            "landform"
+          ],
+          "l3": [
+            "ne_10m_geography_regions_polys"
+          ]
+        }
+      ]
+    },
+    {
+      "name": "Human Geography & Infrastructure",
+      "description": "Settlements and transport infrastructure layers.",
+      "keywords": [
+        "population",
+        "urban",
+        "transport",
+        "infrastructure"
+      ],
+      "l2": [
+        {
+          "name": "Populated Places",
+          "description": "Cities and towns.",
+          "keywords": [
+            "cities",
+            "places"
+          ],
+          "l3": [
+            "ne_10m_populated_places",
+            "ne_10m_populated_places_simple"
+          ]
+        },
+        {
+          "name": "Transportation: Airports & Ports",
+          "description": "Airports and maritime ports.",
+          "keywords": [
+            "airports",
+            "ports",
+            "transport"
+          ],
+          "l3": [
+            "ne_10m_airports",
+            "ne_10m_ports"
+          ]
+        },
+        {
+          "name": "Transportation: Roads & Railroads",
+          "description": "Road and railway networks.",
+          "keywords": [
+            "roads",
+            "railroads",
+            "transport"
+          ],
+          "l3": [
+            "ne_10m_railroads",
+            "ne_10m_railroads_north_america",
+            "ne_10m_roads",
+            "ne_10m_roads_north_america"
+          ]
+        },
+        {
+          "name": "Urban Areas",
+          "description": "Urban footprints and settlement extents.",
+          "keywords": [
+            "urban",
+            "settlement"
+          ],
+          "l3": [
+            "ne_10m_urban_areas",
+            "ne_10m_urban_areas_landscan"
+          ]
+        }
+      ]
+    },
+    {
+      "name": "Marine & Bathymetry",
+      "description": "Underwater terrain depth contours and marine references.",
+      "keywords": [
+        "bathymetry",
+        "depth",
+        "marine"
+      ],
+      "l2": [
+        {
+          "name": "Bathymetric Contours",
+          "description": "Ocean depth contours and related marine references.",
+          "keywords": [
+            "bathymetry",
+            "depth"
+          ],
+          "l3": [
+            "ne_10m_bathymetry_A_10000",
+            "ne_10m_bathymetry_B_9000",
+            "ne_10m_bathymetry_C_8000",
+            "ne_10m_bathymetry_D_7000",
+            "ne_10m_bathymetry_E_6000",
+            "ne_10m_bathymetry_F_5000",
+            "ne_10m_bathymetry_G_4000",
+            "ne_10m_bathymetry_H_3000",
+            "ne_10m_bathymetry_I_2000",
+            "ne_10m_bathymetry_J_1000",
+            "ne_10m_bathymetry_K_200",
+            "ne_10m_bathymetry_L_0"
+          ]
+        }
+      ]
+    },
+    {
+      "name": "Natural Geography",
+      "description": "Natural water bodies and physical geography datasets.",
+      "keywords": [
+        "lake",
+        "water",
+        "ocean",
+        "river",
+        "reef",
+        "hydro"
+      ],
+      "l2": [
+        {
+          "name": "Lakes",
+          "description": "Lakes boundaries and names.",
+          "keywords": [
+            "lakes",
+            "water"
+          ],
+          "l3": [
+            "ne_10m_lakes",
+            "ne_10m_lakes_australia",
+            "ne_10m_lakes_europe",
+            "ne_10m_lakes_north_america",
+            "ne_10m_lakes_pluvial"
+          ]
+        },
+        {
+          "name": "Oceans & Marine Polygons",
+          "description": "Oceans, seas, straits, bays, and related marine polygons.",
+          "keywords": [
+            "ocean",
+            "sea",
+            "marine"
+          ],
+          "l3": [
+            "ne_10m_geography_marine_polys",
+            "ne_10m_reefs"
+          ]
+        },
+        {
+          "name": "Rivers & Centerlines",
+          "description": "River systems and hydrographic centerlines.",
+          "keywords": [
+            "rivers",
+            "centerlines",
+            "hydro"
+          ],
+          "l3": [
+            "ne_10m_rivers_australia",
+            "ne_10m_rivers_europe",
+            "ne_10m_rivers_lake_centerlines",
+            "ne_10m_rivers_lake_centerlines_scale_rank",
+            "ne_10m_rivers_north_america"
+          ]
+        }
+      ]
+    },
+    {
+      "name": "Polar & Cryosphere",
+      "description": "Polar regions including Antarctic ice shelves and claims.",
+      "keywords": [
+        "antarctic",
+        "ice",
+        "cryosphere"
+      ],
+      "l2": [
+        {
+          "name": "Antarctic Ice & Claims",
+          "description": "Antarctic ice shelves and territorial claims/limits.",
+          "keywords": [
+            "antarctic",
+            "ice"
+          ],
+          "l3": [
+            "ne_10m_antarctic_ice_shelves_lines",
+            "ne_10m_antarctic_ice_shelves_polys"
+          ]
+        }
+      ]
+    },
+    {
+      "name": "Reference Layers",
+      "description": "Global reference layers such as lines, time zones, and bounding boxes.",
+      "keywords": [
+        "reference",
+        "lines",
+        "time zones",
+        "bounding box"
+      ],
+      "l2": [
+        {
+          "name": "Geographic Lines",
+          "description": "Equator, tropics, polar circles, and other reference lines.",
+          "keywords": [
+            "equator",
+            "tropic",
+            "polar"
+          ],
+          "l3": [
+            "ne_10m_geographic_lines"
+          ]
+        },
+        {
+          "name": "Graticules & Bounding Boxes",
+          "description": "Graticules and WGS84 bounding boxes.",
+          "keywords": [
+            "graticule",
+            "bounding",
+            "wgs84"
+          ],
+          "l3": [
+            "ne_10m_graticules_1",
+            "ne_10m_graticules_10",
+            "ne_10m_graticules_15",
+            "ne_10m_graticules_20",
+            "ne_10m_graticules_30",
+            "ne_10m_graticules_5",
+            "ne_10m_wgs84_bounding_box"
+          ]
+        },
+        {
+          "name": "Time Zones",
+          "description": "Global time zone polygons.",
+          "keywords": [
+            "time",
+            "zones"
+          ],
+          "l3": [
+            "ne_10m_time_zones"
+          ]
+        }
+      ]
+    },
+    {
+      "name": "Uncategorized (Review)",
+      "description": "Needs human review to assign appropriate category.",
+      "keywords": [
+        "review",
+        "uncategorized"
+      ],
+      "l2": [
+        {
+          "name": "To Review",
+          "description": "Pending categorization.",
+          "keywords": [
+            "review"
+          ],
+          "l3": [
+            "ne_10m_geography_regions_elevation_points",
+            "ne_10m_geography_regions_points",
+            "ne_10m_glaciated_areas",
+            "ne_10m_playas"
+          ]
+        }
+      ]
+    }
+  ]
+}

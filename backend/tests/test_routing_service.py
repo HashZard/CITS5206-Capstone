@@ -1,3 +1,58 @@
+"""
+路由服务测试模块
+
+本模块提供了两种测试模式：
+1. 完整路由测试 (test_routing_with_real_llm)
+2. 逐步调试测试 (test_routing_step_by_step)
+
+执行方法:
+--------
+1. 设置必要的环境变量:
+   export POSTGRES_DSN="postgresql://username:password@localhost:5432/dbname"
+   export OPENAI_API_KEY="your-api-key"
+   # 或者
+   export GEMINI_API_KEY="your-api-key"
+
+2. 运行测试:
+   # 方式一：使用 pytest
+   pytest test_routing_service.py -v
+
+   # 方式二：直接运行（完整测试）
+   python -m tests.test_routing_service
+
+   # 方式三：直接运行（逐步调试）
+   python -m tests.test_routing_service step
+
+功能说明:
+--------
+1. 完整路由测试 (test_routing_with_real_llm):
+   - 测试整个路由流程
+   - 执行多个测试用例
+   - 输出完整的执行结果
+   - 包含性能统计
+
+2. 逐步调试测试 (test_routing_step_by_step):
+   - 分步执行每个路由阶段
+   - 显示详细的中间结果
+   - 适合调试和开发
+   - 使用固定的测试查询
+
+输出说明:
+--------
+- ✅ 表示测试通过
+- ❌ 表示测试失败
+- 包含执行时间统计
+- 显示各层选择结果
+- 输出生成的 SQL
+
+注意事项:
+--------
+1. 需要正确配置数据库连接
+2. 需要有效的 LLM API 密钥
+3. 数据库中需要有测试数据
+4. API 调用可能产生费用
+"""
+
 import json
 import os
 import sys
@@ -22,7 +77,35 @@ def _print_result(payload: Dict[str, Any]) -> None:
 
 
 def test_routing_with_real_llm():
-    """使用真实 LLM API 测试完整路由流程。"""
+    """
+    使用真实 LLM API 测试完整路由流程。
+    
+    本函数测试整个查询路由过程，包括：
+    1. L1 (顶层) 类别选择
+    2. L2 (中层) 卡片选择
+    3. L3 (底层) 表选择
+    4. SQL 查询生成
+    
+    测试流程:
+    1. 验证环境变量
+    2. 对每个测试用例:
+       - 执行完整路由
+       - 验证输出格式
+       - 记录执行时间
+       - 输出详细结果
+    
+    输出包含:
+    - 测试用例信息
+    - 执行状态 (成功/失败)
+    - 执行时间
+    - L1/L2/L3 选择结果
+    - 生成的 SQL
+    
+    Args: None
+    Returns: None
+    Raises: 
+        pytest.skip: 当缺少必要的环境变量时
+    """
     # 检查环境变量
     required_env_vars = ["POSTGRES_DSN"]
     llm_vars = ["OPENAI_API_KEY", "GEMINI_API_KEY"]
@@ -35,10 +118,10 @@ def test_routing_with_real_llm():
 
     # 测试用例
     test_cases = [
-        # "Display the top 10 most populous countries as large bubbles on a map.",
+        "Display the top 10 most populous countries as large bubbles on a map.",
         # "Show countries in Western Africa with population over 20M",
         # "Show countries in ‘Americas’ whose centroid is west of the prime meridian.",
-        "Are there lakes under 1 km² tha?",
+        # "Are there lakes under 1 km² tha?",
     ]
 
     app = create_app("development")
@@ -128,7 +211,48 @@ def test_routing_with_real_llm():
 
 
 def test_routing_step_by_step():
-    """逐步测试每个路由步骤，便于调试。"""
+    """
+    逐步测试每个路由步骤，便于调试。
+    
+    此函数分别测试路由服务的每个步骤：
+    
+    1. Step 1 - L1 选择:
+       - 获取所有 L1 类别
+       - 构建提示
+       - 调用 LLM
+       - 输出选择结果
+    
+    2. Step 2 - L2 选择:
+       - 根据选中的 L1 获取相关 L2 卡片
+       - 构建提示
+       - 调用 LLM
+       - 输出选择结果
+    
+    3. Step 3 - L3 选择:
+       - 根据选中的 L2 获取相关 L3 表
+       - 构建提示
+       - 调用 LLM
+       - 输出选择结果
+    
+    4. Step 4 - SQL 生成:
+       - 获取选中表的 schema
+       - 构建提示
+       - 调用 LLM
+       - 输出生成的 SQL
+    
+    每个步骤都会输出:
+    - 输入提示 (system & user)
+    - LLM 原始响应
+    - 解析后的结果
+    
+    使用固定的测试查询："Find all major lakes in North America"
+    
+    Args: None
+    Returns: None
+    Raises:
+        pytest.skip: 当缺少必要的环境变量时
+        Exception: 当任何步骤失败时
+    """
     if not any(os.getenv(var) for var in ["OPENAI_API_KEY", "GEMINI_API_KEY"]):
         pytest.skip("需要设置 LLM API 密钥")
 
