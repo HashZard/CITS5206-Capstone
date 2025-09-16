@@ -105,14 +105,18 @@ def update_task(table_name: str, fields: Dict[str, Any]) -> None:
         conn.execute(sql, params)
 
 
+import logging
+
 def call_llm(system: str, user: str, model: str | None, temperature: float | None, max_tokens: int | None) -> str:
+    logging.info("[LLM请求] system_prompt=%s, user=%s, model=%s, temperature=%s, max_tokens=%s", system, user, model, temperature, max_tokens)
     resp = llm_service.generate(
         message=user,
         system_prompt=system,
-        model=model,
+        model=model,    
         temperature=temperature,
         max_tokens=max_tokens,
     )
+    logging.info("[LLM响应] content=%s", resp.content)
     return resp.content
 
 
@@ -203,11 +207,16 @@ def step2(table: Dict[str, Any], model: str | None, temperature: float | None, m
     parsed = _parse_json_output(content)
     return {"step2_result": parsed}
 
-
 def step3(table: Dict[str, Any], model: str | None, temperature: float | None, max_tokens: int | None, max_chars: int) -> Dict[str, Any]:
     step2_r = table.get("step2_result") or {}
-    step2_r_text = _truncate_text(_ensure_str(step2_r), max_chars)
-    prompts = render_step3_prompt(step2_result=step2_r_text)
+    if isinstance(step2_r, dict):
+        merged_result = step2_r.get("merged_result")
+        if merged_result is None:
+            raise ValueError("step2_result 中没有 merged_result 字段")
+        merged_result_text = _truncate_text(_ensure_str(merged_result), max_chars)
+        prompts = render_step3_prompt(step2_result=merged_result_text)
+    else:
+        raise ValueError("step2_result 类型不支持，必须为 dict")
     content = call_llm(prompts["system"], prompts["user"], model, temperature, max_tokens)
     parsed = _parse_json_output(content)
     return {"step3_result": parsed}
@@ -215,12 +224,18 @@ def step3(table: Dict[str, Any], model: str | None, temperature: float | None, m
 
 def step4(table: Dict[str, Any], model: str | None, temperature: float | None, max_tokens: int | None, max_chars: int) -> Dict[str, Any]:
     step3_r = table.get("step3_result") or {}
-    step3_r_text = _truncate_text(_ensure_str(step3_r), max_chars)
+    cleaned_fields = None
+    if isinstance(step3_r, dict):
+        cleaned_fields = step3_r["cleaned_result"]
+        if cleaned_fields is None:
+            raise ValueError("step3_result 中没有 cleaned_result 或 cleaned_fields 字段")
+    else:
+        raise ValueError("step3_result 类型不支持，必须为 dict")
+    step3_r_text = _truncate_text(_ensure_str(cleaned_fields), max_chars)
     prompts = render_step4_prompt(table_name=table["table_name"], step3_result=step3_r_text)
     content = call_llm(prompts["system"], prompts["user"], model, temperature, max_tokens)
     parsed = _parse_json_output(content)
     return {"step4_tablecard": parsed, "is_done": True, "status": "done"}
-
 
 def process_table(table: Dict[str, Any], *, model: str | None, temperature: float | None, max_tokens: int | None, max_chars: int, sample_items: int, dry_run: bool = False) -> None:
     logging.info("Processing table: %s", table["table_name"])
