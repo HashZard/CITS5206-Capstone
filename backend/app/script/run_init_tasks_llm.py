@@ -222,6 +222,48 @@ def step3(table: Dict[str, Any], model: str | None, temperature: float | None, m
     return {"step3_result": parsed}
 
 
+def save_l3_table(table_name: str, llm_output: Dict[str, Any]) -> None:
+    """
+    将 LLM 输出保存到 l3_table 表。
+    
+    Args:
+        table_name: 表名
+        llm_output: LLM 输出的表卡片数据
+    """
+    l3_data = {
+        "table_name": table_name,
+        "display_name": llm_output.get("display_name"),
+        "summary": llm_output.get("summary"),
+        "core_fields": json.dumps(llm_output.get("core_fields")),
+        "keywords": llm_output.get("keywords"),
+        "use_cases": llm_output.get("use_cases"),
+        "active": True,
+        "version": 1,
+        "updated_at": time.strftime('%Y-%m-%d %H:%M:%S%z'),
+    }
+    
+    sql = text("""
+        INSERT INTO l3_table (
+            table_name, display_name, summary, core_fields, 
+            keywords, use_cases, active, version, updated_at
+        ) VALUES (
+            :table_name, :display_name, :summary, :core_fields,
+            :keywords, :use_cases, :active, :version, :updated_at
+        ) ON CONFLICT (table_name) DO UPDATE SET
+            display_name = EXCLUDED.display_name,
+            summary = EXCLUDED.summary,
+            core_fields = EXCLUDED.core_fields,
+            keywords = EXCLUDED.keywords,
+            use_cases = EXCLUDED.use_cases,
+            active = EXCLUDED.active,
+            version = EXCLUDED.version,
+            updated_at = EXCLUDED.updated_at
+    """)
+    
+    with db.engine.begin() as conn:
+        conn.execute(sql, l3_data)
+
+
 def step4(table: Dict[str, Any], model: str | None, temperature: float | None, max_tokens: int | None, max_chars: int) -> Dict[str, Any]:
     step3_r = table.get("step3_result") or {}
     cleaned_fields = None
@@ -237,48 +279,82 @@ def step4(table: Dict[str, Any], model: str | None, temperature: float | None, m
     parsed = _parse_json_output(content)
     return {"step4_tablecard": parsed, "is_done": True, "status": "done"}
 
+
 def process_table(table: Dict[str, Any], *, model: str | None, temperature: float | None, max_tokens: int | None, max_chars: int, sample_items: int, dry_run: bool = False) -> None:
+    """
+    处理单个表的 LLM 流水线并更新到数据库。
+    
+    Args:
+        table: 表信息字典
+        model: LLM 模型名称
+        temperature: LLM 采样温度
+        max_tokens: LLM 最大输出 tokens
+        max_chars: 文本最大字符数
+        sample_items: 样本数据最大条数
+        dry_run: 是否仅预览不写库
+    """
     logging.info("Processing table: %s", table["table_name"])
     fields: Dict[str, Any] = {}
+    
     try:
+        # Step 1: 基础分析
         if not table.get("step1_result"):
             r = step1(table, model, temperature, max_tokens, max_chars, sample_items)
             fields.update(r)
             if dry_run:
-                logging.info("[dry-run] step1_result length=%d", len(json.dumps(r["step1_result"]) if isinstance(r["step1_result"], (dict, list)) else len(str(r["step1_result"]))))
+                logging.info("[dry-run] step1_result length=%d", 
+                           len(json.dumps(r["step1_result"]) if isinstance(r["step1_result"], (dict, list)) else len(str(r["step1_result"]))))
             else:
                 time.sleep(1.0)
+
+        # Step 2: 合并结果
         if not table.get("step2_result"):
             table.update(fields)
             r = step2(table, model, temperature, max_tokens, max_chars)
             fields.update(r)
             if dry_run:
-                logging.info("[dry-run] step2_result length=%d", len(json.dumps(r["step2_result"]) if isinstance(r["step2_result"], (dict, list)) else len(str(r["step2_result"]))))
+                logging.info("[dry-run] step2_result length=%d",
+                           len(json.dumps(r["step2_result"]) if isinstance(r["step2_result"], (dict, list)) else len(str(r["step2_result"]))))
             else:
                 time.sleep(1.0)
+
+        # Step 3: 清洗数据
         if not table.get("step3_result"):
             table.update(fields)
             r = step3(table, model, temperature, max_tokens, max_chars)
             fields.update(r)
             if dry_run:
-                logging.info("[dry-run] step3_result length=%d", len(json.dumps(r["step3_result"]) if isinstance(r["step3_result"], (dict, list)) else len(str(r["step3_result"]))))
+                logging.info("[dry-run] step3_result length=%d",
+                           len(json.dumps(r["step3_result"]) if isinstance(r["step3_result"], (dict, list)) else len(str(r["step3_result"]))))
             else:
                 time.sleep(1.0)
+
+        # Step 4: 生成表卡片
         if not table.get("step4_tablecard"):
             table.update(fields)
             r = step4(table, model, temperature, max_tokens, max_chars)
             fields.update(r)
             if dry_run:
-                logging.info("[dry-run] step4_tablecard length=%d", len(json.dumps(r["step4_tablecard"]) if isinstance(r["step4_tablecard"], (dict, list)) else len(str(r["step4_tablecard"]))))
+                logging.info("[dry-run] step4_tablecard length=%d",
+                           len(json.dumps(r["step4_tablecard"]) if isinstance(r["step4_tablecard"], (dict, list)) else len(str(r["step4_tablecard"]))))
             else:
                 time.sleep(1.0)
-        if not dry_run and fields:
-            update_task(table["table_name"], fields)
-            logging.info("Updated table: %s", table["table_name"])
-    except Exception:
+
+        # 更新任务状态和 l3_table
+        if not dry_run:
+            if fields:
+                update_task(table["table_name"], fields)
+                logging.info("Updated table: %s", table["table_name"])
+            
+            if "step4_tablecard" in fields:
+                save_l3_table(table["table_name"], fields["step4_tablecard"])
+                logging.info("l3_table updated: %s", table["table_name"])
+                
+    except Exception as e:
         logging.exception("Failed processing table: %s", table["table_name"])
         if not dry_run:
             update_task(table["table_name"], {"status": "failed"})
+        raise e
 
 
 def main() -> None:

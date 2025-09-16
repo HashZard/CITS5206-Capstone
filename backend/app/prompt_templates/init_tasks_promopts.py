@@ -78,26 +78,37 @@ def render_step3_prompt(step2_result: str) -> Dict[str, str]:
 
 def render_step4_prompt(table_name: str, step3_result: str) -> Dict[str, str]:
     """Render prompts for Step 4 — TableCard-Detail."""
-    system = "You are an assistant that creates a concise description card for a database table."
+    system = (
+        "You are an assistant that creates a structured description card for a database table. "
+        "Your goal is to capture the essential purpose, usage context, and key fields of the table. "
+        "The output should allow someone unfamiliar with the table to quickly understand what it contains "
+        "and how it might be used in analysis or applications."
+    )
     user = (
         f"Table name: {table_name}\n\n"
-        "Cleaned field list:\n" 
-        f"{_ensure_str(step3_result)}\n"
+        "Field list (after cleaning irrelevant fields):\n"
+        f"{_ensure_str(step3_result)}\n\n"
         "Task:\n"
-        "- Generate a TableCard-Detail in Markdown style.\n"
-        "- Include: table name, theme, field explanations, keywords, and example use cases.\n\n"
+        "- Generate a concise but informative TableCard-Detail.\n"
+        "- Highlight the table’s theme (high-level category).\n"
+        "- Provide a human-friendly display_name (short descriptive title).\n"
+        "- Write a brief summary explaining the table’s overall purpose and what kind of analysis it supports.\n"
+        "- List core fields.\n"
+        "- Suggest relevant keywords for retrieval and classification.\n"
+        "- Suggest practical use cases that demonstrate how this table could be applied.\n\n"
         "Output JSON:\n"
         "{\n"
         "  \"table_name\": \"string\",\n"
-        "  \"theme\": \"string\",\n"
-        "  \"field_explanations\": [\n"
-        "    { \"name\": \"field_name\", \"explanation\": \"meaning\" }\n"
-        "  ],\n"
+        "  \"display_name\": \"string, human-friendly name\",\n"
+        "  \"theme\": \"string, high-level category\",\n"
+        "  \"summary\": \"string, brief description of the table's purpose and usage\",\n"
+        "  \"core_fields\": [\"field1\", \"field2\"],\n"
         "  \"keywords\": [\"kw1\", \"kw2\"],\n"
-        "  \"use_cases\": [\"case1\", \"case2\"],\n"
-        "  \"tablecard_detail_md\": \"optional markdown summary to describe the table's content and usage\"\n"
-        "}\n"    )
+        "  \"use_cases\": [\"case1\", \"case2\"]\n"
+        "}\n"
+    )
     return {"system": system, "user": user}
+
 
 
 def _ensure_str(obj: Any) -> str:
