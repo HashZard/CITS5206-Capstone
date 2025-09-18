@@ -35,7 +35,7 @@ class LLMRequest:
     model: str | None = None
     temperature: float | None = None
     system_prompt: str | None = None
-    max_tokens: int | None = 1000
+    max_tokens: int | None = 5000
 
 
 @dataclass

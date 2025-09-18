@@ -62,12 +62,12 @@ from typing import Dict, Any
 
 import pytest
 
-from app.extensions import llm_service
 
 # 添加项目根目录到 Python 路径
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), ".."))
 
 from app import create_app
+from app.extensions import llm_service
 from app.services.routing_service import RoutingService
 
 
@@ -79,13 +79,13 @@ def _print_result(payload: Dict[str, Any]) -> None:
 def test_routing_with_real_llm():
     """
     使用真实 LLM API 测试完整路由流程。
-    
+
     本函数测试整个查询路由过程，包括：
     1. L1 (顶层) 类别选择
     2. L2 (中层) 卡片选择
     3. L3 (底层) 表选择
     4. SQL 查询生成
-    
+
     测试流程:
     1. 验证环境变量
     2. 对每个测试用例:
@@ -93,17 +93,17 @@ def test_routing_with_real_llm():
        - 验证输出格式
        - 记录执行时间
        - 输出详细结果
-    
+
     输出包含:
     - 测试用例信息
     - 执行状态 (成功/失败)
     - 执行时间
     - L1/L2/L3 选择结果
     - 生成的 SQL
-    
+
     Args: None
     Returns: None
-    Raises: 
+    Raises:
         pytest.skip: 当缺少必要的环境变量时
     """
     # 检查环境变量
@@ -118,10 +118,12 @@ def test_routing_with_real_llm():
 
     # 测试用例
     test_cases = [
-        "Display the top 10 most populous countries as large bubbles on a map.",
-        # "Show countries in Western Africa with population over 20M",
-        # "Show countries in ‘Americas’ whose centroid is west of the prime meridian.",
-        # "Are there lakes under 1 km² tha?",
+        "Draw countries from the 'Americas' continent.",
+        "Map only 'Low income' countries.",
+        "Display all countries with area > 2 million sq. km.",
+        "Visualize only top 3 countries in GDP per UN region.",
+        "Create a map of countries with centroid within 1,000 km of the Greenwich meridian.",
+        "Show countries where abbreviation and break name start with same letter.",
     ]
 
     app = create_app("development")
@@ -192,6 +194,15 @@ def test_routing_with_real_llm():
                 print(f"   L3 表: {step3_out['l3_selected']['table_name']}")
                 print(f"   SQL: {sql[:100]}...")
 
+                # Log user question and SQL sentence into a file
+                log_file = "routing_test_log.jsonl"
+                log_data = {
+                    "user_question": user_question,
+                    "sql": sql,
+                }
+                with open(log_file, "a", encoding="utf-8") as f:
+                    f.write(json.dumps(log_data, ensure_ascii=False) + "\n")
+
             except Exception as e:
                 # 打印失败结果
                 log_entry = {
@@ -213,40 +224,40 @@ def test_routing_with_real_llm():
 def test_routing_step_by_step():
     """
     逐步测试每个路由步骤，便于调试。
-    
+
     此函数分别测试路由服务的每个步骤：
-    
+
     1. Step 1 - L1 选择:
        - 获取所有 L1 类别
        - 构建提示
        - 调用 LLM
        - 输出选择结果
-    
+
     2. Step 2 - L2 选择:
        - 根据选中的 L1 获取相关 L2 卡片
        - 构建提示
        - 调用 LLM
        - 输出选择结果
-    
+
     3. Step 3 - L3 选择:
        - 根据选中的 L2 获取相关 L3 表
        - 构建提示
        - 调用 LLM
        - 输出选择结果
-    
+
     4. Step 4 - SQL 生成:
        - 获取选中表的 schema
        - 构建提示
        - 调用 LLM
        - 输出生成的 SQL
-    
+
     每个步骤都会输出:
     - 输入提示 (system & user)
     - LLM 原始响应
     - 解析后的结果
-    
+
     使用固定的测试查询："Find all major lakes in North America"
-    
+
     Args: None
     Returns: None
     Raises:

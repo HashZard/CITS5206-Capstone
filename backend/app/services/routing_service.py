@@ -1,6 +1,6 @@
 from __future__ import annotations
 import json
-from typing import Any, Dict, List, Tuple
+from typing import Any
 
 from app.extensions import db
 from app.extensions import llm_service
@@ -16,7 +16,8 @@ class RoutingService:
         self.lang = lang
 
     # -------- Utils --------
-    def _parse_json_safely(self, text: str):
+    @staticmethod
+    def _parse_json_safely(text: str):
         """容错解析：去除 ```json 代码块、截取花括号范围，避免模型输出包裹导致的解析失败。"""
         import json as _json
 
@@ -38,61 +39,68 @@ class RoutingService:
         return _json.loads(candidate)
 
     # -------- Step builders --------
+    @staticmethod
     def _build_step1_prompt(
-        self, user_question: str, l1_list: List[Dict[str, Any]]
-    ) -> Tuple[str, str]:
-        system = (
-            "You are an assistant that routes a user question into a 3-level taxonomy.\n"
-            "Task: Select the most relevant L1 categories for the question. Output JSON only."
-        )
-        user = (
-            "User question:\n" + user_question + "\n\n"
-            "Available L1 categories (list of L1Category objects):\n"
-            + json.dumps(l1_list, ensure_ascii=False)
-            + "\n\nInstructions:\n"
-            "- Pick 1–2 L1 categories that best match the intent.\n"
-            "- Explain briefly why they match.\n"
-            "- Output JSON only with keys: l1_selected (array of {id,name}), reasons (array)"
-        )
+        user_question: str, l1_list: list[dict[str, Any]]
+    ) -> tuple[str, str]:
+        system = f"""You are an assistant that routes a user question into a 3-level taxonomy.
+Task: Select the most relevant L1 categories for the question. Output JSON only.
+"""
+        user = f"""User question:
+{user_question}
+
+Available L1 categories (list of L1Category objects):
+{json.dumps(l1_list, ensure_ascii=False)}
+
+Instructions:
+- Pick 1–2 L1 categories that best match the intent.
+- Explain briefly why they match.
+- Output JSON only with keys: l1_selected (array of {{id,name}}), reasons (array)
+"""
         return system, user
 
+    @staticmethod
     def _build_step2_prompt(
-        self, user_question: str, l2_list: List[Dict[str, Any]]
-    ) -> Tuple[str, str]:
-        system = (
-            "You are an assistant that continues classification into the 3-level taxonomy.\n"
-            "Task: From the given L2 categories, select the most relevant ones. Output JSON only."
-        )
-        user = (
-            "User question:\n" + user_question + "\n\n"
-            "Available L2 categories (list of L2Card objects):\n"
-            + json.dumps(l2_list, ensure_ascii=False)
-            + "\n\nInstructions:\n"
-            "- Pick 1–2 L2 categories that best match the intent.\n"
-            "- Explain briefly why they match.\n"
-            "- Output JSON only with keys: l2_selected (array of {id,name}), reasons (array)"
-        )
+        user_question: str, l2_list: list[dict[str, Any]]
+    ) -> tuple[str, str]:
+        system = """You are an assistant that continues classification into the 3-level taxonomy.
+Task: From the given L2 categories, select the most relevant ones. Output JSON only.
+"""
+        user = f"""User question:
+{user_question}
+
+Available L2 categories (list of L2Card objects):
+{json.dumps(l2_list, ensure_ascii=False)}
+
+Instructions:
+- Pick 1–2 L2 categories that best match the intent.
+- Explain briefly why they match.
+- Output JSON only with keys: l2_selected (array of {{id,name}}), reasons
+"""
         return system, user
 
+    @staticmethod
     def _build_step3_prompt(
-        self, user_question: str, l3_list: List[Dict[str, Any]]
-    ) -> Tuple[str, str]:
-        system = (
-            "You are an assistant that continues classification into the 3-level taxonomy.\n"
-            "Task: From the given L3 tables, select exactly one L3 table that best fits the question."
-        )
-        user = (
-            "User question:\n" + user_question + "\n\n"
-            "Available L3 tables (list of L3Table objects):\n"
-            + json.dumps(l3_list, ensure_ascii=False)
-            + "\n\nInstructions:\n"
-            "- Choose exactly one L3 table.\n"
-            "- Explain briefly why it matches.\n"
-            "- Output JSON only with keys: l3_selected ({id,table_name,display_name}), reasons (array)"
-        )
+        user_question: str, l3_list: list[dict[str, Any]]
+    ) -> tuple[str, str]:
+        system = f"""You are an assistant that continues classification into the 3-level taxonomy.
+Task: From the given L3 tables, select exactly one L3 table that best fits the question.
+"""
+        user = f"""User question:
+{user_question}
+
+Available L3 tables (list of L3Table objects):
+{json.dumps(l3_list, ensure_ascii=False)}
+
+Instructions:
+- Choose exactly one L3 table.
+- Explain briefly why it matches.
+- Output JSON only with keys: l3_selected ({{id,table_name,display_name}}), reasons (array)
+"""
         return system, user
 
-    def _fetch_table_schema_dict(self, table_name: str) -> Dict[str, Any]:
+    @staticmethod
+    def _fetch_table_schema_dict(table_name: str) -> dict[str, Any]:
         sql = (
             "SELECT column_name, data_type, is_nullable "
             "FROM information_schema.columns "
@@ -126,34 +134,34 @@ class RoutingService:
     def _build_step4_prompt(
         self,
         user_question: str,
-        l3_selected: Dict[str, Any],
-        l3_schema: Dict[str, Any],
-        constraints: Dict[str, Any],
-    ) -> Tuple[str, str]:
-        system = (
-            "You are an assistant that generates SQL for PostgreSQL/PostGIS. "
-            "Return JSON with final_sql {sql, params}, assumptions (array), notes (array)."
-        )
-        user = (
-            "User question:\n" + user_question + "\n\n"
-            "Chosen L3:\n" + json.dumps(l3_selected, ensure_ascii=False) + "\n\n"
-            "Full schema of the chosen L3 table:\n"
-            + json.dumps(l3_schema, ensure_ascii=False)
-            + "\n\n"
-            "Optional constraints (JSON):\n"
-            + json.dumps(constraints, ensure_ascii=False)
-            + "\n\n"
-            "Instructions:\n"
-            "- Understand the intent (lookup / filter / aggregate / spatial).\n"
-            "- Generate parameterized SQL for PostgreSQL/PostGIS with named params (:q,:iso,:lng,:lat,:meters,:limit).\n"
-            "- Do not SELECT *; only include necessary fields.\n"
-            "- If spatial, assume SRID=4326.\n"
-            "- Respect constraints.limit if provided; otherwise use a default limit."
-        )
+        l3_selected: dict[str, Any],
+        l3_schema: dict[str, Any],
+        constraints: dict[str, Any],
+    ) -> tuple[str, str]:
+        system = "You are an assistant that generates SQL for PostgreSQL/PostGIS. Return JSON with final_sql {sql, params}, assumptions (array), notes (array)."
+        user = f"""User question:
+{user_question}
+
+Chosen L3: 
+{json.dumps(l3_selected, ensure_ascii=False)}
+
+Full schema of the chosen L3 table:
+{json.dumps(l3_schema, ensure_ascii=False)}
+
+Optional constraints (JSON):
+{json.dumps(constraints, ensure_ascii=False)}
+
+Instructions:
+- Understand the intent (lookup / filter / aggregate / spatial).
+- Generate parameterized SQL for PostgreSQL/PostGIS with named params (:q,:iso,:lng,:lat,:meters,:limit).
+- Do not SELECT *; only include necessary fields.
+- If spatial, assume SRID=4326.
+- Respect constraints.limit if provided; otherwise use a default limit.
+"""
         return system, user
 
     # -------- Public API --------
-    def route(self, user_question: str, limit: int = 100) -> Dict[str, Any]:
+    def route(self, user_question: str, limit: int = 100) -> dict[str, Any]:
         """执行四步路由，返回完整的每步输入与输出。"""
         # Step1: L1
         l1_objs = ThreeLevelService.get_all_l1_categories()
@@ -173,7 +181,7 @@ class RoutingService:
         l1_ids = [int(i["id"]) for i in d1.get("l1_selected", [])]
 
         # Step2: L2
-        l2_all: List[Dict[str, Any]] = []
+        l2_all: list[dict[str, Any]] = []
         for l1_id in l1_ids:
             l2_cards = ThreeLevelService.get_l2_cards_by_l1(l1_id)
             l2_all.extend(
@@ -194,7 +202,7 @@ class RoutingService:
         l2_ids = [int(i["id"]) for i in d2.get("l2_selected", [])]
 
         # Step3: L3
-        l3_all: List[Dict[str, Any]] = []
+        l3_all: list[dict[str, Any]] = []
         for l2_id in l2_ids:
             l3_tables = ThreeLevelService.get_l3_tables_by_l2(l2_id)
             l3_all.extend(
