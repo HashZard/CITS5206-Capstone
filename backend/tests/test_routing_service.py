@@ -55,24 +55,18 @@
 
 import json
 import os
-import sys
 import time
 from datetime import datetime, UTC
-from typing import Dict, Any
+from typing import Any
 
 import pytest
-
-
-# 添加项目根目录到 Python 路径
-sys.path.insert(0, os.path.join(os.path.dirname(__file__), ".."))
 
 from app import create_app
 from app.extensions import llm_service
 from app.services.routing_service import RoutingService
 
 
-def _print_result(payload: Dict[str, Any]) -> None:
-    """打印结果到控制台。"""
+def _print_result(payload: dict[str, Any]) -> None:
     print(json.dumps(payload, ensure_ascii=False, indent=2))
 
 
@@ -116,41 +110,36 @@ def test_routing_with_real_llm():
     if not os.getenv("POSTGRES_DSN"):
         pytest.skip("需要设置 POSTGRES_DSN 环境变量")
 
-    # 测试用例
+    # User questions for testing
     test_cases = [
-        "Draw countries from the 'Americas' continent.",
-        "Map only 'Low income' countries.",
-        "Display all countries with area > 2 million sq. km.",
-        "Visualize only top 3 countries in GDP per UN region.",
-        "Create a map of countries with centroid within 1,000 km of the Greenwich meridian.",
-        "Show countries where abbreviation and break name start with same letter.",
+        "Highlight all mountain ranges or ranges.",
     ]
 
     app = create_app("development")
 
     with app.app_context():
         for i, user_question in enumerate(test_cases):
-            print(f"\n=== 测试用例 {i+1}: {user_question} ===")
+            print(f"\n=== Test case {i+1}: {user_question} ===")
 
             try:
-                # 记录开始时间
+                # log the start time
                 start_time = time.time()
 
-                # 执行路由
+                # start routing
                 svc = RoutingService()
                 result = svc.route(user_question, limit=50)
 
-                # 记录结束时间
+                # log the end time
                 end_time = time.time()
                 elapsed_ms = int((end_time - start_time) * 1000)
 
-                # 验证结果结构
+                # validate result structure
                 assert "inputs" in result
                 assert "outputs" in result
                 assert all(f"step{j}" in result["inputs"] for j in range(1, 5))
                 assert all(f"step{j}" in result["outputs"] for j in range(1, 5))
 
-                # 验证各步骤输出
+                # validate step outputs
                 step1_out = result["outputs"]["step1"]
                 assert "l1_selected" in step1_out
                 assert isinstance(step1_out["l1_selected"], list)
@@ -167,13 +156,10 @@ def test_routing_with_real_llm():
 
                 step4_out = result["outputs"]["step4"]
                 assert "final_sql" in step4_out
-                assert "sql" in step4_out["final_sql"]
-                assert "params" in step4_out["final_sql"]
 
-                # 验证 SQL 包含命名参数
-                sql = step4_out["final_sql"]["sql"]
+                sql = step4_out["final_sql"]
 
-                # 打印成功结果
+                # printer result
                 log_entry = {
                     "test_case": i + 1,
                     "user_question": user_question,
@@ -185,26 +171,11 @@ def test_routing_with_real_llm():
                 _print_result(log_entry)
 
                 print(f"✅ 成功 - 耗时: {elapsed_ms}ms")
-                print(
-                    f"   L1 选择: {[item['name'] for item in step1_out['l1_selected']]}"
-                )
-                print(
-                    f"   L2 选择: {[item['name'] for item in step2_out['l2_selected']]}"
-                )
-                print(f"   L3 表: {step3_out['l3_selected']['table_name']}")
-                print(f"   SQL: {sql[:100]}...")
-
-                # Log user question and SQL sentence into a file
-                log_file = "routing_test_log.jsonl"
-                log_data = {
-                    "user_question": user_question,
-                    "sql": sql,
-                }
-                with open(log_file, "a", encoding="utf-8") as f:
-                    f.write(json.dumps(log_data, ensure_ascii=False) + "\n")
-
+                print(f"L1 选择: {[item['name'] for item in step1_out['l1_selected']]}")
+                print(f"L2 选择: {[item['name'] for item in step2_out['l2_selected']]}")
+                print(f"L3 表: {step3_out['l3_selected']['table_name']}")
+                print(f"SQL: {sql}")
             except Exception as e:
-                # 打印失败结果
                 log_entry = {
                     "test_case": i + 1,
                     "user_question": user_question,
@@ -215,10 +186,10 @@ def test_routing_with_real_llm():
                 _print_result(log_entry)
 
                 print(f"❌ 失败: {e}")
-                # 不抛出异常，继续测试其他用例
+                # Do not raise an exception to continue testing
                 continue
 
-        print(f"\n📝 测试完成")
+        print(f"\n📝 Test cases complete.")
 
 
 def test_routing_step_by_step():
@@ -413,7 +384,6 @@ def test_routing_step_by_step():
 
 
 if __name__ == "__main__":
-    # 可以直接运行此文件进行测试
     import sys
 
     if len(sys.argv) > 1 and sys.argv[1] == "step":

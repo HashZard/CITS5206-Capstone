@@ -1,16 +1,16 @@
 from __future__ import annotations
 import json
 from typing import Any
+from textwrap import dedent
 
 from app.extensions import db
 from app.extensions import llm_service
-
 from app.services.three_level_service import ThreeLevelService
 from app.services.llm_service import LLMResponse
 
 
 class RoutingService:
-    """封装 L1→L2→L3→SQL 四步在线路由流程。"""
+    """Encapsulates the four-step online routing process: L1 → L2 → L3 → SQL"""
 
     def __init__(self, lang: str = "en"):
         self.lang = lang
@@ -43,126 +43,190 @@ class RoutingService:
     def _build_step1_prompt(
         user_question: str, l1_list: list[dict[str, Any]]
     ) -> tuple[str, str]:
-        system = f"""You are an assistant that routes a user question into a 3-level taxonomy.
-Task: Select the most relevant L1 categories for the question. Output JSON only.
-"""
-        user = f"""User question:
-{user_question}
-
-Available L1 categories (list of L1Category objects):
-{json.dumps(l1_list, ensure_ascii=False)}
-
-Instructions:
-- Pick 1–2 L1 categories that best match the intent.
-- Explain briefly why they match.
-- Output JSON only with keys: l1_selected (array of {{id,name}}), reasons (array)
-"""
-        return system, user
+        system = """
+            You are an assistant that routes a user question into a 3-level taxonomy.
+            Task: 
+            - Select the most relevant L1 categories for the question.
+            - Pick 1–2 L1 categories that best match the intent.
+            Instructions:
+            1. Only output JSON, nothing else.
+            2. JSON must have exactly two keys: 
+               - "l1_selected": an array of objects with keys "id" (string) and "name" (string)
+               - "reasons": an array of strings explaining briefly why each category was chosen
+            3. Do not include any text outside the JSON.
+            4. Example of correct JSON format:
+            {
+              "l1_selected": [{"id": "123", "name": "Software"}],
+              "reasons": ["The question is about software development."]
+            }
+        """
+        user = f"""
+            User question:
+            {user_question}
+            
+            Available L1 categories (list of L1Category objects):
+            {json.dumps(l1_list, ensure_ascii=False)}
+        """
+        return dedent(system).strip(), dedent(user).strip()
 
     @staticmethod
     def _build_step2_prompt(
         user_question: str, l2_list: list[dict[str, Any]]
     ) -> tuple[str, str]:
-        system = """You are an assistant that continues classification into the 3-level taxonomy.
-Task: From the given L2 categories, select the most relevant ones. Output JSON only.
-"""
-        user = f"""User question:
-{user_question}
-
-Available L2 categories (list of L2Card objects):
-{json.dumps(l2_list, ensure_ascii=False)}
-
-Instructions:
-- Pick 1–2 L2 categories that best match the intent.
-- Explain briefly why they match.
-- Output JSON only with keys: l2_selected (array of {{id,name}}), reasons
-"""
-        return system, user
+        system = """
+            You are an assistant that continues classification into the 3-level taxonomy.
+            Task:
+            - From the given L2 categories, select the most relevant ones.
+            - Pick 1–2 L2 categories that best match the intent. 
+            Instructions:
+            1. Only output JSON, nothing else.
+            2. JSON must have exactly two keys:
+               - "l2_selected": an array of objects with keys "id" (string) and "name" (string)
+               - "reasons": an array of strings explaining briefly why each category was chosen
+            3. The order of "reasons" should correspond to the order of "l2_selected"
+            4. Do not include any extra text outside the JSON.
+            5. Example of correct JSON:
+            {
+              "l2_selected": [{"id": "456", "name": "Backend Development"}],
+              "reasons": ["The question is about backend programming."]
+            }
+        """
+        user = f"""
+            User question:
+            {user_question}
+            
+            Available L2 categories (list of L2Card objects):
+            {json.dumps(l2_list, ensure_ascii=False)}
+        """
+        return dedent(system).strip(), dedent(user).strip()
 
     @staticmethod
     def _build_step3_prompt(
         user_question: str, l3_list: list[dict[str, Any]]
     ) -> tuple[str, str]:
-        system = f"""You are an assistant that continues classification into the 3-level taxonomy.
-Task: From the given L3 tables, select exactly one L3 table that best fits the question.
-"""
-        user = f"""User question:
-{user_question}
-
-Available L3 tables (list of L3Table objects):
-{json.dumps(l3_list, ensure_ascii=False)}
-
-Instructions:
-- Choose exactly one L3 table.
-- Explain briefly why it matches.
-- Output JSON only with keys: l3_selected ({{id,table_name,display_name}}), reasons (array)
-"""
-        return system, user
+        system = """
+            You are an assistant that continues classification into the 3-level taxonomy.
+            Task:
+            - From the given L3 tables, select exactly one L3 table that best fits the question.
+            Instructions:
+            1. Only output JSON, nothing else.
+            2. JSON must have exactly two keys:
+               - "l3_selected": an object with keys "id" (string), "table_name" (string), "display_name" (string)
+               - "reasons": an array of strings explaining briefly why this table was chosen
+            3. Choose exactly one L3 table.
+            4. Do not include any extra text or formatting outside the JSON.
+            5. Example of correct JSON:
+            {
+              "l3_selected": {"id": "789", "table_name": "orders", "display_name": "Order Table"},
+              "reasons": ["The question asks about order data."]
+            }
+        """
+        user = f"""
+            User question:
+            {user_question}
+            
+            Available L3 tables (list of L3Table objects):
+            {json.dumps(l3_list, ensure_ascii=False)}
+        """
+        return dedent(system).strip(), dedent(user).strip()
 
     @staticmethod
     def _fetch_table_schema_dict(table_name: str) -> dict[str, Any]:
-        sql = (
-            "SELECT column_name, data_type, is_nullable "
-            "FROM information_schema.columns "
-            "WHERE table_schema='public' AND table_name=:t ORDER BY ordinal_position"
-        )
+        structure_query = """
+              SELECT column_name, data_type, is_nullable
+              FROM information_schema.columns
+              WHERE table_schema = 'ne_data'
+                AND table_name = :t
+              ORDER BY ordinal_position;
+              """
+
         with db.engine.connect() as conn:
-            rows = conn.execute(db.text(sql), {"t": table_name}).mappings().all()
-        fields = [
-            {
-                "name": r["column_name"],
-                "type": r["data_type"],
-                "nullable": (r["is_nullable"].lower() == "yes"),
-            }
-            for r in rows
-        ]
-        try:
-            gsql = (
-                "SELECT f_geometry_column AS column_name, type, srid "
-                "FROM geometry_columns WHERE f_table_schema='public' AND f_table_name=:t"
+            rows = (
+                conn.execute(db.text(structure_query), {"t": table_name})
+                .mappings()
+                .all()
             )
+            fields = [
+                {
+                    "name": r["column_name"],
+                    "type": r["data_type"],
+                    "nullable": (r["is_nullable"].lower() == "yes"),
+                }
+                for r in rows
+            ]
+        try:
+            geo_structure_query = """
+                   SELECT f_geometry_column AS column_name, type, srid
+                   FROM geometry_columns
+                   WHERE f_table_schema = 'public'
+                     AND f_table_name = :t;
+                   """
             with db.engine.connect() as conn:
-                grows = conn.execute(db.text(gsql), {"t": table_name}).mappings().all()
-            for gr in grows:
+                geo_structure_rows = (
+                    conn.execute(db.text(geo_structure_query), {"t": table_name})
+                    .mappings()
+                    .all()
+                )
+            for geo_row in geo_structure_rows:
                 for f in fields:
-                    if f["name"] == gr["column_name"]:
-                        f["type"] = f"Geometry({gr['type']},{gr['srid']})"
+                    if f["name"] == geo_row["column_name"]:
+                        f["type"] = f"Geometry({geo_row['type']},{geo_row['srid']})"
         except Exception:
             pass
-        return {"table": f"public.{table_name}", "fields": fields}
 
+        return {"table": f"ne_data.{table_name}", "fields": fields}
+
+    @staticmethod
     def _build_step4_prompt(
-        self,
         user_question: str,
         l3_selected: dict[str, Any],
         l3_schema: dict[str, Any],
         constraints: dict[str, Any],
     ) -> tuple[str, str]:
-        system = "You are an assistant that generates SQL for PostgreSQL/PostGIS. Return JSON with final_sql {sql, params}, assumptions (array), notes (array)."
-        user = f"""User question:
-{user_question}
-
-Chosen L3: 
-{json.dumps(l3_selected, ensure_ascii=False)}
-
-Full schema of the chosen L3 table:
-{json.dumps(l3_schema, ensure_ascii=False)}
-
-Optional constraints (JSON):
-{json.dumps(constraints, ensure_ascii=False)}
-
-Instructions:
-- Understand the intent (lookup / filter / aggregate / spatial).
-- Generate parameterized SQL for PostgreSQL/PostGIS with named params (:q,:iso,:lng,:lat,:meters,:limit).
-- Do not SELECT *; only include necessary fields.
-- If spatial, assume SRID=4326.
-- Respect constraints.limit if provided; otherwise use a default limit.
-"""
-        return system, user
+        system = """
+            You are an assistant that generates executable SQL for PostgreSQL/PostGIS.
+            
+            Output requirements:
+            1. Only return valid JSON, nothing else.
+            2. JSON must have exactly three keys:
+               - "final_sql": string containing a single executable SQL query
+               - "assumptions": array of strings explaining assumptions you made
+               - "notes": array of strings with implementation details, caveats, or alternative approaches
+            
+            SQL generation rules:
+            - Understand the intent: lookup / filter / aggregate / spatial.
+            - Generate fully executable SQL (no parameters like $1 or ?).
+            - Avoid SELECT *; only include the necessary fields based on schema and question.
+            - If spatial, assume SRID=4326 and use appropriate PostGIS functions.
+            - Decide the LIMIT value based on the user's question; otherwise use the provided optional constraints.
+            - Do not generate DDL, EXPLAIN, or comments in SQL.
+            - Only one query should be returned inside "final_sql".
+            SELECT formal_en, pop_est, geom FROM ne_10m_admin_0_countries_chn WHERE subregion = 'Western Africa' AND pop_est > 20000000;
+            Example of correct JSON:
+            {
+              "final_sql": "SELECT id, name, geom FROM places WHERE ST_Within(geom, ST_GeomFromText('POLYGON((...))', 4326)) LIMIT 50;",
+              "assumptions": ["The question refers to places within a bounding polygon."],
+              "notes": ["geom column is assumed to be in EPSG:4326.", "LIMIT value chosen based on default constraint."]
+            }
+        """
+        user = f"""
+            User question:
+            {user_question}
+            
+            Chosen L3: 
+            {json.dumps(l3_selected, ensure_ascii=False)}
+            
+            Full schema of the chosen L3 table:
+            {json.dumps(l3_schema, ensure_ascii=False)}
+            
+            Optional constraints (JSON):
+            {json.dumps(constraints, ensure_ascii=False)}
+        """
+        return dedent(system).strip(), dedent(user).strip()
 
     # -------- Public API --------
     def route(self, user_question: str, limit: int = 100) -> dict[str, Any]:
-        """执行四步路由，返回完整的每步输入与输出。"""
+        """Execute the four-step routing process and return all inputs and outputs."""
         # Step1: L1
         l1_objs = ThreeLevelService.get_all_l1_categories()
         l1_list = [
@@ -249,4 +313,8 @@ Instructions:
                 "step3": d3,
                 "step4": d4,
             },
+            "token_consumed": r1.tokens_used
+            + r2.tokens_used
+            + r3.tokens_used
+            + r4.tokens_used,
         }
