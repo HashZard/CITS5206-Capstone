@@ -35,6 +35,8 @@ def data_import(file_name: str):
 
     # Write GeoDataFrame to database
     try:
+        # Convert column names to lowercase
+        gdf.columns = [col.lower() for col in gdf.columns]
         gdf.to_postgis(
             name=file_name.split(".")[0],
             con=engine,
