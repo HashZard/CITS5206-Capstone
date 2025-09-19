@@ -116,7 +116,7 @@ def geo_reason_mock():
         mock_path = os.path.join(os.path.dirname(__file__), "mock.json")
         with open(mock_path, "r") as f:
             mock_data = json.load(f)
-        # 读取最后一条reason作为最终reason（如果是list的话）
+        # 读取最后一条reason作为最终reason（如果是list的话）（这里也得根据mock.json的格式改）
         final_reason = (
             mock_data.get("sql", {}).get("final_sql", {}).get("reasoning", "")
             or (mock_data.get("l3", {}).get("reasons") or [""])[-1]
