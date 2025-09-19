@@ -9,15 +9,7 @@ query_bp = Blueprint("query", __name__)
 
 
 def _err(code: str, msg: str, http=400, details=None):
-    return (
-        jsonify(
-            {
-                "ok": False,
-                "error": {"code": code, "message": msg, "details": details or {}},
-            }
-        ),
-        http,
-    )
+   return jsonify({"detail": msg}), http
 
 
 def _build_reason_sql(qin: QueryIn) -> tuple[str, dict[str, Any], list[str]]:
@@ -92,13 +84,17 @@ def geo_reason():
         resu = sql_service.run_sql(sql, params)
         if not resu.get("ok"):
             return _err("INTERNAL_ERROR", str(resu.get("error")), 500)
-        out = QueryOut(
-            ok=True,
-            data=resu.get("data"),
-            sql=sql_with_params,
-            meta=resu.get("meta"),
-            reasons=reasons,
-        )
+        # Use the last reason as the final reason（ if it is list）
+        # 等返回reason service写完后可以删掉（如果service可以直接返回最后一条reason的话）
+        final_reason = reasons if isinstance(reasons, str) else (reasons[-1] if reasons else "")
+        # 先不用queryout，等service和mock.json都改完了再统一
+        out = {
+            "results": resu["results"],
+            "sql": sql_with_params,
+            "is_fallback": False,
+            "model_used": "gpt-5-nano",
+            "reasoning": final_reason, # 前面删掉的话这里直接改成reason
+        }
         return jsonify(out.__dict__), 200
     except Exception as e:
         return _err("INTERNAL_ERROR", str(e), 500)
@@ -120,11 +116,11 @@ def geo_reason_mock():
         mock_path = os.path.join(os.path.dirname(__file__), "mock.json")
         with open(mock_path, "r") as f:
             mock_data = json.load(f)
-        reasons = [
-            f"L1 Selected: {mock_data['l1']['selected'][0]['name']}, Reason: {mock_data['l1']['reasons'][0]}",
-            f"L2 Selected: {mock_data['l2']['selected'][0]['name']}, Reason: {mock_data['l2']['reasons'][0]}",
-            f"L3 Selected: {mock_data['l3']['selected']['display_name']}, Reason: {mock_data['l3']['reasons'][0]}",
-        ]
+        # 读取最后一条reason作为最终reason（如果是list的话）
+        final_reason = (
+            mock_data.get("sql", {}).get("final_sql", {}).get("reasoning", "")
+            or (mock_data.get("l3", {}).get("reasons") or [""])[-1]
+        )
         sql = mock_data["sql"]["final_sql"]["sql"]
     except RuntimeError as e:
         return _err("SERVICE_UNAVAILABLE", str(e), 503)
@@ -140,13 +136,13 @@ def geo_reason_mock():
         resu = sql_service.run_sql(sql, params={})
         if not resu.get("ok"):
             return _err("INTERNAL_ERROR", str(resu.get("error")), 500)
-        out = QueryOut(
-            ok=True,
-            data=resu.get("data"),
-            sql=sql,
-            meta=resu.get("meta"),
-            reasons=reasons,
-        )
+        out = {
+            "results": resu["results"],
+            "sql": sql,
+            "is_fallback": False,
+            "model_used": "mock",
+            "reasoning": final_reason,
+        }
         return jsonify(out.__dict__), 200
     except Exception as e:
         return _err("INTERNAL_ERROR", str(e), 500)

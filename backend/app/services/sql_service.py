@@ -102,25 +102,40 @@ def run_sql(sql: str, params: dict | None = None) -> Dict[str, Any]:
     返回格式：
     {
         "ok": bool,
-        "data": List[Dict],
+        "results": {
+            "columns": List[str],
+            "rows": List[List[Any]]
+        },
         "meta": Dict,
         "error": str | None
     }
     """
     try:
-        rows, meta = execute(sql, params or {})
-        geom_field = None
-        if rows:
-            geom_candidates = [
-                k for k in rows[0].keys() if k.startswith("geom")
-            ]
-            geom_field = geom_candidates[0] if geom_candidates else "geom"
-        geojson = rows_to_feature_collection(rows, geom_field=geom_field)
-        return {"ok": True, "data": geojson, "meta": meta, "error": None}
+        rows_dicts, meta = execute(sql, params or {})
+
+        # 将 List[Dict] → (columns, rows)
+        if rows_dicts:
+            columns = list(rows_dicts[0].keys())
+            rows = [[r.get(c) for c in columns] for r in rows_dicts]
+        else:
+            columns, rows = [], []
+
+        return {
+            "ok": True,
+            "results": {
+                "columns": columns,
+                "rows": rows
+            },
+            "meta": meta,
+            "error": None
+        }
     except Exception as e:
         return {
             "ok": False,
-            "data": {},
+            "results": {
+                "columns": [],
+                "rows": []
+            },
             "meta": {},
             "error": str(e)
         }
