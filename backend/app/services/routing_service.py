@@ -201,7 +201,7 @@ class RoutingService:
             - Decide the LIMIT value based on the user's question; otherwise use the provided optional constraints.
             - Do not generate DDL, EXPLAIN, or comments in SQL.
             - Only one query should be returned inside "final_sql".
-            SELECT formal_en, pop_est, geom FROM ne_10m_admin_0_countries_chn WHERE subregion = 'Western Africa' AND pop_est > 20000000;
+            
             Example of correct JSON:
             {
               "final_sql": "SELECT id, name, geom FROM places WHERE ST_Within(geom, ST_GeomFromText('POLYGON((...))', 4326)) LIMIT 50;",
