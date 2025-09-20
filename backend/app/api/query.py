@@ -101,11 +101,11 @@ def geo_reason():
         dict_results = [dict(zip(cols, r)) for r in rows]
         
         out = QueryOut(
+            sql=sql_with_params
             results=dict_results,
-            sql=sql_with_params,
-            is_fallback=False,
-            model_used="gpt-5-nano",
             reasoning=reason_list,
+            model_used="gpt-5-nano",
+            is_fallback=False,
         )
         return jsonify(out.__dict__), 200
     except Exception as e:
@@ -187,11 +187,11 @@ def geo_reason_mock():
         rows = resu["results"]["rows"]
         dict_results = [dict(zip(cols, r)) for r in rows]
         out = QueryOut(
+            sql=sql
             results=dict_results,
-            sql=sql,
-            is_fallback=False,
-            model_used=f"mock_case_{test_case_id}",
             reasoning=reason_list,
+            model_used=f"mock_case_{test_case_id}",
+            is_fallback=False,
         )
         return jsonify(out.__dict__), 200
     except Exception as e:
