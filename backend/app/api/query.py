@@ -96,8 +96,12 @@ def geo_reason():
         resu = sql_service.run_sql(sql, params)
         if not resu.get("ok"):
             return _err("INTERNAL_ERROR", str(resu.get("error")), 500)
+        cols = resu["results"]["columns"]
+        rows = resu["results"]["rows"]
+        dict_results = [dict(zip(cols, r)) for r in rows]
+        
         out = QueryOut(
-            results=resu["results"],
+            results=dict_results,
             sql=sql_with_params,
             is_fallback=False,
             model_used="gpt-5-nano",
@@ -162,7 +166,7 @@ def geo_reason_mock():
         step4 = outputs.get("step4", {})
         sql = (step4.get("final_sql") or "").strip()
         if not sql:
-            return _err("BAD_MOCK", "mock.json missing outputs.step4.final_sql", 500)
+            return _err("BAD_MOCK", "mock.json missing outputs.step4.final_sql", 500)        
 
         reason_list = _extract_final_reason(outputs)
     except RuntimeError as e:
@@ -179,8 +183,11 @@ def geo_reason_mock():
         resu = sql_service.run_sql(sql, params={})
         if not resu.get("ok"):
             return _err("INTERNAL_ERROR", str(resu.get("error")), 500)
+        cols = resu["results"]["columns"]
+        rows = resu["results"]["rows"]
+        dict_results = [dict(zip(cols, r)) for r in rows]
         out = QueryOut(
-            results=resu["results"],
+            results=dict_results,
             sql=sql,
             is_fallback=False,
             model_used=f"mock_case_{test_case_id}",
