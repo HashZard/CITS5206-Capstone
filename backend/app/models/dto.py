@@ -1,5 +1,5 @@
 from dataclasses import dataclass, field
-from typing import List, Dict, Any, Optional
+from typing import Any
 
 ALLOWED_TABLES = {
     "l1_category",
@@ -22,19 +22,18 @@ class QueryIn:
 
 @dataclass
 class QueryOut:
-    ok: bool
-    data: List[Dict[str, Any]] = field(default_factory=list)
-    sql: Optional[str] = None
-    reasons: List[str] = field(default_factory=list)
-    meta: Dict[str, Any] = field(default_factory=dict)
-    error: Optional[Dict[str, Any]] = None
+    sql: str
+    results: list[dict[str, Any]]
+    reasoning: list[str]
+    model_used: str
+    is_fallback: bool = False
 
 
 @dataclass
 class PreviewOut:
     ok: bool
-    sql: Optional[str] = None
-    reasons: List[str] = field(default_factory=list)
-    warnings: List[str] = field(default_factory=list)
-    meta: Dict[str, Any] = field(default_factory=dict)
-    error: Optional[Dict[str, Any]] = None
+    sql: str = None
+    reasons: list[str] = field(default_factory=list)
+    warnings: list[str] = field(default_factory=list)
+    meta: dict[str, Any] = field(default_factory=dict)
+    error: dict[str, Any] | None = None
