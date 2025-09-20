@@ -9,7 +9,8 @@ query_bp = Blueprint("query", __name__)
 
 
 def _err(code: str, msg: str, http=400, details=None):
-   return jsonify({"detail": msg}), http
+    return jsonify({"detail": msg}), http
+
 
 # 提取最后一步reason
 def _extract_final_reason(outputs: dict) -> list[str]:
@@ -21,6 +22,7 @@ def _extract_final_reason(outputs: dict) -> list[str]:
     if isinstance(rs, list):
         return rs
     return []
+
 
 def _build_reason_sql(qin: "QueryIn") -> tuple[str, Dict[str, Any], dict]:
     question = (qin.question or "").strip()
@@ -58,11 +60,7 @@ def geo_reason_preview():
             sql_with_params = sql_with_params.replace(f":{k}", repr(v))
         reason_list = _extract_final_reason(outputs)
         out = PreviewOut(
-            ok=True,
-            sql=sql_with_params,
-            reasons=reason_list,
-            warnings=[],
-            meta={}
+            ok=True, sql=sql_with_params, reasons=reason_list, warnings=[], meta={}
         )
         return jsonify(out.__dict__), 200
     except RuntimeError as e:
@@ -114,6 +112,33 @@ def geo_reason():
 # User question -> fixed SQL + fixed reasons
 @query_bp.route("/query/mock", methods=["POST"])
 def geo_reason_mock():
+    """
+    This mock endpoint is for testing purposes only.
+
+    Return format（JSON）：
+    {
+        "sql": str,
+        "results": list[dict[str, Any]], # Table results of SQL execution
+        "reasoning": list[str], # The model's reasons for generating this SQL
+        "model_used": str,
+        "is_fallback": bool # If SQL sentence falls back to SELECT * FROM ...
+    }
+
+    Example (JSON):
+    {
+        "sql": "SELECT * FROM ne_data.ne_cities WHERE name LIKE 'S%' ORDER BY population DESC LIMIT 10",
+        "results": [
+            {"name": "San Francisco", "population": 883305, ...},
+            {"name": "Seattle", "population": 744955, ...},
+        ],
+        "reasoning": [
+            "The question is about cities in the United States.",
+            "The SQL sentence falls back to SELECT * FROM ne_data.ne_cities.",
+        ],
+        "model_used": "gpt-5",
+        "is_fallback": true
+    }
+    """
     try:
         payload = request.get_json(silent=True) or {}
         qin = QueryIn(**payload)
@@ -121,7 +146,7 @@ def geo_reason_mock():
 
         # 可选测试用例，默认1
         test_case_id = payload.get("test_case", 1)
-        
+
         # Read from mock.json
         import os
 
