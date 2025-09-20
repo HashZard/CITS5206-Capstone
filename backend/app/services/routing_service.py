@@ -188,10 +188,8 @@ class RoutingService:
             
             Output requirements:
             1. Only return valid JSON, nothing else.
-            2. JSON must have exactly three keys:
+            2. JSON must have exactly one key:
                - "final_sql": string containing a single executable SQL query
-               - "assumptions": array of strings explaining assumptions you made
-               - "notes": array of strings with implementation details, caveats, or alternative approaches
             
             SQL generation rules:
             - Understand the intent: lookup / filter / aggregate / spatial.
@@ -205,8 +203,6 @@ class RoutingService:
             Example of correct JSON:
             {
               "final_sql": "SELECT id, name, geom FROM places WHERE ST_Within(geom, ST_GeomFromText('POLYGON((...))', 4326)) LIMIT 50;",
-              "assumptions": ["The question refers to places within a bounding polygon."],
-              "notes": ["geom column is assumed to be in EPSG:4326.", "LIMIT value chosen based on default constraint."]
             }
         """
         user = f"""
