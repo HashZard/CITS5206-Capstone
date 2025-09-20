@@ -22,12 +22,11 @@ class QueryIn:
 
 @dataclass
 class QueryOut:
-    ok: bool
-    data: List[Dict[str, Any]] = field(default_factory=list)
-    sql: Optional[str] = None
-    reasons: List[str] = field(default_factory=list)
-    meta: Dict[str, Any] = field(default_factory=dict)
-    error: Optional[Dict[str, Any]] = None
+    results: Dict[str, Any] = field(default_factory=dict)
+    sql: Optional[str] = None 
+    is_fallback: bool = False
+    model_used: Optional[str] = None
+    reasoning: List[str] = field(default_factory=list)
 
 
 @dataclass

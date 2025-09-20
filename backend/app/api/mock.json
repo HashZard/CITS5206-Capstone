@@ -1,53 +1,268 @@
 {
-    "l1": {
-        "selected": [
-            {
-                "id": 1,
-                "name": "Administrative Boundaries / Countries"
-            }
-        ],
-        "reasons": [
-            "The question pertains to countries and their populations, which directly relates to administrative boundaries and attributes of countries.",
-            "Mapping populous countries by income group involves demographic data, aligning with the population aspect in this category."
-        ]
-    },
-    "l2": {
-        "selected": [
-            {
-                "id": 1,
-                "name": "Country Boundaries & Attributes"
-            }
-        ],
-        "reasons": [
-            "The question pertains to mapping countries based on their population, which falls under the category of country boundaries and attributes.",
-            "This category includes information about population, which is essential for determining the most populous countries within different income groups."
-        ]
-    },
-    "l3": {
-        "selected": {
-            "id": 1,
-            "table_name": "ne_10m_admin_0_countries_chn",
-            "display_name": "Country/Region Boundary Data"
+  "cases": [
+    {
+      "test_case": 1,
+      "user_question": "Map all featurecla entries larger than 500,000 km².",
+      "status": "success",
+      "elapsed_ms": 48087,
+      "result": {
+        "inputs": {
+          "step1": "User question:\nMap all featurecla entries larger than 500,000 km².\n\nAvailable L1 categories (list of L1Category objects):\n[{\"id\": 1, \"name\": \"Administrative Boundaries\", \"description\": \"Countries, subnational units, boundary lines, labels, and recognition status.\", \"dimension\": null, \"keywords\": [\"country\", \"admin\", \"boundary\", \"sovereignty\", \"labels\"]}, {\"id\": 2, \"name\": \"Base Layers\", \"description\": \"Land/ocean base layers and scale rank references.\", \"dimension\": null, \"keywords\": [\"land\", \"ocean\", \"base\", \"scale rank\"]}, {\"id\": 3, \"name\": \"Coastlines & Shorelines\", \"description\": \"Global coastlines and shoreline references for mapping.\", \"dimension\": null, \"keywords\": [\"coastline\", \"shoreline\", \"coast\", \"islands\"]}, {\"id\": 4, \"name\": \"Environment & Protected Areas\", \"description\": \"Parks and protected areas datasets.\", \"dimension\": null, \"keywords\": [\"parks\", \"protected\", \"environment\"]}, {\"id\": 5, \"name\": \"Geographic Regions and Landforms\", \"description\": \"Regions and landform boundaries and classifications.\", \"dimension\": null, \"keywords\": [\"region\", \"landform\", \"archipelago\", \"mountain\", \"desert\"]}, {\"id\": 6, \"name\": \"Human Geography & Infrastructure\", \"description\": \"Settlements and transport infrastructure layers.\", \"dimension\": null, \"keywords\": [\"population\", \"urban\", \"transport\", \"infrastructure\"]}, {\"id\": 7, \"name\": \"Marine & Bathymetry\", \"description\": \"Underwater terrain depth contours and marine references.\", \"dimension\": null, \"keywords\": [\"bathymetry\", \"depth\", \"marine\"]}, {\"id\": 8, \"name\": \"Natural Geography\", \"description\": \"Natural water bodies and physical geography datasets.\", \"dimension\": null, \"keywords\": [\"lake\", \"water\", \"ocean\", \"river\", \"reef\", \"hydro\"]}, {\"id\": 9, \"name\": \"Polar & Cryosphere\", \"description\": \"Polar regions including Antarctic ice shelves and claims.\", \"dimension\": null, \"keywords\": [\"antarctic\", \"ice\", \"cryosphere\"]}, {\"id\": 10, \"name\": \"Reference Layers\", \"description\": \"Global reference layers such as lines, time zones, and bounding boxes.\", \"dimension\": null, \"keywords\": [\"reference\", \"lines\", \"time zones\", \"bounding box\"]}, {\"id\": 11, \"name\": \"Uncategorized (Review)\", \"description\": \"Needs human review to assign appropriate category.\", \"dimension\": null, \"keywords\": [\"review\", \"uncategorized\"]}]",
+          "step2": "User question:\nMap all featurecla entries larger than 500,000 km².\n\nAvailable L2 categories (list of L2Card objects):\n[{\"id\": 1, \"name\": \"Boundary Lines\", \"description_short\": \"International boundary lines and disputed areas.\", \"keywords\": [\"boundary\", \"lines\", \"disputed\"], \"allowed_dimensions\": []}, {\"id\": 2, \"name\": \"Country Boundaries & Units\", \"description_short\": \"Country boundaries, sovereignty, and mapping units/subunits.\", \"keywords\": [\"country\", \"sovereignty\", \"units\", \"subunits\"], \"allowed_dimensions\": []}, {\"id\": 3, \"name\": \"Labels & Reference\", \"description_short\": \"Names, label points, seams, scale ranks, and groupings.\", \"keywords\": [\"labels\", \"names\", \"seams\", \"scale\"], \"allowed_dimensions\": []}, {\"id\": 4, \"name\": \"Other Administrative\", \"description_short\": \"Other administrative datasets.\", \"keywords\": [\"administrative\"], \"allowed_dimensions\": []}, {\"id\": 5, \"name\": \"Subnational Boundaries\", \"description_short\": \"First- and second-level administrative boundaries.\", \"keywords\": [\"admin1\", \"admin2\", \"states\", \"provinces\", \"counties\"], \"allowed_dimensions\": []}, {\"id\": 9, \"name\": \"Regions & Landforms\", \"description_short\": \"Geographic regions and landform polygons.\", \"keywords\": [\"region\", \"landform\"], \"allowed_dimensions\": []}]",
+          "step3": "User question:\nMap all featurecla entries larger than 500,000 km².\n\nAvailable L3 tables (list of L3Table objects):\n[{\"id\": 3, \"table_name\": \"ne_10m_geography_regions_polys\", \"display_name\": \"Geographic Regions & Landform Polygons\", \"summary\": \"Contains boundaries of various geographic regions and landforms (such as archipelagos, mountain ranges, deserts, etc.), with region and subregion annotations.\", \"core_fields\": [\"name\", \"namealt\", \"featurecla\", \"region\", \"subregion\", \"geom\"], \"keywords\": [\"region\", \"landform\", \"archipelago\", \"mountain range\", \"desert\", \"region\", \"subregion\"], \"use_cases\": [\"Search regions by category (featurecla)\", \"Filter by region/subregion\", \"Spatial relationship analysis\"]}, {\"id\": 1, \"table_name\": \"ne_10m_admin_0_countries_chn\", \"display_name\": \"Country/Region Boundary Data\", \"summary\": \"Contains boundaries, population, GDP, ISO/UN/WB codes of countries and regions, suitable for statistical and spatial queries.\", \"core_fields\": [\"name\", \"name_long\", \"adm0_a3\", \"iso_a3\", \"pop_est\", \"gdp_md\", \"continent\", \"geom\"], \"keywords\": [\"country\", \"sovereignty\", \"boundary\", \"population\", \"GDP\", \"ISO\", \"UN\", \"WB\", \"multilingual\"], \"use_cases\": [\"Locate countries by ISO/UN/WB codes\", \"Query country boundaries with spatial intersection\", \"Statistical population or GDP rankings\"]}, {\"id\": 9, \"table_name\": \"ne_10m_admin_0_map_units\", \"display_name\": \"Geographical Administrative Units Map Data\", \"summary\": \"The ne_10m_admin_0_map_units table provides detailed administrative and geographical data for countries and their subdivisions, including various identification codes, economic indicators, and classifications. This table supports analyses related to demographics, economics, and geographical mappings, making it useful for urban planning, cartography, and socio-economic research.\", \"core_fields\": [\"3-letter administrative code\", \"ISO codes\", \"SOVEREIGNT\", \"Population estimates\", \"GDP data\", \"ADMIN\", \"GEOUNIT\"], \"keywords\": [\"administrative units\", \"geographical data\", \"ISO codes\", \"population estimates\", \"GDP\", \"mapping\"], \"use_cases\": [\"Generating thematic maps for visual representation of demographic data.\", \"Analyzing the economic status of countries and regions for socio-economic research.\", \"Comparative studies on administrative differences and classifications between countries.\"]}, {\"id\": 8, \"table_name\": \"ne_10m_admin_0_map_subunits\", \"display_name\": \"Global Administrative Units and Demographics\", \"summary\": \"This table provides detailed information on global administrative units, including standardized country codes, names, and associated demographic and economic data. It is primarily used for analysis and visualization of geopolitical boundaries alongside population and economic indicators.\", \"core_fields\": [\"3-letter country code\", \"ISO Code\", \"Country Name\", \"Population Data\", \"GDP Data\", \"Administrative Notes\"], \"keywords\": [\"administrative units\", \"geographical boundaries\", \"demographics\", \"economic indicators\", \"country codes\"], \"use_cases\": [\"Mapping and visualizing population distribution across different administrative regions.\", \"Analyzing economic performance and GDP trends among countries and regions.\", \"Standardizing country identification for cross-national studies and reports.\"]}, {\"id\": 15, \"table_name\": \"ne_10m_admin_0_sovereignty\", \"display_name\": \"Global Sovereignty and Demographics Data\", \"summary\": \"This table provides comprehensive data about countries and their governance structures, incorporating essential demographic and economic metrics such as population and GDP. It serves as a foundational resource for geographic and economic analysis, supporting research on global development trends and national characteristics.\", \"core_fields\": [\"3-letter country code\", \"2-letter country code\", \"country name\", \"population\", \"GDP\", \"SOVEREIGNT\", \"INCOME_GRP\"], \"keywords\": [\"sovereignty\", \"demographics\", \"economy\", \"ISO codes\", \"country data\"], \"use_cases\": [\"Analyzing demographic changes over time by comparing population estimates across different countries.\", \"Conducting economic research using GDP data to identify trends in global economies and classify income levels of countries.\"]}]",
+          "step4": "User question:\nMap all featurecla entries larger than 500,000 km².\n\nChosen L3: \n{\"id\": \"3\", \"table_name\": \"ne_10m_geography_regions_polys\", \"display_name\": \"Geographic Regions & Landform Polygons\"}\n\nFull schema of the chosen L3 table:\n{\"table\": \"ne_data.ne_10m_geography_regions_polys\", \"fields\": [{\"name\": \"featurecla\", \"type\": \"text\", \"nullable\": true}, {\"name\": \"name\", \"type\": \"text\", \"nullable\": true}, {\"name\": \"namealt\", \"type\": \"text\", \"nullable\": true}, {\"name\": \"region\", \"type\": \"text\", \"nullable\": true}, {\"name\": \"subregion\", \"type\": \"text\", \"nullable\": true}, {\"name\": \"min_label\", \"type\": \"double precision\", \"nullable\": true}, {\"name\": \"max_label\", \"type\": \"double precision\", \"nullable\": true}, {\"name\": \"scalerank\", \"type\": \"integer\", \"nullable\": true}, {\"name\": \"label\", \"type\": \"text\", \"nullable\": true}, {\"name\": \"wikidataid\", \"type\": \"text\", \"nullable\": true}, {\"name\": \"name_ar\", \"type\": \"text\", \"nullable\": true}, {\"name\": \"name_bn\", \"type\": \"text\", \"nullable\": true}, {\"name\": \"name_de\", \"type\": \"text\", \"nullable\": true}, {\"name\": \"name_en\", \"type\": \"text\", \"nullable\": true}, {\"name\": \"name_es\", \"type\": \"text\", \"nullable\": true}, {\"name\": \"name_fr\", \"type\": \"text\", \"nullable\": true}, {\"name\": \"name_el\", \"type\": \"text\", \"nullable\": true}, {\"name\": \"name_hi\", \"type\": \"text\", \"nullable\": true}, {\"name\": \"name_hu\", \"type\": \"text\", \"nullable\": true}, {\"name\": \"name_id\", \"type\": \"text\", \"nullable\": true}, {\"name\": \"name_it\", \"type\": \"text\", \"nullable\": true}, {\"name\": \"name_ja\", \"type\": \"text\", \"nullable\": true}, {\"name\": \"name_ko\", \"type\": \"text\", \"nullable\": true}, {\"name\": \"name_nl\", \"type\": \"text\", \"nullable\": true}, {\"name\": \"name_pl\", \"type\": \"text\", \"nullable\": true}, {\"name\": \"name_pt\", \"type\": \"text\", \"nullable\": true}, {\"name\": \"name_ru\", \"type\": \"text\", \"nullable\": true}, {\"name\": \"name_sv\", \"type\": \"text\", \"nullable\": true}, {\"name\": \"name_tr\", \"type\": \"text\", \"nullable\": true}, {\"name\": \"name_vi\", \"type\": \"text\", \"nullable\": true}, {\"name\": \"name_zh\", \"type\": \"text\", \"nullable\": true}, {\"name\": \"ne_id\", \"type\": \"bigint\", \"nullable\": true}, {\"name\": \"name_fa\", \"type\": \"text\", \"nullable\": true}, {\"name\": \"name_he\", \"type\": \"text\", \"nullable\": true}, {\"name\": \"name_uk\", \"type\": \"text\", \"nullable\": true}, {\"name\": \"name_ur\", \"type\": \"text\", \"nullable\": true}, {\"name\": \"name_zht\", \"type\": \"text\", \"nullable\": true}, {\"name\": \"geometry\", \"type\": \"USER-DEFINED\", \"nullable\": true}]}\n\nOptional constraints (JSON):\n{\"limit\": 50}"
         },
-        "reasons": [
-            "The table contains population estimates for countries, which is necessary to identify the most populous countries.",
-            "It includes GDP information, which may be relevant for categorizing countries into different income groups.",
-            "The table is suitable for statistical queries, making it appropriate for mapping countries by population and income."
-        ]
+        "outputs": {
+          "step1": {
+            "l1_selected": [
+              { "id": "1", "name": "Administrative Boundaries" },
+              { "id": "5", "name": "Geographic Regions and Landforms" }
+            ],
+            "reasons": [
+              "Selecting features by area (e.g., countries or subnational units) commonly applies to administrative boundary datasets where featurecla denotes country/admin types and large-area thresholds (500,000 km²) identify large countries/units.",
+              "Featurecla can also represent geographic regions or landforms (regions, archipelagos, deserts); mapping entries >500,000 km² may target these natural/region polygons, so this category covers non-administrative large-area features."
+            ]
+          },
+          "step2": {
+            "l2_selected": [
+              { "id": "9", "name": "Regions & Landforms" },
+              { "id": "2", "name": "Country Boundaries & Units" }
+            ],
+            "reasons": [
+              "The task is about mapping polygonal geographic features (featurecla) by area, which fits regions and landform polygons.",
+              "Many featurecla entries over 500,000 km² will be countries or sovereign units, so country boundaries are also relevant."
+            ]
+          },
+          "step3": {
+            "l3_selected": {
+              "id": "3",
+              "table_name": "ne_10m_geography_regions_polys",
+              "display_name": "Geographic Regions & Landform Polygons"
+            },
+            "reasons": [
+              "Contains the featurecla field required by the query.",
+              "Provides polygon geometries (geom) for regions/landforms so area filtering (>500,000 km²) and mapping are possible.",
+              "Purpose-built for searching regions by category (featurecla) and spatial analyses, matching the task of mapping large feature classes."
+            ]
+          },
+          "step4": {
+            "final_sql": "SELECT featurecla, name_en, ne_id, (ST_Area(geometry::geography) / 1000000.0) AS area_km2, geometry FROM ne_data.ne_10m_geography_regions_polys WHERE geometry IS NOT NULL AND (ST_Area(geometry::geography) / 1000000.0) > 500000 ORDER BY area_km2 DESC LIMIT 50;",
+            "assumptions": [
+              "The table ne_data.ne_10m_geography_regions_polys uses SRID=4326 for the geometry column.",
+              "Area is computed on the spheroid by casting geometry to geography (ST_Area(geometry::geography)), returning m² and converted to km² by dividing by 1,000,000.",
+              "The request intends to return individual rows whose area is strictly greater than 500,000 km² (>) rather than >=.",
+              "A LIMIT of 50 is applied per the provided optional constraint."
+            ],
+            "notes": [
+              "Using geometry::geography gives more accurate geodesic areas for long/large polygons; it may be slower and cannot use a spatial index for the area predicate.",
+              "If you instead want one combined polygon per featurecla (i.e., unioned area per feature class), use GROUP BY featurecla and ST_Union(geometry) and compute area on the unioned geometry.",
+              "This query returns geometry so it can be directly mapped; ensure your client supports GeoJSON/WKB or WKB output as needed.",
+              "Invalid geometries can cause errors when casting to geography; consider running ST_IsValid and ST_MakeValid beforehand if you encounter issues.",
+              "An alternative approximate approach is to transform to a projected CRS (e.g., EPSG:3857) and use ST_Area(ST_Transform(geometry, 3857))/1e6, but that is less accurate for very large extents."
+            ]
+          }
+        }
+      },
+      "token_consumed": 6394,
+      "timestamp": "2025-09-19T11:45:09.017329+00:00"
     },
-    "sql": {
-        "final_sql": {
-            "sql": "SELECT name, income_grp, pop_est, geom FROM public.ne_10m_admin_0_countries_chn WHERE income_grp IS NOT NULL AND pop_est IS NOT NULL ORDER BY income_grp, pop_est DESC LIMIT 3",
-            "params": {}
+    {
+      "test_case": 2,
+      "user_question": "Show countries in the Southern Hemisphere (approx lat < 0).",
+      "status": "success",
+      "elapsed_ms": 53698,
+      "result": {
+        "inputs": {
+          "step1": "User question:\nShow countries in the Southern Hemisphere (approx lat < 0).\n\nAvailable L1 categories ...",
+          "step2": "User question:\nShow countries in the Southern Hemisphere (approx lat < 0).\n\nAvailable L2 categories ...",
+          "step3": "User question:\nShow countries in the Southern Hemisphere (approx lat < 0).\n\nAvailable L3 tables ...",
+          "step4": "User question:\nShow countries in the Southern Hemisphere (approx lat < 0).\n\nChosen L3: ..."
         },
-        "assumptions": [
-            "The income group is defined in the 'income_grp' column.",
-            "Population estimates are in the 'pop_est' column.",
-            "Only countries with non-null income groups and population estimates are included."
-        ],
-        "notes": [
-            "The SQL provided will return the top 3 most populous countries for each income group.",
-            "If the income groups have fewer than 3 countries, it will return as many as available."
-        ]
+        "outputs": {
+          "step1": {
+            "l1_selected": [
+              { "id": "1", "name": "Administrative Boundaries" }
+            ],
+            "reasons": [
+              "The task is to show countries, which corresponds to administrative boundaries datasets."
+            ]
+          },
+          "step2": {
+            "l2_selected": [
+              { "id": "2", "name": "Country Boundaries & Units" }
+            ],
+            "reasons": [
+              "Countries are the unit of analysis, so country boundaries/units dataset is appropriate."
+            ]
+          },
+          "step3": {
+            "l3_selected": {
+              "id": "1",
+              "table_name": "ne_10m_admin_0_countries_chn",
+              "display_name": "Country/Region Boundary Data"
+            },
+            "reasons": [
+              "Contains country boundaries with geometries.",
+              "Includes latitude/geometry for hemisphere filtering.",
+              "Purpose-built for statistical/spatial queries on countries."
+            ]
+          },
+          "step4": {
+            "final_sql": "SELECT formal_en, name, continent, ST_Y(ST_Centroid(geometry)) AS centroid_lat, geometry FROM ne_data.ne_10m_admin_0_countries_chn WHERE geometry IS NOT NULL AND ST_Y(ST_Centroid(geometry)) < 0 ORDER BY centroid_lat ASC LIMIT 50;",
+            "assumptions": [
+              "Using centroid latitude (ST_Y(ST_Centroid(geometry))) as proxy for hemisphere classification.",
+              "Countries that straddle the equator may have centroid slightly north or south; classification by centroid is approximate.",
+              "The query filters on centroid latitude < 0 to select Southern Hemisphere countries.",
+              "LIMIT 50 was applied per the provided optional constraint."
+            ],
+            "notes": [
+              "Centroid-based classification may misclassify countries crossing equator (e.g., Indonesia, Brazil).",
+              "If strict geometry-based filtering is required, use ST_Envelope or ST_Extent tests instead of centroid.",
+              "The query returns geometry so it can be directly mapped.",
+              "Ensure your client supports GeoJSON output if using geometry field.",
+              "Spatial indexes can accelerate ST_Centroid but performance may vary."
+            ]
+          }
+        }
+      },
+      "token_consumed": 8494,
+      "timestamp": "2025-09-19T13:00:56.788033+00:00"
+    },
+    {
+      "test_case": 3,
+      "user_question": "Highlight countries with GDP greater than the average of their continent.",
+      "status": "success",
+      "elapsed_ms": 57274,
+      "result": {
+        "inputs": {
+          "step1": "User question:\nHighlight countries with GDP greater than the average of their continent.\n\nAvailable L1 categories (list of L1Category objects):\n[{\"id\": 1, \"name\": \"Administrative Boundaries\", \"description\": \"Countries, subnational units, boundary lines, labels, and recognition status.\", \"dimension\": null, \"keywords\": [\"country\", \"admin\", \"boundary\", \"sovereignty\", \"labels\"]}, {\"id\": 2, \"name\": \"Base Layers\", \"description\": \"Land/ocean base layers and scale rank references.\", \"dimension\": null, \"keywords\": [\"land\", \"ocean\", \"base\", \"scale rank\"]}, {\"id\": 3, \"name\": \"Coastlines & Shorelines\", \"description\": \"Global coastlines and shoreline references for mapping.\", \"dimension\": null, \"keywords\": [\"coastline\", \"shoreline\", \"coast\", \"islands\"]}, {\"id\": 4, \"name\": \"Environment & Protected Areas\", \"description\": \"Parks and protected areas datasets.\", \"dimension\": null, \"keywords\": [\"parks\", \"protected\", \"environment\"]}, {\"id\": 5, \"name\": \"Geographic Regions and Landforms\", \"description\": \"Regions and landform boundaries and classifications.\", \"dimension\": null, \"keywords\": [\"region\", \"landform\", \"archipelago\", \"mountain\", \"desert\"]}, {\"id\": 6, \"name\": \"Human Geography & Infrastructure\", \"description\": \"Settlements and transport infrastructure layers.\", \"dimension\": null, \"keywords\": [\"population\", \"urban\", \"transport\", \"infrastructure\"]}, {\"id\": 7, \"name\": \"Marine & Bathymetry\", \"description\": \"Underwater terrain depth contours and marine references.\", \"dimension\": null, \"keywords\": [\"bathymetry\", \"depth\", \"marine\"]}, {\"id\": 8, \"name\": \"Natural Geography\", \"description\": \"Natural water bodies and physical geography datasets.\", \"dimension\": null, \"keywords\": [\"lake\", \"water\", \"ocean\", \"river\", \"reef\", \"hydro\"]}, {\"id\": 9, \"name\": \"Polar & Cryosphere\", \"description\": \"Polar regions including Antarctic ice shelves and claims.\", \"dimension\": null, \"keywords\": [\"antarctic\", \"ice\", \"cryosphere\"]}, {\"id\": 10, \"name\": \"Reference Layers\", \"description\": \"Global reference layers such as lines, time zones, and bounding boxes.\", \"dimension\": null, \"keywords\": [\"reference\", \"lines\", \"time zones\", \"bounding box\"]}, {\"id\": 11, \"name\": \"Uncategorized (Review)\", \"description\": \"Needs human review to assign appropriate category.\", \"dimension\": null, \"keywords\": [\"review\", \"uncategorized\"]}]",
+          "step2": "User question:\nHighlight countries with GDP greater than the average of their continent.\n\nAvailable L2 categories (list of L2Card objects):\n[{\"id\": 1, \"name\": \"Boundary Lines\", \"description_short\": \"International boundary lines and disputed areas.\", \"keywords\": [\"boundary\", \"lines\", \"disputed\"], \"allowed_dimensions\": []}, {\"id\": 2, \"name\": \"Country Boundaries & Units\", \"description_short\": \"Country boundaries, sovereignty, and mapping units/subunits.\", \"keywords\": [\"country\", \"sovereignty\", \"units\", \"subunits\"], \"allowed_dimensions\": []}, {\"id\": 3, \"name\": \"Labels & Reference\", \"description_short\": \"Names, label points, seams, scale ranks, and groupings.\", \"keywords\": [\"labels\", \"names\", \"seams\", \"scale\"], \"allowed_dimensions\": []}, {\"id\": 4, \"name\": \"Other Administrative\", \"description_short\": \"Other administrative datasets.\", \"keywords\": [\"administrative\"], \"allowed_dimensions\": []}, {\"id\": 5, \"name\": \"Subnational Boundaries\", \"description_short\": \"First- and second-level administrative boundaries.\", \"keywords\": [\"admin1\", \"admin2\", \"states\", \"provinces\", \"counties\"], \"allowed_dimensions\": []}]",
+          "step3": "User question:\nHighlight countries with GDP greater than the average of their continent.\n\nAvailable L3 tables (list of L3Table objects):\n[{\"id\": 1, \"table_name\": \"ne_10m_admin_0_countries_chn\", \"display_name\": \"Country/Region Boundary Data\", \"summary\": \"Contains boundaries, population, GDP, ISO/UN/WB codes of countries and regions, suitable for statistical and spatial queries.\", \"core_fields\": [\"name\", \"name_long\", \"adm0_a3\", \"iso_a3\", \"pop_est\", \"gdp_md\", \"continent\", \"geom\"], \"keywords\": [\"country\", \"sovereignty\", \"boundary\", \"population\", \"GDP\", \"ISO\", \"UN\", \"WB\", \"multilingual\"], \"use_cases\": [\"Locate countries by ISO/UN/WB codes\", \"Query country boundaries with spatial intersection\", \"Statistical population or GDP rankings\"]}, {\"id\": 9, \"table_name\": \"ne_10m_admin_0_map_units\", \"display_name\": \"Geographical Administrative Units Map Data\", \"summary\": \"The ne_10m_admin_0_map_units table provides detailed administrative and geographical data for countries and their subdivisions, including various identification codes, economic indicators, and classifications. This table supports analyses related to demographics, economics, and geographical mappings, making it useful for urban planning, cartography, and socio-economic research.\", \"core_fields\": [\"3-letter administrative code\", \"ISO codes\", \"SOVEREIGNT\", \"Population estimates\", \"GDP data\", \"ADMIN\", \"GEOUNIT\"], \"keywords\": [\"administrative units\", \"geographical data\", \"ISO codes\", \"population estimates\", \"GDP\", \"mapping\"], \"use_cases\": [\"Generating thematic maps for visual representation of demographic data.\", \"Analyzing the economic status of countries and regions for socio-economic research.\", \"Comparative studies on administrative differences and classifications between countries.\"]}, {\"id\": 8, \"table_name\": \"ne_10m_admin_0_map_subunits\", \"display_name\": \"Global Administrative Units and Demographics\", \"summary\": \"This table provides detailed information on global administrative units, including standardized country codes, names, and associated demographic and economic data. It is primarily used for analysis and visualization of geopolitical boundaries alongside population and economic indicators.\", \"core_fields\": [\"3-letter country code\", \"ISO Code\", \"Country Name\", \"Population Data\", \"GDP Data\", \"Administrative Notes\"], \"keywords\": [\"administrative units\", \"geographical boundaries\", \"demographics\", \"economic indicators\", \"country codes\"], \"use_cases\": [\"Mapping and visualizing population distribution across different administrative regions.\", \"Analyzing economic performance and GDP trends among countries and regions.\", \"Standardizing country identification for cross-national studies and reports.\"]}, {\"id\": 15, \"table_name\": \"ne_10m_admin_0_sovereignty\", \"display_name\": \"Global Sovereignty and Demographics Data\", \"summary\": \"This table provides comprehensive data about countries and their governance structures, incorporating essential demographic and economic metrics such as population and GDP. It serves as a foundational resource for geographic and economic analysis, supporting research on global development trends and national characteristics.\", \"core_fields\": [\"3-letter country code\", \"2-letter country code\", \"country name\", \"population\", \"GDP\", \"SOVEREIGNT\", \"INCOME_GRP\"], \"keywords\": [\"sovereignty\", \"demographics\", \"economy\", \"ISO codes\", \"country data\"], \"use_cases\": [\"Analyzing demographic changes over time by comparing population estimates across different countries.\", \"Conducting economic research using GDP data to identify trends in global economies and classify income levels of countries.\"]}]",
+          "step4": "User question:\nHighlight countries with GDP greater than the average of their continent.\n\nChosen L3: \n{\"id\": \"1\", \"table_name\": \"ne_10m_admin_0_countries_chn\", \"display_name\": \"Country/Region Boundary Data\"}\n\nFull schema of the chosen L3 table:\n{\"table\": \"ne_data.ne_10m_admin_0_countries_chn\", \"fields\": [{\"name\": \"adm0_a3_cn\", \"type\": \"text\", \"nullable\": true}, {\"name\": \"featurecla\", \"type\": \"text\", \"nullable\": true}, {\"name\": \"scalerank\", \"type\": \"integer\", \"nullable\": true}, {\"name\": \"labelrank\", \"type\": \"integer\", \"nullable\": true}, {\"name\": \"sovereignt\", \"type\": \"text\", \"nullable\": true}, {\"name\": \"sov_a3\", \"type\": \"text\", \"nullable\": true}, {\"name\": \"adm0_dif\", \"type\": \"integer\", \"nullable\": true}, {\"name\": \"level\", \"type\": \"integer\", \"nullable\": true}, {\"name\": \"type\", \"type\": \"text\", \"nullable\": true}, {\"name\": \"tlc\", \"type\": \"text\", \"nullable\": true}, {\"name\": \"admin\", \"type\": \"text\", \"nullable\": true}, {\"name\": \"adm0_a3\", \"type\": \"text\", \"nullable\": true}, {\"name\": \"geou_dif\", \"type\": \"integer\", \"nullable\": true}, {\"name\": \"geounit\", \"type\": \"text\", \"nullable\": true}, {\"name\": \"gu_a3\", \"type\": \"text\", \"nullable\": true}, {\"name\": \"su_dif\", \"type\": \"integer\", \"nullable\": true}, {\"name\": \"subunit\", \"type\": \"text\", \"nullable\": true}, {\"name\": \"su_a3\", \"type\": \"text\", \"nullable\": true}, {\"name\": \"brk_diff\", \"type\": \"integer\", \"nullable\": true}, {\"name\": \"name\", \"type\": \"text\", \"nullable\": true}, {\"name\": \"name_long\", \"type\": \"text\", \"nullable\": true}, {\"name\": \"brk_a3\", \"type\": \"text\", \"nullable\": true}, {\"name\": \"brk_name\", \"type\": \"text\", \"nullable\": true}, {\"name\": \"brk_group\", \"type\": \"text\", \"nullable\": true}, {\"name\": \"abbrev\", \"type\": \"text\", \"nullable\": true}, {\"name\": \"postal\", \"type\": \"text\", \"nullable\": true}, {\"name\": \"formal_en\", \"type\": \"text\", \"nullable\": true}, {\"name\": \"formal_fr\", \"type\": \"text\", \"nullable\": true}, {\"name\": \"name_ciawf\", \"type\": \"text\", \"nullable\": true}, {\"name\": \"note_adm0\", \"type\": \"text\", \"nullable\": true}, {\"name\": \"note_brk\", \"type\": \"text\", \"nullable\": true}, {\"name\": \"name_sort\", \"type\": \"text\", \"nullable\": true}, {\"name\": \"name_alt\", \"type\": \"text\", \"nullable\": true}, {\"name\": \"mapcolor7\", \"type\": \"integer\", \"nullable\": true}, {\"name\": \"mapcolor8\", \"type\": \"integer\", \"nullable\": true}, {\"name\": \"mapcolor9\", \"type\": \"integer\", \"nullable\": true}, {\"name\": \"mapcolor13\", \"type\": \"integer\", \"nullable\": true}, {\"name\": \"pop_est\", \"type\": \"double precision\", \"nullable\": true}, {\"name\": \"pop_rank\", \"type\": \"integer\", \"nullable\": true}, {\"name\": \"pop_year\", \"type\": \"integer\", \"nullable\": true}, {\"name\": \"gdp_md\", \"type\": \"integer\", \"nullable\": true}, {\"name\": \"gdp_year\", \"type\": \"integer\", \"nullable\": true}, {\"name\": \"economy\", \"type\": \"text\", \"nullable\": true}, {\"name\": \"income_grp\", \"type\": \"text\", \"nullable\": true}, {\"name\": \"fips_10\", \"type\": \"text\", \"nullable\": true}, {\"name\": \"iso_a2\", \"type\": \"text\", \"nullable\": true}, {\"name\": \"iso_a2_eh\", \"type\": \"text\", \"nullable\": true}, {\"name\": \"iso_a3\", \"type\": \"text\", \"nullable\": true}, {\"name\": \"iso_a3_eh\", \"type\": \"text\", \"nullable\": true}, {\"name\": \"iso_n3\", \"type\": \"text\", \"nullable\": true}, {\"name\": \"iso_n3_eh\", \"type\": \"text\", \"nullable\": true}, {\"name\": \"un_a3\", \"type\": \"text\", \"nullable\": true}, {\"name\": \"wb_a2\", \"type\": \"text\", \"nullable\": true}, {\"name\": \"wb_a3\", \"type\": \"text\", \"nullable\": true}, {\"name\": \"woe_id\", \"type\": \"integer\", \"nullable\": true}, {\"name\": \"woe_id_eh\", \"type\": \"integer\", \"nullable\": true}, {\"name\": \"woe_note\", \"type\": \"text\", \"nullable\": true}, {\"name\": \"adm0_iso\", \"type\": \"text\", \"nullable\": true}, {\"name\": \"adm0_diff\", \"type\": \"text\", \"nullable\": true}, {\"name\": \"adm0_tlc\", \"type\": \"text\", \"nullable\": true}, {\"name\": \"adm0_a3_us\", \"type\": \"text\", \"nullable\": true}, {\"name\": \"adm0_a3_fr\", \"type\": \"text\", \"nullable\": true}, {\"name\": \"adm0_a3_ru\", \"type\": \"text\", \"nullable\": true}, {\"name\": \"adm0_a3_es\", \"type\": \"text\", \"nullable\": true}, {\"name\": \"adm0_a3_tw\", \"type\": \"text\", \"nullable\": true}, {\"name\": \"adm0_a3_in\", \"type\": \"text\", \"nullable\": true}, {\"name\": \"adm0_a3_np\", \"type\": \"text\", \"nullable\": true}, {\"name\": \"adm0_a3_pk\", \"type\": \"text\", \"nullable\": true}, {\"name\": \"adm0_a3_de\", \"type\": \"text\", \"nullable\": true}, {\"name\": \"adm0_a3_gb\", \"type\": \"text\", \"nullable\": true}, {\"name\": \"adm0_a3_br\", \"type\": \"text\", \"nullable\": true}, {\"name\": \"adm0_a3_il\", \"type\": \"text\", \"nullable\": true}, {\"name\": \"adm0_a3_ps\", \"type\": \"text\", \"nullable\": true}, {\"name\": \"adm0_a3_sa\", \"type\": \"text\", \"nullable\": true}, {\"name\": \"adm0_a3_eg\", \"type\": \"text\", \"nullable\": true}, {\"name\": \"adm0_a3_ma\", \"type\": \"text\", \"nullable\": true}, {\"name\": \"adm0_a3_pt\", \"type\": \"text\", \"nullable\": true}, {\"name\": \"adm0_a3_ar\", \"type\": \"text\", \"nullable\": true}, {\"name\": \"adm0_a3_jp\", \"type\": \"text\", \"nullable\": true}, {\"name\": \"adm0_a3_ko\", \"type\": \"text\", \"nullable\": true}, {\"name\": \"adm0_a3_vn\", \"type\": \"text\", \"nullable\": true}, {\"name\": \"adm0_a3_tr\", \"type\": \"text\", \"nullable\": true}, {\"name\": \"adm0_a3_id\", \"type\": \"text\", \"nullable\": true}, {\"name\": \"adm0_a3_pl\", \"type\": \"text\", \"nullable\": true}, {\"name\": \"adm0_a3_gr\", \"type\": \"text\", \"nullable\": true}, {\"name\": \"adm0_a3_it\", \"type\": \"text\", \"nullable\": true}, {\"name\": \"adm0_a3_nl\", \"type\": \"text\", \"nullable\": true}, {\"name\": \"adm0_a3_se\", \"type\": \"text\", \"nullable\": true}, {\"name\": \"adm0_a3_bd\", \"type\": \"text\", \"nullable\": true}, {\"name\": \"adm0_a3_ua\", \"type\": \"text\", \"nullable\": true}, {\"name\": \"adm0_a3_un\", \"type\": \"integer\", \"nullable\": true}, {\"name\": \"adm0_a3_wb\", \"type\": \"integer\", \"nullable\": true}, {\"name\": \"continent\", \"type\": \"text\", \"nullable\": true}, {\"name\": \"region_un\", \"type\": \"text\", \"nullable\": true}, {\"name\": \"subregion\", \"type\": \"text\", \"nullable\": true}, {\"name\": \"region_wb\", \"type\": \"text\", \"nullable\": true}, {\"name\": \"name_len\", \"type\": \"integer\", \"nullable\": true}, {\"name\": \"long_len\", \"type\": \"integer\", \"nullable\": true}, {\"name\": \"abbrev_len\", \"type\": \"integer\", \"nullable\": true}, {\"name\": \"tiny\", \"type\": \"integer\", \"nullable\": true}, {\"name\": \"homepart\", \"type\": \"integer\", \"nullable\": true}, {\"name\": \"min_zoom\", \"type\": \"double precision\", \"nullable\": true}, {\"name\": \"min_label\", \"type\": \"double precision\", \"nullable\": true}, {\"name\": \"max_label\", \"type\": \"double precision\", \"nullable\": true}, {\"name\": \"label_x\", \"type\": \"double precision\", \"nullable\": true}, {\"name\": \"label_y\", \"type\": \"double precision\", \"nullable\": true}, {\"name\": \"ne_id\", \"type\": \"bigint\", \"nullable\": true}, {\"name\": \"wikidataid\", \"type\": \"text\", \"nullable\": true}, {\"name\": \"name_ar\", \"type\": \"text\", \"nullable\": true}, {\"name\": \"name_bn\", \"type\": \"text\", \"nullable\": true}, {\"name\": \"name_de\", \"type\": \"text\", \"nullable\": true}, {\"name\": \"name_en\", \"type\": \"text\", \"nullable\": true}, {\"name\": \"name_es\", \"type\": \"text\", \"nullable\": true}, {\"name\": \"name_fa\", \"type\": \"text\", \"nullable\": true}, {\"name\": \"name_fr\", \"type\": \"text\", \"nullable\": true}, {\"name\": \"name_el\", \"type\": \"text\", \"nullable\": true}, {\"name\": \"name_he\", \"type\": \"text\", \"nullable\": true}, {\"name\": \"name_hi\", \"type\": \"text\", \"nullable\": true}, {\"name\": \"name_hu\", \"type\": \"text\", \"nullable\": true}, {\"name\": \"name_id\", \"type\": \"text\", \"nullable\": true}, {\"name\": \"name_it\", \"type\": \"text\", \"nullable\": true}, {\"name\": \"name_ja\", \"type\": \"text\", \"nullable\": true}, {\"name\": \"name_ko\", \"type\": \"text\", \"nullable\": true}, {\"name\": \"name_nl\", \"type\": \"text\", \"nullable\": true}, {\"name\": \"name_pl\", \"type\": \"text\", \"nullable\": true}, {\"name\": \"name_pt\", \"type\": \"text\", \"nullable\": true}, {\"name\": \"name_ru\", \"type\": \"text\", \"nullable\": true}, {\"name\": \"name_sv\", \"type\": \"text\", \"nullable\": true}, {\"name\": \"name_tr\", \"type\": \"text\", \"nullable\": true}, {\"name\": \"name_uk\", \"type\": \"text\", \"nullable\": true}, {\"name\": \"name_ur\", \"type\": \"text\", \"nullable\": true}, {\"name\": \"name_vi\", \"type\": \"text\", \"nullable\": true}, {\"name\": \"name_zh\", \"type\": \"text\", \"nullable\": true}, {\"name\": \"name_zht\", \"type\": \"text\", \"nullable\": true}, {\"name\": \"fclass_iso\", \"type\": \"text\", \"nullable\": true}, {\"name\": \"tlc_diff\", \"type\": \"text\", \"nullable\": true}, {\"name\": \"fclass_tlc\", \"type\": \"text\", \"nullable\": true}, {\"name\": \"fclass_us\", \"type\": \"text\", \"nullable\": true}, {\"name\": \"fclass_fr\", \"type\": \"text\", \"nullable\": true}, {\"name\": \"fclass_ru\", \"type\": \"text\", \"nullable\": true}, {\"name\": \"fclass_es\", \"type\": \"text\", \"nullable\": true}, {\"name\": \"fclass_cn\", \"type\": \"text\", \"nullable\": true}, {\"name\": \"fclass_tw\", \"type\": \"text\", \"nullable\": true}, {\"name\": \"fclass_in\", \"type\": \"text\", \"nullable\": true}, {\"name\": \"fclass_np\", \"type\": \"text\", \"nullable\": true}, {\"name\": \"fclass_pk\", \"type\": \"text\", \"nullable\": true}, {\"name\": \"fclass_de\", \"type\": \"text\", \"nullable\": true}, {\"name\": \"fclass_gb\", \"type\": \"text\", \"nullable\": true}, {\"name\": \"fclass_br\", \"type\": \"text\", \"nullable\": true}, {\"name\": \"fclass_il\", \"type\": \"text\", \"nullable\": true}, {\"name\": \"fclass_ps\", \"type\": \"text\", \"nullable\": true}, {\"name\": \"fclass_sa\", \"type\": \"text\", \"nullable\": true}, {\"name\": \"fclass_eg\", \"type\": \"text\", \"nullable\": true}, {\"name\": \"fclass_ma\", \"type\": \"text\", \"nullable\": true}, {\"name\": \"fclass_pt\", \"type\": \"text\", \"nullable\": true}, {\"name\": \"fclass_ar\", \"type\": \"text\", \"nullable\": true}, {\"name\": \"fclass_jp\", \"type\": \"text\", \"nullable\": true}, {\"name\": \"fclass_ko\", \"type\": \"text\", \"nullable\": true}, {\"name\": \"fclass_vn\", \"type\": \"text\", \"nullable\": true}, {\"name\": \"fclass_tr\", \"type\": \"text\", \"nullable\": true}, {\"name\": \"fclass_id\", \"type\": \"text\", \"nullable\": true}, {\"name\": \"fclass_pl\", \"type\": \"text\", \"nullable\": true}, {\"name\": \"fclass_gr\", \"type\": \"text\", \"nullable\": true}, {\"name\": \"fclass_it\", \"type\": \"text\", \"nullable\": true}, {\"name\": \"fclass_nl\", \"type\": \"text\", \"nullable\": true}, {\"name\": \"fclass_se\", \"type\": \"text\", \"nullable\": true}, {\"name\": \"fclass_bd\", \"type\": \"text\", \"nullable\": true}, {\"name\": \"fclass_ua\", \"type\": \"text\", \"nullable\": true}, {\"name\": \"geometry\", \"type\": \"USER-DEFINED\", \"nullable\": true}]}\n\nOptional constraints (JSON):\n{\"limit\": 50}"
+        },
+        "outputs": {
+          "step1": {
+            "l1_selected": [
+              {
+                "id": "1",
+                "name": "Administrative Boundaries"
+              }
+            ],
+            "reasons": [
+              "The task involves countries as units (comparing country GDP to continent averages), which corresponds to country/administrative boundary datasets."
+            ]
+          },
+          "step2": {
+            "l2_selected": [
+              {
+                "id": "2",
+                "name": "Country Boundaries & Units"
+              }
+            ],
+            "reasons": [
+              "The task selects and highlights whole countries based on an attribute (GDP) relative to continent averages, so country-level boundaries/units are the appropriate dataset."
+            ]
+          },
+          "step3": {
+            "l3_selected": {
+              "id": "1",
+              "table_name": "ne_10m_admin_0_countries_chn",
+              "display_name": "Country/Region Boundary Data"
+            },
+            "reasons": [
+              "Contains country-level GDP (gdp_md) needed to compare values.",
+              "Includes a continent field, enabling continent-level averaging and grouping.",
+              "Designed for statistical queries on countries (population/GDP) making it ideal for this analysis."
+            ]
+          },
+          "step4": {
+            "final_sql": "WITH continent_avg AS (\n  SELECT continent, AVG(gdp_md)::double precision AS avg_gdp_md\n  FROM ne_data.ne_10m_admin_0_countries_chn\n  WHERE gdp_md IS NOT NULL AND continent IS NOT NULL\n  GROUP BY continent\n)\nSELECT\n  t.formal_en,\n  t.name,\n  t.continent,\n  t.gdp_md,\n  ca.avg_gdp_md AS avg_gdp_md_continent,\n  (t.gdp_md - ca.avg_gdp_md) AS gdp_minus_continent_avg,\n  t.geometry\nFROM ne_data.ne_10m_admin_0_countries_chn t\nJOIN continent_avg ca ON t.continent = ca.continent\nWHERE t.gdp_md IS NOT NULL\n  AND t.continent IS NOT NULL\n  AND t.gdp_md > ca.avg_gdp_md\nORDER BY gdp_minus_continent_avg DESC\nLIMIT 50;",
+            "assumptions": [
+              "The continent column groups countries into continents for averaging (e.g., 'Asia', 'Europe').",
+              "gdp_md is the country's GDP value and is numeric (units typically millions of USD); different rows may refer to different gdp_years but we compare raw gdp_md values.",
+              "geometry is the geometry column and is in EPSG:4326 (PostGIS).",
+              "Countries with NULL gdp_md or NULL continent are excluded from the comparison.",
+              "LIMIT 50 was applied per the provided optional constraint."
+            ],
+            "notes": [
+              "A CTE computes the continent average GDP (AVG ignores NULLs); the main query joins on continent and returns only countries with gdp_md > continent average.",
+              "Returned fields: formal_en and name for labels, continent, gdp_md, the continent average (avg_gdp_md_continent), the difference, and geometry for mapping/highlighting.",
+              "This compares absolute GDP, not GDP per capita or GDP normalized by year; if you want per-capita comparison use gdp_md / pop_est and compute per-continent averages accordingly.",
+              "Alternative implementation: a window function (AVG(gdp_md) OVER (PARTITION BY continent)) could be used instead of the CTE to compute continent averages inline.",
+              "Be aware of territories or transcontinental countries that may have continent values inconsistent with desired grouping; adjust grouping field (e.g., region_wb or subregion) if needed."
+            ]
+          }
+        }
+      },
+      "token_consumed": 8567,
+      "timestamp": "2025-09-19T13:07:25.941281+00:00"
+    },
+    {
+      "test_case": 4,
+      "user_question": "Highlight all mountain ranges or ranges.",
+      "status": "success",
+      "elapsed_ms": 49600,
+      "result": {
+        "inputs": {
+          "step1": "User question:\nHighlight all mountain ranges or ranges.\n\nAvailable L1 categories (list of L1Category objects):\n[{\"id\": 1, \"name\": \"Administrative Boundaries\", \"description\": \"Countries, subnational units, boundary lines, labels, and recognition status.\", \"dimension\": null, \"keywords\": [\"country\", \"admin\", \"boundary\", \"sovereignty\", \"labels\"]}, {\"id\": 2, \"name\": \"Base Layers\", \"description\": \"Land/ocean base layers and scale rank references.\", \"dimension\": null, \"keywords\": [\"land\", \"ocean\", \"base\", \"scale rank\"]}, {\"id\": 3, \"name\": \"Coastlines & Shorelines\", \"description\": \"Global coastlines and shoreline references for mapping.\", \"dimension\": null, \"keywords\": [\"coastline\", \"shoreline\", \"coast\", \"islands\"]}, {\"id\": 4, \"name\": \"Environment & Protected Areas\", \"description\": \"Parks and protected areas datasets.\", \"dimension\": null, \"keywords\": [\"parks\", \"protected\", \"environment\"]}, {\"id\": 5, \"name\": \"Geographic Regions and Landforms\", \"description\": \"Regions and landform boundaries and classifications.\", \"dimension\": null, \"keywords\": [\"region\", \"landform\", \"archipelago\", \"mountain\", \"desert\"]}, {\"id\": 6, \"name\": \"Human Geography & Infrastructure\", \"description\": \"Settlements and transport infrastructure layers.\", \"dimension\": null, \"keywords\": [\"population\", \"urban\", \"transport\", \"infrastructure\"]}, {\"id\": 7, \"name\": \"Marine & Bathymetry\", \"description\": \"Underwater terrain depth contours and marine references.\", \"dimension\": null, \"keywords\": [\"bathymetry\", \"depth\", \"marine\"]}, {\"id\": 8, \"name\": \"Natural Geography\", \"description\": \"Natural water bodies and physical geography datasets.\", \"dimension\": null, \"keywords\": [\"lake\", \"water\", \"ocean\", \"river\", \"reef\", \"hydro\"]}, {\"id\": 9, \"name\": \"Polar & Cryosphere\", \"description\": \"Polar regions including Antarctic ice shelves and claims.\", \"dimension\": null, \"keywords\": [\"antarctic\", \"ice\", \"cryosphere\"]}, {\"id\": 10, \"name\": \"Reference Layers\", \"description\": \"Global reference layers such as lines, time zones, and bounding boxes.\", \"dimension\": null, \"keywords\": [\"reference\", \"lines\", \"time zones\", \"bounding box\"]}, {\"id\": 11, \"name\": \"Uncategorized (Review)\", \"description\": \"Needs human review to assign appropriate category.\", \"dimension\": null, \"keywords\": [\"review\", \"uncategorized\"]}]",
+          "step2": "User question:\nHighlight all mountain ranges or ranges.\n\nAvailable L2 categories (list of L2Card objects):\n[{\"id\": 9, \"name\": \"Regions & Landforms\", \"description_short\": \"Geographic regions and landform polygons.\", \"keywords\": [\"region\", \"landform\"], \"allowed_dimensions\": []}]",
+          "step3": "User question:\nHighlight all mountain ranges or ranges.\n\nAvailable L3 tables (list of L3Table objects):\n[{\"id\": 3, \"table_name\": \"ne_10m_geography_regions_polys\", \"display_name\": \"Geographic Regions & Landform Polygons\", \"summary\": \"Contains boundaries of various geographic regions and landforms (such as archipelagos, mountain ranges, deserts, etc.), with region and subregion annotations.\", \"core_fields\": [\"name\", \"namealt\", \"featurecla\", \"region\", \"subregion\", \"geom\"], \"keywords\": [\"region\", \"landform\", \"archipelago\", \"mountain range\", \"desert\", \"region\", \"subregion\"], \"use_cases\": [\"Search regions by category (featurecla)\", \"Filter by region/subregion\", \"Spatial relationship analysis\"]}]",
+          "step4": "User question:\nHighlight all mountain ranges or ranges.\n\nChosen L3: \n{\"id\": \"3\", \"table_name\": \"ne_10m_geography_regions_polys\", \"display_name\": \"Geographic Regions & Landform Polygons\"}\n\nFull schema of the chosen L3 table:\n{\"table\": \"ne_data.ne_10m_geography_regions_polys\", \"fields\": [{\"name\": \"featurecla\", \"type\": \"text\", \"nullable\": true}, {\"name\": \"name\", \"type\": \"text\", \"nullable\": true}, {\"name\": \"namealt\", \"type\": \"text\", \"nullable\": true}, {\"name\": \"region\", \"type\": \"text\", \"nullable\": true}, {\"name\": \"subregion\", \"type\": \"text\", \"nullable\": true}, {\"name\": \"min_label\", \"type\": \"double precision\", \"nullable\": true}, {\"name\": \"max_label\", \"type\": \"double precision\", \"nullable\": true}, {\"name\": \"scalerank\", \"type\": \"integer\", \"nullable\": true}, {\"name\": \"label\", \"type\": \"text\", \"nullable\": true}, {\"name\": \"wikidataid\", \"type\": \"text\", \"nullable\": true}, {\"name\": \"name_ar\", \"type\": \"text\", \"nullable\": true}, {\"name\": \"name_bn\", \"type\": \"text\", \"nullable\": true}, {\"name\": \"name_de\", \"type\": \"text\", \"nullable\": true}, {\"name\": \"name_en\", \"type\": \"text\", \"nullable\": true}, {\"name\": \"name_es\", \"type\": \"text\", \"nullable\": true}, {\"name\": \"name_fr\", \"type\": \"text\", \"nullable\": true}, {\"name\": \"name_el\", \"type\": \"text\", \"nullable\": true}, {\"name\": \"name_hi\", \"type\": \"text\", \"nullable\": true}, {\"name\": \"name_hu\", \"type\": \"text\", \"nullable\": true}, {\"name\": \"name_id\", \"type\": \"text\", \"nullable\": true}, {\"name\": \"name_it\", \"type\": \"text\", \"nullable\": true}, {\"name\": \"name_ja\", \"type\": \"text\", \"nullable\": true}, {\"name\": \"name_ko\", \"type\": \"text\", \"nullable\": true}, {\"name\": \"name_nl\", \"type\": \"text\", \"nullable\": true}, {\"name\": \"name_pl\", \"type\": \"text\", \"nullable\": true}, {\"name\": \"name_pt\", \"type\": \"text\", \"nullable\": true}, {\"name\": \"name_ru\", \"type\": \"text\", \"nullable\": true}, {\"name\": \"name_sv\", \"type\": \"text\", \"nullable\": true}, {\"name\": \"name_tr\", \"type\": \"text\", \"nullable\": true}, {\"name\": \"name_vi\", \"type\": \"text\", \"nullable\": true}, {\"name\": \"name_zh\", \"type\": \"text\", \"nullable\": true}, {\"name\": \"ne_id\", \"type\": \"bigint\", \"nullable\": true}, {\"name\": \"name_fa\", \"type\": \"text\", \"nullable\": true}, {\"name\": \"name_he\", \"type\": \"text\", \"nullable\": true}, {\"name\": \"name_uk\", \"type\": \"text\", \"nullable\": true}, {\"name\": \"name_ur\", \"type\": \"text\", \"nullable\": true}, {\"name\": \"name_zht\", \"type\": \"text\", \"nullable\": true}, {\"name\": \"geometry\", \"type\": \"USER-DEFINED\", \"nullable\": true}]}\n\nOptional constraints (JSON):\n{\"limit\": 50}"
+        },
+        "outputs": {
+          "step1": {
+            "l1_selected": [
+              {
+                "id": "5",
+                "name": "Geographic Regions and Landforms"
+              }
+            ],
+            "reasons": [
+              "The request is to highlight mountain ranges, which are landforms; this category explicitly covers mountains and regional landform boundaries."
+            ]
+          },
+          "step2": {
+            "l2_selected": [
+              {
+                "id": "9",
+                "name": "Regions & Landforms"
+              }
+            ],
+            "reasons": [
+              "The user asks to highlight mountain ranges, which are geographic landforms and fall under Regions & Landforms."
+            ]
+          },
+          "step3": {
+            "l3_selected": {
+              "id": "3",
+              "table_name": "ne_10m_geography_regions_polys",
+              "display_name": "Geographic Regions & Landform Polygons"
+            },
+            "reasons": [
+              "The table explicitly contains boundaries of landforms including mountain ranges (summary mentions 'mountain ranges').",
+              "Core fields include 'featurecla' (to filter by mountain range feature class), 'name'/'namealt' (to label ranges), and 'geom' (to highlight polygons).",
+              "Use cases list region/landform searches and spatial analysis, which match the request to highlight all ranges."
+            ]
+          },
+          "step4": {
+            "final_sql": "SELECT ne_id, name, name_en, featurecla, region, subregion, scalerank, label, geometry FROM ne_data.ne_10m_geography_regions_polys WHERE (COALESCE(featurecla, '') ILIKE '%mountain%' OR COALESCE(featurecla, '') ILIKE '%range%' OR COALESCE(name_en, '') ILIKE '%mountain%' OR COALESCE(name_en, '') ILIKE '%range%' OR COALESCE(name, '') ILIKE '%mountain%' OR COALESCE(name, '') ILIKE '%range%' OR COALESCE(name_en, '') ILIKE '%ridge%' OR COALESCE(name, '') ILIKE '%ridge%' OR COALESCE(name_en, '') ILIKE '%cordillera%' OR COALESCE(name, '') ILIKE '%cordillera%' OR COALESCE(name_en, '') ILIKE '%massif%' OR COALESCE(name, '') ILIKE '%massif%') LIMIT 50;",
+            "assumptions": [
+              "The geometry column is named \"geometry\" and is in EPSG:4326 (PostGIS SRID=4326).",
+              "Mountain ranges can be identified by textual matches in featurecla, name, or name_en using terms such as 'mountain', 'range', 'ridge', 'cordillera', and 'massif'.",
+              "The query returns up to 50 features per the provided optional constraint."
+            ],
+            "notes": [
+              "This approach uses simple case-insensitive substring matching (ILIKE) on name and featurecla fields; it may miss ranges named in other languages or using uncommon terms.",
+              "To improve recall you could add more language variants (e.g., 'mont', 'sierra', 'berge', 'montaña') or use full-text search or regex word boundaries.",
+              "Returned geometry is the native geometry column for highlighting; consuming applications should ensure appropriate styling and reprojection if needed.",
+              "If the dataset standardizes featurecla values for landforms, restricting to featurecla (e.g., featurecla = 'Mountain') would be more precise and efficient.",
+              "Consider creating trigram or btree indexes on name/name_en/featurecla for faster pattern searches on large datasets."
+            ]
+          }
+        }
+      },
+      "token_consumed": 4791,
+      "timestamp": "2025-09-19T13:09:47.832770+00:00"
     }
+  ]
 }
