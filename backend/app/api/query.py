@@ -78,6 +78,14 @@ def geo_reason():
         qin = QueryIn(**payload)
         qin.validate()
         sql, params, outputs = _build_reason_sql(qin)
+
+        # 修改传入参数为数组的问题
+        import re
+        if "l1_id" in params:
+            sql = re.sub(r"(\bm\.l1_id\s*)=\s*%\(l1_id\)s", r"\1= ANY(%(l1_id)s)", sql)
+            if not isinstance(params["l1_id"], list):
+                params["l1_id"] = [params["l1_id"]]
+
         sql_with_params = sql
         for k, v in params.items():
             sql_with_params = sql_with_params.replace(f":{k}", repr(v))
@@ -93,7 +101,11 @@ def geo_reason():
         # Lazy import to avoid circular import of sql_service earlier
         from app.services import sql_service
 
+        if isinstance(params.get("l1_id"), list) and len(params["l1_id"]) == 1:
+            params["l1_id"] = params["l1_id"][0]
+
         resu = sql_service.run_sql(sql, params)
+
         if not resu.get("ok"):
             return _err("INTERNAL_ERROR", str(resu.get("error")), 500)
         cols = resu["results"]["columns"]
@@ -101,7 +113,7 @@ def geo_reason():
         dict_results = [dict(zip(cols, r)) for r in rows]
         
         out = QueryOut(
-            sql=sql_with_params
+            sql=sql_with_params,
             results=dict_results,
             reasoning=reason_list,
             model_used="gpt-5-nano",
@@ -145,11 +157,16 @@ def geo_reason_mock():
     """
     try:
         payload = request.get_json(silent=True) or {}
-        qin = QueryIn(**payload)
-        qin.validate()
+        
+        question = (payload.get("question") or "").strip()
+        if not question:
+            return _err("VALIDATION_ERROR", "'question' is required", 400)
 
         # 可选测试用例，默认1
-        test_case_id = payload.get("test_case", 1)
+        try:
+            test_case_id = int(payload.get("test_case", 1))
+        except (TypeError, ValueError):
+            test_case_id = 1
 
         # Read from mock.json
         import os
@@ -162,37 +179,24 @@ def geo_reason_mock():
         if not case:
             return _err("BAD_MOCK", f"mock.json missing test_case {test_case_id}", 500)
 
-        outputs = (case.get("result") or {}).get("outputs", {})
-        step4 = outputs.get("step4", {})
-        sql = (step4.get("final_sql") or "").strip()
-        if not sql:
-            return _err("BAD_MOCK", "mock.json missing outputs.step4.final_sql", 500)        
+        case_sql = case.get("sql", "")
+        case_results = case.get("results", [])
+        case_reasoning = case.get("reasoning", [])
+        case_model_used = case.get("model_used", f"mock_case_{test_case_id}")
+        case_is_fallback = bool(case.get("is_fallback", False))
 
-        reason_list = _extract_final_reason(outputs)
+        out = QueryOut(
+            sql=case_sql,
+            results=case_results,
+            reasoning=case_reasoning,
+            model_used=case_model_used,
+            is_fallback=case_is_fallback,
+        )
+        return jsonify(out.__dict__), 200
+
     except RuntimeError as e:
         return _err("SERVICE_UNAVAILABLE", str(e), 503)
     except ValueError as e:
         return _err("VALIDATION_ERROR", str(e), 400)
-    except Exception as e:
-        return _err("INTERNAL_ERROR", str(e), 500)
-
-    try:
-        # Lazy import to avoid circular import of sql_service earlier
-        from app.services import sql_service
-
-        resu = sql_service.run_sql(sql, params={})
-        if not resu.get("ok"):
-            return _err("INTERNAL_ERROR", str(resu.get("error")), 500)
-        cols = resu["results"]["columns"]
-        rows = resu["results"]["rows"]
-        dict_results = [dict(zip(cols, r)) for r in rows]
-        out = QueryOut(
-            sql=sql
-            results=dict_results,
-            reasoning=reason_list,
-            model_used=f"mock_case_{test_case_id}",
-            is_fallback=False,
-        )
-        return jsonify(out.__dict__), 200
     except Exception as e:
         return _err("INTERNAL_ERROR", str(e), 500)
