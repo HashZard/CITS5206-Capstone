@@ -12,11 +12,11 @@ def _err(code: str, msg: str, http=400, details=None):
     return jsonify({"detail": msg}), http
 
 
-# 提取最后一步reason
+# Extract the reasoning from the final step only
 def _extract_final_reason(outputs: dict) -> list[str]:
     """
-    只取 step3.reasons(list), 按数组形式返回。
-    若没有 step3 或 reasons 为空，则返回空串。
+    Only extract step3.reasons (list) and return them as an array.
+    If step3 or reasons is missing/empty, return an empty list.
     """
     rs = (outputs or {}).get("step3", {}).get("reasons")
     if isinstance(rs, list):
@@ -79,13 +79,6 @@ def geo_reason():
         qin.validate()
         sql, params, outputs = _build_reason_sql(qin)
 
-        # 修改传入参数为数组的问题
-        import re
-        if "l1_id" in params:
-            sql = re.sub(r"(\bm\.l1_id\s*)=\s*%\(l1_id\)s", r"\1= ANY(%(l1_id)s)", sql)
-            if not isinstance(params["l1_id"], list):
-                params["l1_id"] = [params["l1_id"]]
-
         sql_with_params = sql
         for k, v in params.items():
             sql_with_params = sql_with_params.replace(f":{k}", repr(v))
@@ -101,9 +94,6 @@ def geo_reason():
         # Lazy import to avoid circular import of sql_service earlier
         from app.services import sql_service
 
-        if isinstance(params.get("l1_id"), list) and len(params["l1_id"]) == 1:
-            params["l1_id"] = params["l1_id"][0]
-
         resu = sql_service.run_sql(sql, params)
 
         if not resu.get("ok"):
@@ -111,7 +101,7 @@ def geo_reason():
         cols = resu["results"]["columns"]
         rows = resu["results"]["rows"]
         dict_results = [dict(zip(cols, r)) for r in rows]
-        
+
         out = QueryOut(
             sql=sql_with_params,
             results=dict_results,
@@ -130,6 +120,12 @@ def geo_reason():
 def geo_reason_mock():
     """
     This mock endpoint is for testing purposes only.
+
+    Input (JSON body):
+    {
+        "question": str,
+        "test_case": int (opt.)   # Optional. ID of the mock test case (default=1). There is no such field in the real data.
+    }
 
     Return format（JSON）：
     {
@@ -157,12 +153,12 @@ def geo_reason_mock():
     """
     try:
         payload = request.get_json(silent=True) or {}
-        
+
         question = (payload.get("question") or "").strip()
         if not question:
             return _err("VALIDATION_ERROR", "'question' is required", 400)
 
-        # 可选测试用例，默认1
+        # Optional test case ID, default = 1
         try:
             test_case_id = int(payload.get("test_case", 1))
         except (TypeError, ValueError):
@@ -192,7 +188,7 @@ def geo_reason_mock():
             model_used=case_model_used,
             is_fallback=case_is_fallback,
         )
-        return jsonify(out.__dict__), 200
+        return jsonify(out.__dict__, sort_keys=False), 200
 
     except RuntimeError as e:
         return _err("SERVICE_UNAVAILABLE", str(e), 503)

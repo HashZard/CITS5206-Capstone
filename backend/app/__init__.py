@@ -9,8 +9,6 @@ def create_app(config_name):
     """Application Factory Function"""
     app = Flask(__name__)
 
-    app.config['JSON_SORT_KEYS'] = False # Keep JSON response order
-
     app.config.from_object(config[config_name])
 
     # Initialize extensions using unified function
