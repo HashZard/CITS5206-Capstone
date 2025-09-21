@@ -8,6 +8,7 @@ from app.services.llm_service import LLMService
 def create_app(config_name):
     """Application Factory Function"""
     app = Flask(__name__)
+
     app.config.from_object(config[config_name])
 
     # Initialize extensions using unified function

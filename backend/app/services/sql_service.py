@@ -2,7 +2,6 @@ from __future__ import annotations
 import json
 from functools import lru_cache
 from typing import Any, Dict, Iterable, List, Mapping, Tuple
-from app.utils.geojson import rows_to_feature_collection
 from sqlalchemy import text
 from ..extensions import db
 from app.models.dto import ALLOWED_TABLES
@@ -14,10 +13,13 @@ Interface function:
 
 Return format:
     {
-        "ok": bool,             
-        "data": List[Dict],     
-        "meta": Dict,           
-        "error": str | None    
+        "ok": bool,
+        "results": {
+            "columns": List[str],
+            "rows": List[List[Any]]
+        },
+        "meta": Dict,
+        "error": str | None
     }
 
 Usage example:
@@ -27,7 +29,8 @@ Usage example:
     resp = sql_service.run_sql(sql)
 
     if resp["ok"]:
-        for row in resp["data"]:
+        print("Columns:", resp["results"]["columns"])
+        for row in resp["results"]["rows"]:
             print(row)
     else:
         print("Query failed:", resp["error"])
@@ -102,25 +105,39 @@ def run_sql(sql: str, params: dict | None = None) -> Dict[str, Any]:
     返回格式：
     {
         "ok": bool,
-        "data": List[Dict],
+        "results": {
+            "columns": List[str],
+            "rows": List[List[Any]]
+        },
         "meta": Dict,
         "error": str | None
     }
     """
     try:
-        rows, meta = execute(sql, params or {})
-        geom_field = None
-        if rows:
-            geom_candidates = [
-                k for k in rows[0].keys() if k.startswith("geom")
-            ]
-            geom_field = geom_candidates[0] if geom_candidates else "geom"
-        geojson = rows_to_feature_collection(rows, geom_field=geom_field)
-        return {"ok": True, "data": geojson, "meta": meta, "error": None}
+        rows_dicts, meta = execute(sql, params or {})
+
+        if rows_dicts:
+            columns = list(rows_dicts[0].keys())
+            rows = [[row.get(c) for c in columns] for row in rows_dicts]
+        else:
+            columns, rows = [], []
+
+        return {
+            "ok": True,
+            "results": {
+                "columns": columns,
+                "rows": rows
+            },
+            "meta": meta,
+            "error": None
+        }
     except Exception as e:
         return {
             "ok": False,
-            "data": {},
+            "results": {
+                "columns": [],
+                "rows": []
+            },
             "meta": {},
             "error": str(e)
         }
