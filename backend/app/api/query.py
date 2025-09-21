@@ -1,5 +1,5 @@
 import json
-from typing import Any, Dict
+from typing import Any
 from flask import Blueprint, request, jsonify
 from app.models.dto import QueryIn, QueryOut, PreviewOut
 from app.services.geo_reasoning_service import GeoReasoningService
@@ -24,7 +24,7 @@ def _extract_final_reason(outputs: dict) -> list[str]:
     return []
 
 
-def _build_reason_sql(qin: "QueryIn") -> tuple[str, Dict[str, Any], dict]:
+def _build_reason_sql(qin: "QueryIn") -> tuple[str, dict[str, Any], dict]:
     question = (qin.question or "").strip()
     if not question:
         raise ValueError("'question' is required")
@@ -188,7 +188,7 @@ def geo_reason_mock():
             model_used=case_model_used,
             is_fallback=case_is_fallback,
         )
-        return jsonify(out.__dict__, sort_keys=False), 200
+        return jsonify(out.__dict__), 200
 
     except RuntimeError as e:
         return _err("SERVICE_UNAVAILABLE", str(e), 503)
