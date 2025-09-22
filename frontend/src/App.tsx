@@ -246,7 +246,7 @@ export default function App() {
 
         {path === "/upload" && isAuthed && <ImportPage />}
 
-        {path === "/result" && <GeoQueryResults query={userQuery || "What are the longest rivers in the world?"} results={[]} generationTime={0} />}
+        {path === "/result" && <GeoQueryResults query={userQuery} />}
 
         {/* Default homepage */}
         {path !== "/login" &&
