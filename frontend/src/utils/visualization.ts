@@ -19,6 +19,9 @@
  */
 
 import { RowItem, VisualizationMode } from '@/types/result';
+import * as wkx from 'wkx';
+import { Buffer } from 'buffer';
+if (typeof window !== 'undefined') { (window as any).Buffer = Buffer; }
 
 // 获取数据类型和可视化模式
 export const getVisualizationMode = (items: RowItem[]): VisualizationMode => {
@@ -33,6 +36,91 @@ export const getVisualizationMode = (items: RowItem[]): VisualizationMode => {
   
   return 'general';
 };
+
+// Decide visualization intent from SQL
+export type Intent = 'map' | 'chart' | 'text';
+
+export function analyzeSql(sql: string, _rows: any[]): Intent {
+  const s = (sql || '').toLowerCase();
+
+  const has = (re: RegExp) => re.test(s);
+
+  // text-only heuristics (highest priority)
+  const textOnly = [
+    /\slike\s|\silike\s|\sregexp\s/, // string matching
+    /\bleft\s*\(|\bright\s*\(|\blength\s*\(/, // string funcs
+    /(name|formal_en|brk_name|abbr)\s*(is\s+null|is\s+not\s+null|=|<>)/,
+  ].some(has) && !/(st_\w+|\bgeom\b|\bgeometry\b)/.test(s);
+  if (textOnly) return 'text';
+
+  // chart heuristics (aggregations / centroid X/Y without geom)
+  const chartAgg = [
+    /\bgroup\s+by\b/,
+    /\b(count|sum|avg|median|percentile|rank|ntile)\s*\(/,
+  ].some(has);
+  const centroidXYNoGeom = /(st_x\s*\(|st_y\s*\()/ .test(s) && !/\bgeom\b|\bgeometry\b/.test(s);
+  if (chartAgg || centroidXYNoGeom) return 'chart';
+
+  // map (default if geom or spatial functions present)
+  const hasGeom = /\bgeom\b|\bgeometry\b/.test(s);
+  const spatialFn = /st_(intersects|within|distance|area|centroid|contains|buffer|asgeojson)/.test(s);
+  if (hasGeom || spatialFn) return 'map';
+
+  // fallback: text
+  return 'text';
+}
+
+// Normalize backend results into RowItem[] and extract geometry (GeoJSON)
+export function normalizeResponse(input: any): RowItem[] {
+  const results = Array.isArray(input) ? input : (Array.isArray(input?.results) ? input.results : []);
+  if (!Array.isArray(results)) return [];
+
+  const fromColumnsRows = (obj: any) => {
+    const columns = (obj?.columns || []).map((c: any) => String(c));
+    const rows = Array.isArray(obj?.rows) ? obj.rows : [];
+    return rows.map((row: any[]) => {
+      const o: any = {};
+      columns.forEach((c: string, i: number) => { o[c] = row[i]; });
+      return o;
+    });
+  };
+
+  const list: any[] = Array.isArray(results?.rows) && Array.isArray(results?.columns)
+    ? fromColumnsRows(results) : results;
+
+  const pickName = (r: any) => r?.formal_en || r?.name || r?.name_en || r?.brk_name || r?.featurecla || r?.id || 'unknown';
+
+  const parseGeom = (r: any): any | null => {
+    try {
+      if (r?.geom_json || r?.geojson || r?.geomGeoJSON) {
+        const g = typeof r.geom_json === 'string' ? JSON.parse(r.geom_json) : (r.geojson || r.geomGeoJSON);
+        return g || null;
+      }
+      const wkb = r?.geometry || r?.geom;
+      if (typeof wkb === 'string' && /^[0-9a-fA-F]+$/.test(wkb)) {
+        const geom = (wkx as any).Geometry.parse(Buffer.from(wkb, 'hex'));
+        return (geom as any).toGeoJSON();
+      }
+    } catch {}
+    return null;
+  };
+
+  return list.map((r: any, idx: number): RowItem => {
+    const geom = parseGeom(r);
+    const area = r?.area_km2 ?? r?.area ?? undefined;
+    const pop = r?.pop_est ?? r?.population ?? r?.pop ?? undefined;
+    const gdp = r?.gdp_md ?? r?.gdp ?? undefined;
+    return {
+      id: String(r?.id ?? r?.ne_id ?? idx + 1),
+      name: pickName(r),
+      population: pop != null ? Number(pop) : undefined,
+      incomeGroup: r?.income_group || r?.income_grp || r?.economy || undefined,
+      region: r?.region || r?.subregion || r?.featurecla || undefined,
+      reason: r?.reason || r?.explanation || r?.rationale || undefined,
+      raw: { ...r, geom },
+    };
+  });
+}
 
 // 格式化面积显示
 export const formatArea = (area: number): string => {

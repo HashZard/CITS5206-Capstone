@@ -102,7 +102,7 @@ export const LoadingBar: React.FC<LoadingBarProps> = ({
 
   return (
     <div 
-      className={`fixed top-0 left-0 right-0 z-50 ${isCompleting ? 'animate-fade-out' : 'animate-fade-in'} ${className}`}
+      className={`fixed top-0 left-0 right-0 z-50 pointer-events-none ${isCompleting ? 'animate-fade-out' : 'animate-fade-in'} ${className}`}
       role="status"
       aria-live="polite"
       aria-label={`Loading progress: ${Math.round(progress)}%`}
