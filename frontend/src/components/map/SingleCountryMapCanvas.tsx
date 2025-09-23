@@ -1,6 +1,20 @@
+/**
+ * SingleCountryMapCanvas 单国家地图画布组件
+ * 
+ * 功能：为单个国家/地区创建专属地图视图
+ * - 自动计算几何边界，优化视图缩放和居中
+ * - 渲染国家的真实边界形状（非圆圈）
+ * - 智能投影系统，确保最佳显示效果
+ * - 数据驱动的颜色编码（面积/GDP/大洲）
+ * - 显示详细标签：国家名、面积、GDP、大洲
+ * - 自适应网格坐标系
+ * 
+ * 使用场景：国家卡片内的小地图，展示该国家的详细地理形状
+ */
+
 import React, { useEffect, useMemo, useRef } from "react";
 import { RowItem } from '@/types/result';
-import { parseWKBGeometry, calculateCentroid, getBounds, drawGeometryWithProjection } from '@/utils/geometry';
+import { parseWKBGeometry, calculateOptimalLabelAnchor, drawGeometryWithProjection, getFitTransform } from '@/utils/geometry';
 import { formatArea, formatGDP, continentColors } from '@/utils/visualization';
 
 interface SingleCountryMapCanvasProps {
@@ -8,13 +22,15 @@ interface SingleCountryMapCanvasProps {
   width?: number;
   height?: number;
   className?: string;
+  debugFrames?: boolean;
 }
 
 export const SingleCountryMapCanvas: React.FC<SingleCountryMapCanvasProps> = ({ 
   item, 
   width = 520, 
   height = 180, 
-  className 
+  className,
+  debugFrames = false
 }) => {
   const canvasRef = useRef<HTMLCanvasElement | null>(null);
   const dpr = typeof window !== "undefined" ? window.devicePixelRatio || 1 : 1;
@@ -23,7 +39,7 @@ export const SingleCountryMapCanvas: React.FC<SingleCountryMapCanvasProps> = ({
   const processedItem = useMemo(() => {
     if (item.raw?.geometry) {
       const geometry = parseWKBGeometry(item.raw.geometry);
-      const centroid = geometry ? calculateCentroid(geometry) : null;
+      const centroid = geometry ? calculateOptimalLabelAnchor(geometry) : null;
       return {
         ...item,
         geometry,
@@ -39,54 +55,28 @@ export const SingleCountryMapCanvas: React.FC<SingleCountryMapCanvasProps> = ({
     const canvas = canvasRef.current;
     if (!canvas) return;
     
-    canvas.width = width * dpr;
-    canvas.height = height * dpr;
+    // 以实际CSS尺寸为准，防止形变；父容器控制style宽高
+    const rect = canvas.getBoundingClientRect();
+    const viewW = Math.max(1, Math.floor(rect.width) || width);
+    const viewH = Math.max(1, Math.floor(rect.height) || height);
+    canvas.width = Math.floor(viewW * dpr);
+    canvas.height = Math.floor(viewH * dpr);
     const ctx = canvas.getContext("2d");
     if (!ctx) return;
     
+    ctx.setTransform(1,0,0,1,0,0);
     ctx.scale(dpr, dpr);
-    ctx.clearRect(0, 0, width, height);
+    ctx.clearRect(0, 0, viewW, viewH);
     
     // 背景
     ctx.fillStyle = "#F8FAFC"; // slate-50
-    ctx.fillRect(0, 0, width, height);
+    ctx.fillRect(0, 0, viewW, viewH);
     
     if (processedItem.geometry) {
-      const bounds = getBounds(processedItem.geometry);
-      
-      if (bounds) {
-        // 自定义投影函数 - 基于几何边界自动缩放
-        const projectCoord = (coord: [number, number]): [number, number] => {
-          const [lon, lat] = coord;
-          const x = ((lon - bounds.minLon) / (bounds.maxLon - bounds.minLon)) * width;
-          const y = ((bounds.maxLat - lat) / (bounds.maxLat - bounds.minLat)) * height;
-          return [x, y];
-        };
-        
-        // 绘制网格（基于实际边界）
-        ctx.strokeStyle = "#E2E8F0"; // slate-200
-        ctx.lineWidth = 0.5;
-        
-        const latStep = (bounds.maxLat - bounds.minLat) / 4;
-        const lonStep = (bounds.maxLon - bounds.minLon) / 6;
-        
-        for (let lat = bounds.minLat; lat <= bounds.maxLat; lat += latStep) {
-          const [, y] = projectCoord([bounds.minLon, lat]);
-          ctx.beginPath();
-          ctx.moveTo(0, y);
-          ctx.lineTo(width, y);
-          ctx.stroke();
-        }
-        
-        for (let lon = bounds.minLon; lon <= bounds.maxLon; lon += lonStep) {
-          const [x] = projectCoord([lon, bounds.minLat]);
-          ctx.beginPath();
-          ctx.moveTo(x, 0);
-          ctx.lineTo(x, height);
-          ctx.stroke();
-        }
-        
-        // 绘制国家几何边界
+      // 计算统一fit变换，保证完整显示+留白
+      const { scale, tx, ty, normalizedGeometry } = getFitTransform(processedItem.geometry, { width: viewW, height: viewH, padding: 14 });
+
+      // 绘制国家几何边界
         const area = processedItem.raw?.area_km2 || 0;
         const gdp = processedItem.raw?.gdp_md || 0;
         const continent = processedItem.raw?.continent || '';
@@ -113,19 +103,39 @@ export const SingleCountryMapCanvas: React.FC<SingleCountryMapCanvasProps> = ({
           fillStyle = continentColors[continent] || 'rgba(124, 58, 237, 0.6)';
         }
         
-        // 使用自定义投影绘制几何体
-        drawGeometryWithProjection(ctx, processedItem.geometry, fillStyle, '#374151', projectCoord);
+        // 在未变换坐标下投影到 width/height 空间，然后整体应用 fit 变换
+        const projectCoord = (coord: [number, number]): [number, number] => {
+          const [lon, lat] = coord;
+          const x = ((lon + 180) / 360) * viewW;
+          const y = ((90 - lat) / 180) * viewH;
+          return [x, y];
+        };
+
+        ctx.save();
+        ctx.translate(tx, ty);
+        ctx.scale(scale, scale);
+        // 细线宽，随DPR调整；并使用偶数-奇数填充保证洞
+        const strokeW = Math.max(1 / dpr, 0.75);
+        ctx.lineWidth = strokeW;
+        // 自定义填充采用 evenodd：在工具函数内部执行 ctx.fill()，此处不重复
+        drawGeometryWithProjection(ctx, normalizedGeometry, fillStyle, '#374151', projectCoord);
+        // 调试框
+        if (debugFrames) {
+          // 内容框
+          ctx.strokeStyle = '#22c55e';
+          ctx.strokeRect((14), (14), (viewW - 28), (viewH - 28));
+        }
+        ctx.restore();
         
         // 添加标签信息
-        renderLabels(ctx, processedItem, area, gdp, continent, width);
-      }
+        renderLabels(ctx, processedItem, area, gdp, continent, viewW);
     } else {
       // 没有几何数据时显示占位符
       ctx.fillStyle = "#94A3B8"; // slate-400
       ctx.font = "16px system-ui";
       ctx.textAlign = "center";
       ctx.textBaseline = "middle";
-      ctx.fillText("No geometry data available", width / 2, height / 2);
+      ctx.fillText("No geometry data available", (canvas.width/dpr) / 2, (canvas.height/dpr) / 2);
     }
   };
 

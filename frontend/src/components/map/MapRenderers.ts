@@ -1,6 +1,26 @@
+/**
+ * MapRenderers 地图渲染器集合
+ * 
+ * 功能：提供各种专业地图可视化渲染算法
+ * - renderAreaVisualization: 面积分布渲染器，按国家面积大小着色
+ * - renderCountriesVisualization: 国家分布渲染器，按大洲分类着色
+ * - renderEconomyVisualization: 经济热力图渲染器，按GDP水平着色
+ * - renderTerrainVisualization: 地形特征渲染器，按地理特征着色
+ * - renderGeneralVisualization: 通用渲染器，适用于未分类数据
+ * 
+ * 每个渲染器都支持：
+ * - 真实几何边界绘制
+ * - 智能颜色编码
+ * - 文本标签和数据展示
+ * - 回退到符号显示（无几何数据时）
+ * 
+ * 使用场景：AdvancedMapCanvas根据数据类型调用相应渲染器
+ */
+
 import { RowItem } from '@/types/result';
 import { drawGeometry } from '@/utils/geometry';
 import { formatArea, formatGDP, continentColors, terrainColors } from '@/utils/visualization';
+import { LabelRenderer } from '@/utils/labelRenderer';
 
 // 面积分布可视化渲染器
 export const renderAreaVisualization = (
@@ -13,6 +33,16 @@ export const renderAreaVisualization = (
   const maxArea = Math.max(...items.map(item => item.raw?.area_km2 || 0));
   console.log('Max area:', maxArea);
   
+  // 创建标签渲染器
+  const labelRenderer = new LabelRenderer(ctx, {
+    fontSize: 12,
+    fontWeight: '600',
+    textColor: '#1e293b',
+    haloColor: '#ffffff',
+    haloWidth: 3
+  });
+
+  // 首先绘制所有几何体
   items.forEach((item, index) => {
     console.log(`Item ${index}:`, item.name, 'area:', item.raw?.area_km2, 'has geometry:', !!item.geometry);
     const area = item.raw?.area_km2 || 0;
@@ -27,28 +57,6 @@ export const renderAreaVisualization = (
       // 绘制真实几何边界
       console.log(`Drawing geometry for ${item.name} with area ${area}`);
       drawGeometry(ctx, item.geometry, w, h, fillStyle, '#374151');
-      
-      // 在质心位置添加标签
-      if (typeof item.lat === 'number' && typeof item.lon === 'number') {
-        const x = ((item.lon + 180) / 360) * w;
-        const y = ((90 - item.lat) / 180) * h;
-        
-        ctx.fillStyle = '#1e293b';
-        ctx.font = '12px system-ui';
-        ctx.textAlign = 'center';
-        ctx.strokeStyle = '#ffffff';
-        ctx.lineWidth = 3;
-        ctx.strokeText(item.name || `${index + 1}`, x, y);
-        ctx.fillText(item.name || `${index + 1}`, x, y);
-        
-        // 面积信息
-        if (area > 0) {
-          ctx.font = '10px system-ui';
-          const areaText = formatArea(area);
-          ctx.strokeText(areaText, x, y + 15);
-          ctx.fillText(areaText, x, y + 15);
-        }
-      }
     } else if (typeof item.lat === 'number' && typeof item.lon === 'number') {
       // 回退到圆圈显示
       const x = ((item.lon + 180) / 360) * w;
@@ -63,13 +71,38 @@ export const renderAreaVisualization = (
       ctx.strokeStyle = '#475569';
       ctx.lineWidth = 1;
       ctx.stroke();
-      
-      if (radius > 10) {
-        ctx.fillStyle = '#1e293b';
-        ctx.font = '12px system-ui';
-        ctx.textAlign = 'center';
-        ctx.fillText(item.name || `${index + 1}`, x, y + radius + 15);
-      }
+    }
+  });
+
+  // 然后渲染所有标签，按面积排序（大的优先）
+  const sortedItems = [...items].sort((a, b) => (b.raw?.area_km2 || 0) - (a.raw?.area_km2 || 0));
+  
+  sortedItems.forEach((item, index) => {
+    const area = item.raw?.area_km2 || 0;
+    const areaText = area > 0 ? formatArea(area) : undefined;
+    const priority = items.length - index; // 面积越大优先级越高
+
+    if (item.geometry) {
+      // 使用几何体渲染标签
+      labelRenderer.renderGeometryLabel(
+        item.geometry,
+        item.name || 'Unknown',
+        areaText,
+        w,
+        h,
+        priority
+      );
+    } else if (typeof item.lat === 'number' && typeof item.lon === 'number') {
+      // 使用点坐标渲染标签
+      labelRenderer.renderPointLabel(
+        item.lat,
+        item.lon,
+        item.name || 'Unknown',
+        areaText,
+        w,
+        h,
+        priority
+      );
     }
   });
 };
@@ -81,6 +114,16 @@ export const renderCountriesVisualization = (
   w: number, 
   h: number
 ) => {
+  // 创建标签渲染器
+  const labelRenderer = new LabelRenderer(ctx, {
+    fontSize: 11,
+    fontWeight: '600',
+    textColor: '#1e293b',
+    haloColor: '#ffffff',
+    haloWidth: 2
+  });
+
+  // 首先绘制所有几何体
   items.forEach((item, index) => {
     console.log(`Country ${index}:`, item.name, 'continent:', item.raw?.continent, 'has geometry:', !!item.geometry);
     const continent = item.raw?.continent || 'Unknown';
@@ -90,28 +133,6 @@ export const renderCountriesVisualization = (
       // 绘制真实国家边界
       console.log(`Drawing country geometry for ${item.name} (${continent})`);
       drawGeometry(ctx, item.geometry, w, h, fillStyle, '#374151');
-      
-      // 在质心位置添加国家标签
-      if (typeof item.lat === 'number' && typeof item.lon === 'number') {
-        const x = ((item.lon + 180) / 360) * w;
-        const y = ((90 - item.lat) / 180) * h;
-        
-        ctx.fillStyle = '#1e293b';
-        ctx.font = '11px system-ui';
-        ctx.textAlign = 'center';
-        ctx.strokeStyle = '#ffffff';
-        ctx.lineWidth = 2;
-        ctx.strokeText(item.name || item.raw?.iso3 || `${index + 1}`, x, y);
-        ctx.fillText(item.name || item.raw?.iso3 || `${index + 1}`, x, y);
-        
-        // GDP信息（如果有）
-        if (item.raw?.gdp_md) {
-          ctx.font = '9px system-ui';
-          const gdpText = formatGDP(item.raw.gdp_md);
-          ctx.strokeText(gdpText, x, y + 12);
-          ctx.fillText(gdpText, x, y + 12);
-        }
-      }
     } else if (typeof item.lat === 'number' && typeof item.lon === 'number') {
       // 回退到圆点显示
       const x = ((item.lon + 180) / 360) * w;
@@ -127,6 +148,35 @@ export const renderCountriesVisualization = (
       ctx.stroke();
     }
   });
+
+  // 然后渲染所有标签
+  items.forEach((item, index) => {
+    const gdpText = item.raw?.gdp_md ? formatGDP(item.raw.gdp_md) : undefined;
+    const priority = items.length - index;
+
+    if (item.geometry) {
+      // 使用几何体渲染标签
+      labelRenderer.renderGeometryLabel(
+        item.geometry,
+        item.name || item.raw?.iso3 || 'Unknown',
+        gdpText,
+        w,
+        h,
+        priority
+      );
+    } else if (typeof item.lat === 'number' && typeof item.lon === 'number') {
+      // 使用点坐标渲染标签
+      labelRenderer.renderPointLabel(
+        item.lat,
+        item.lon,
+        item.name || item.raw?.iso3 || 'Unknown',
+        gdpText,
+        w,
+        h,
+        priority
+      );
+    }
+  });
 };
 
 // 经济热力图可视化渲染器
@@ -139,6 +189,16 @@ export const renderEconomyVisualization = (
   const maxGDP = Math.max(...items.map(item => item.raw?.gdp_md || 0));
   console.log('Max GDP:', maxGDP);
   
+  // 创建标签渲染器
+  const labelRenderer = new LabelRenderer(ctx, {
+    fontSize: 11,
+    fontWeight: '600',
+    textColor: '#1e293b',
+    haloColor: '#ffffff',
+    haloWidth: 2
+  });
+
+  // 首先绘制所有几何体
   items.forEach((item, index) => {
     console.log(`Economy ${index}:`, item.name, 'GDP:', item.raw?.gdp_md, 'has geometry:', !!item.geometry);
     const gdp = item.raw?.gdp_md || 0;
@@ -153,29 +213,6 @@ export const renderEconomyVisualization = (
       // 绘制真实国家边界，颜色基于GDP
       console.log(`Drawing economy geometry for ${item.name} with GDP ${gdp}`);
       drawGeometry(ctx, item.geometry, w, h, fillStyle, '#374151');
-      
-      // 在质心位置添加GDP标签
-      if (typeof item.lat === 'number' && typeof item.lon === 'number') {
-        const x = ((item.lon + 180) / 360) * w;
-        const y = ((90 - item.lat) / 180) * h;
-        
-        // 国家名称
-        ctx.fillStyle = '#1e293b';
-        ctx.font = '11px system-ui';
-        ctx.textAlign = 'center';
-        ctx.strokeStyle = '#ffffff';
-        ctx.lineWidth = 2;
-        ctx.strokeText(item.name || `${index + 1}`, x, y - 8);
-        ctx.fillText(item.name || `${index + 1}`, x, y - 8);
-        
-        // GDP值
-        if (gdp > 0) {
-          ctx.font = '10px system-ui';
-          const gdpText = formatGDP(gdp);
-          ctx.strokeText(gdpText, x, y + 8);
-          ctx.fillText(gdpText, x, y + 8);
-        }
-      }
     } else if (typeof item.lat === 'number' && typeof item.lon === 'number') {
       // 回退到圆圈显示
       const x = ((item.lon + 180) / 360) * w;
@@ -186,15 +223,38 @@ export const renderEconomyVisualization = (
       ctx.beginPath();
       ctx.arc(x, y, radius, 0, Math.PI * 2);
       ctx.fill();
-      
-      // GDP值标签
-      if (gdp > maxGDP * 0.1) {
-        ctx.fillStyle = '#1e293b';
-        ctx.font = '10px system-ui';
-        ctx.textAlign = 'center';
-        const gdpText = formatGDP(gdp);
-        ctx.fillText(gdpText, x, y + radius + 12);
-      }
+    }
+  });
+
+  // 然后渲染所有标签，按GDP排序（高的优先）
+  const sortedItems = [...items].sort((a, b) => (b.raw?.gdp_md || 0) - (a.raw?.gdp_md || 0));
+  
+  sortedItems.forEach((item, index) => {
+    const gdp = item.raw?.gdp_md || 0;
+    const gdpText = gdp > 0 ? formatGDP(gdp) : undefined;
+    const priority = items.length - index; // GDP越高优先级越高
+
+    if (item.geometry) {
+      // 使用几何体渲染标签
+      labelRenderer.renderGeometryLabel(
+        item.geometry,
+        item.name || 'Unknown',
+        gdpText,
+        w,
+        h,
+        priority
+      );
+    } else if (typeof item.lat === 'number' && typeof item.lon === 'number') {
+      // 使用点坐标渲染标签
+      labelRenderer.renderPointLabel(
+        item.lat,
+        item.lon,
+        item.name || 'Unknown',
+        gdpText,
+        w,
+        h,
+        priority
+      );
     }
   });
 };
@@ -206,6 +266,16 @@ export const renderTerrainVisualization = (
   w: number, 
   h: number
 ) => {
+  // 创建标签渲染器
+  const labelRenderer = new LabelRenderer(ctx, {
+    fontSize: 10,
+    fontWeight: '600',
+    textColor: '#2d1b0e',
+    haloColor: '#ffffff',
+    haloWidth: 2
+  });
+
+  // 首先绘制所有几何体
   items.forEach((item, index) => {
     console.log(`Terrain ${index}:`, item.name, 'featurecla:', item.raw?.featurecla, 'has geometry:', !!item.geometry);
     const featurecla = item.raw?.featurecla || 'Unknown';
@@ -215,27 +285,6 @@ export const renderTerrainVisualization = (
       // 绘制真实地形几何边界
       console.log(`Drawing terrain geometry for ${item.name} (${featurecla})`);
       drawGeometry(ctx, item.geometry, w, h, fillStyle, '#654321');
-      
-      // 在质心位置添加地形标签
-      if (typeof item.lat === 'number' && typeof item.lon === 'number') {
-        const x = ((item.lon + 180) / 360) * w;
-        const y = ((90 - item.lat) / 180) * h;
-        
-        ctx.fillStyle = '#2d1b0e';
-        ctx.font = '10px system-ui';
-        ctx.textAlign = 'center';
-        ctx.strokeStyle = '#ffffff';
-        ctx.lineWidth = 2;
-        ctx.strokeText(item.name || `${index + 1}`, x, y);
-        ctx.fillText(item.name || `${index + 1}`, x, y);
-        
-        // 地形类型
-        if (featurecla !== 'Unknown') {
-          ctx.font = '8px system-ui';
-          ctx.strokeText(featurecla, x, y + 12);
-          ctx.fillText(featurecla, x, y + 12);
-        }
-      }
     } else if (typeof item.lat === 'number' && typeof item.lon === 'number') {
       // 回退到符号显示
       const x = ((item.lon + 180) / 360) * w;
@@ -262,6 +311,36 @@ export const renderTerrainVisualization = (
       ctx.strokeStyle = '#654321';
       ctx.lineWidth = 1;
       ctx.stroke();
+    }
+  });
+
+  // 然后渲染所有标签
+  items.forEach((item, index) => {
+    const featurecla = item.raw?.featurecla || 'Unknown';
+    const subText = featurecla !== 'Unknown' ? featurecla : undefined;
+    const priority = items.length - index;
+
+    if (item.geometry) {
+      // 使用几何体渲染标签
+      labelRenderer.renderGeometryLabel(
+        item.geometry,
+        item.name || 'Unknown',
+        subText,
+        w,
+        h,
+        priority
+      );
+    } else if (typeof item.lat === 'number' && typeof item.lon === 'number') {
+      // 使用点坐标渲染标签
+      labelRenderer.renderPointLabel(
+        item.lat,
+        item.lon,
+        item.name || 'Unknown',
+        subText,
+        w,
+        h,
+        priority
+      );
     }
   });
 };
@@ -312,27 +391,23 @@ export const renderGeneralVisualization = (
     return;
   }
   
-  items.forEach((item, index) => {
+  // 创建标签渲染器
+  const labelRenderer = new LabelRenderer(ctx, {
+    fontSize: 11,
+    fontWeight: '600',
+    textColor: '#1e293b',
+    haloColor: '#ffffff',
+    haloWidth: 2
+  });
+
+  // 首先绘制所有几何体
+  items.forEach((item) => {
     console.log('Drawing item:', item.name, 'has geometry:', !!item.geometry, 'at', item.lat, item.lon);
     
     if (item.geometry) {
       // 绘制真实几何边界
       console.log(`Drawing general geometry for ${item.name}`);
       drawGeometry(ctx, item.geometry, w, h, 'rgba(124, 58, 237, 0.6)', '#7C3AED');
-      
-      // 在质心位置添加标签
-      if (typeof item.lat === 'number' && typeof item.lon === 'number') {
-        const x = ((item.lon + 180) / 360) * w;
-        const y = ((90 - item.lat) / 180) * h;
-        
-        ctx.fillStyle = '#1e293b';
-        ctx.font = '11px system-ui';
-        ctx.textAlign = 'center';
-        ctx.strokeStyle = '#ffffff';
-        ctx.lineWidth = 2;
-        ctx.strokeText(item.name || `${index + 1}`, x, y);
-        ctx.fillText(item.name || `${index + 1}`, x, y);
-      }
     } else if (typeof item.lat === 'number' && typeof item.lon === 'number') {
       // 回退到圆点显示
       const x = ((item.lon + 180) / 360) * w;
@@ -346,11 +421,34 @@ export const renderGeneralVisualization = (
       ctx.strokeStyle = '#ffffff';
       ctx.lineWidth = 2;
       ctx.stroke();
-      
-      ctx.fillStyle = '#1e293b';
-      ctx.font = '11px system-ui';
-      ctx.textAlign = 'center';
-      ctx.fillText(item.name || `${index + 1}`, x, y + 15);
+    }
+  });
+
+  // 然后渲染所有标签
+  items.forEach((item, index) => {
+    const priority = items.length - index;
+
+    if (item.geometry) {
+      // 使用几何体渲染标签
+      labelRenderer.renderGeometryLabel(
+        item.geometry,
+        item.name || 'Unknown',
+        undefined,
+        w,
+        h,
+        priority
+      );
+    } else if (typeof item.lat === 'number' && typeof item.lon === 'number') {
+      // 使用点坐标渲染标签
+      labelRenderer.renderPointLabel(
+        item.lat,
+        item.lon,
+        item.name || 'Unknown',
+        undefined,
+        w,
+        h,
+        priority
+      );
     }
   });
 };

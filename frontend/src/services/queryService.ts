@@ -1,3 +1,21 @@
+/**
+ * QueryService 查询服务类
+ * 
+ * 功能：处理所有与后端API的交互和数据转换
+ * - executeQuery: 执行地理查询，返回处理后的结果
+ * - fetchResults: 发送HTTP请求到后端API
+ * - extractCoordinates: 从地名提取近似坐标（回退方案）
+ * - mapResultsToRowItems: 将API响应转换为前端数据格式
+ * 
+ * 数据处理功能：
+ * - 统一数据格式转换
+ * - 坐标提取和映射
+ * - 错误处理和异常捕获
+ * - 支持测试用例参数
+ * 
+ * 使用场景：Result组件的数据层，封装所有API调用逻辑
+ */
+
 import axios from "axios";
 import { ApiSuccess, RowItem } from '@/types/result';
 

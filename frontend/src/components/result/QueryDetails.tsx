@@ -1,3 +1,15 @@
+/**
+ * QueryDetails 查询详情组件
+ * 
+ * 功能：显示查询的技术详情信息
+ * - 展示生成的SQL查询语句
+ * - 显示AI推理过程和逻辑
+ * - 代码高亮和格式化显示
+ * - 可折叠的详情面板
+ * 
+ * 使用场景：为开发者和高级用户提供查询的技术细节
+ */
+
 import React from "react";
 import { MetaData } from '@/types/result';
 

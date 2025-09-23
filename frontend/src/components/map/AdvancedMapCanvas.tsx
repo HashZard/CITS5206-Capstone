@@ -1,7 +1,25 @@
-import React, { useEffect, useMemo, useRef, useState } from "react";
-import { ZoomIn, ZoomOut, RotateCcw } from "lucide-react";
+/**
+ * AdvancedMapCanvas 高级地图画布组件
+ * 
+ * 功能：智能地图可视化的核心组件
+ * - 自动识别数据类型，选择最佳可视化模式（面积/国家/经济/地形/通用）
+ * - 解析WKB几何数据，渲染真实国家边界
+ * - 交互功能：缩放、平移、重置、点击选择
+ * - 支持4种专业可视化模式：
+ *   • 面积分布图：按国家面积大小着色
+ *   • 国家分布图：按大洲分类着色  
+ *   • 经济热力图：按GDP水平着色
+ *   • 地形特征图：按地理特征着色
+ * - 动态图例和模式指示器
+ * 
+ * 使用场景：查询结果的主要地图展示区域
+ */
+
+import React, { useEffect, useMemo, useRef, useState, useImperativeHandle } from "react";
+// toolbar icons are encapsulated inside VerticalToolbar
+import VerticalToolbar from '@/components/ui/VerticalToolbar';
 import { RowItem, VisualizationMode } from '@/types/result';
-import { parseWKBGeometry, calculateCentroid } from '@/utils/geometry';
+import { parseWKBGeometry, calculateOptimalLabelAnchor } from '@/utils/geometry';
 import { getVisualizationMode } from '@/utils/visualization';
 import {
   renderAreaVisualization,
@@ -11,19 +29,27 @@ import {
   renderGeneralVisualization
 } from './MapRenderers';
 
+export interface AdvancedMapCanvasControlsHandle {
+  zoomIn: () => void;
+  zoomOut: () => void;
+  reset: () => void;
+}
+
 interface AdvancedMapCanvasProps {
   items: RowItem[];
   width?: number;
   height?: number;
   className?: string;
+  showInternalToolbar?: boolean; // 是否显示内部右侧垂直工具栏（默认显示）
 }
 
-export const AdvancedMapCanvas: React.FC<AdvancedMapCanvasProps> = ({ 
-  items, 
-  width = 980, 
-  height = 500, 
-  className 
-}) => {
+export const AdvancedMapCanvas = React.forwardRef<AdvancedMapCanvasControlsHandle, AdvancedMapCanvasProps>(({ 
+  items,
+  width = 980,
+  height = 500,
+  className,
+  showInternalToolbar = true
+}, ref) => {
   const canvasRef = useRef<HTMLCanvasElement | null>(null);
   const [zoom, setZoom] = useState(1);
   const [panX, setPanX] = useState(0);
@@ -40,7 +66,7 @@ export const AdvancedMapCanvas: React.FC<AdvancedMapCanvasProps> = ({
       if (item.raw?.geometry) {
         const geometry = parseWKBGeometry(item.raw.geometry);
         console.log('Parsed geometry:', (geometry as any)?.type, geometry);
-        const centroid = geometry ? calculateCentroid(geometry) : null;
+        const centroid = geometry ? calculateOptimalLabelAnchor(geometry) : null;
         console.log('Calculated centroid:', centroid);
         return {
           ...item,
@@ -164,36 +190,26 @@ export const AdvancedMapCanvas: React.FC<AdvancedMapCanvasProps> = ({
     renderMap();
   }, [processedItems, zoom, panX, panY, selectedItem, width, height]);
 
+  // 暴露外部控制句柄
+  useImperativeHandle(ref, () => ({
+    zoomIn: () => setZoom(z => Math.min(z * 1.2, 5)),
+    zoomOut: () => setZoom(z => Math.max(z / 1.2, 0.5)),
+    reset: () => { setZoom(1); setPanX(0); setPanY(0); setSelectedItem(null); }
+  }), []);
+
   return (
-    <div className="relative">
-      {/* 地图控制按钮 */}
-      <div className="absolute top-4 right-4 flex gap-2 z-10">
-        <button
-          onClick={() => setZoom(z => Math.min(z * 1.2, 5))}
-          className="p-2 bg-white/90 border border-slate-300 rounded-md hover:bg-slate-50 transition-colors"
-          title="放大"
-        >
-          <ZoomIn className="w-4 h-4" />
-        </button>
-        <button
-          onClick={() => setZoom(z => Math.max(z / 1.2, 0.5))}
-          className="p-2 bg-white/90 border border-slate-300 rounded-md hover:bg-slate-50 transition-colors"
-          title="缩小"
-        >
-          <ZoomOut className="w-4 h-4" />
-        </button>
-        <button
-          onClick={() => {setZoom(1); setPanX(0); setPanY(0); setSelectedItem(null);}}
-          className="p-2 bg-white/90 border border-slate-300 rounded-md hover:bg-slate-50 transition-colors"
-          title="重置视图"
-        >
-          <RotateCcw className="w-4 h-4" />
-        </button>
-      </div>
+    <div className="relative w-full flex justify-center">
+      {/* 垂直工具栏（右侧停靠） */}
+      {showInternalToolbar && (
+        <VerticalToolbar
+          onZoomIn={() => setZoom(z => Math.min(z * 1.2, 5))}
+          onZoomOut={() => setZoom(z => Math.max(z / 1.2, 0.5))}
+          onRefresh={() => { setZoom(1); setPanX(0); setPanY(0); setSelectedItem(null); }}
+        />
+      )}
       
       {/* 地图模式指示器 */}
       <div className="absolute top-4 left-4 bg-white/90 px-3 py-1 rounded-md text-sm font-medium">
-        {mode === 'area' && '📊 面积分布图'}
         {mode === 'countries' && '🌍 国家分布图'}
         {mode === 'economy' && '💰 经济热力图'}
         {mode === 'terrain' && '🏔️ 地形特征图'}
@@ -203,7 +219,7 @@ export const AdvancedMapCanvas: React.FC<AdvancedMapCanvasProps> = ({
       
       <canvas
         ref={canvasRef}
-        style={{ width, height }}
+        style={{ width, height, maxWidth: '100%' }}
         className={`border border-slate-200 rounded-xl cursor-crosshair ${className}`}
         onClick={handleCanvasClick}
       />
@@ -212,18 +228,13 @@ export const AdvancedMapCanvas: React.FC<AdvancedMapCanvasProps> = ({
       <MapLegend mode={mode} />
     </div>
   );
-};
+});
+
+AdvancedMapCanvas.displayName = 'AdvancedMapCanvas';
 
 // 地图图例组件
 const MapLegend: React.FC<{ mode: VisualizationMode }> = ({ mode }) => (
   <div className="mt-4 text-sm text-slate-600">
-    {mode === 'area' && (
-      <div className="flex items-center gap-4">
-        <span>🔵 小面积区域</span>
-        <span>🟡 中等面积区域</span>
-        <span>🔴 大面积区域</span>
-      </div>
-    )}
     {mode === 'countries' && (
       <div className="flex items-center gap-4 flex-wrap">
         <span>🔴 亚洲</span>

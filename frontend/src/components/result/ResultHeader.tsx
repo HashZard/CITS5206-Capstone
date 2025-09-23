@@ -1,3 +1,15 @@
+/**
+ * ResultHeader 结果页头部组件
+ * 
+ * 功能：显示查询结果页面的标题和元信息
+ * - 显示用户输入的查询语句
+ * - 展示使用的AI模型信息
+ * - 指示是否为fallback模式
+ * - 美观的渐变背景设计
+ * 
+ * 使用场景：查询结果页面的顶部标题区域
+ */
+
 import React from "react";
 import { MetaData } from '@/types/result';
 
