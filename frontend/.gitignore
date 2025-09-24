@@ -37,3 +37,15 @@ lerna-debug.log*
 
 # Local Netlify folder
 .netlify
+
+.package.json
+.package-lock.json
+.yarn.lock
+.pnpm-lock.yaml
+.bun.lockb
+.npmrc
+.npm-cache
+.npm-debug.log
+.npm-debug.log.json
+.npm-debug.log.txt
+.npm-debug.log.json

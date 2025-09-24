@@ -1,409 +1,187 @@
-import React, { useState } from 'react';
-import { Copy, Download, Share2, MapPin, BarChart3, Globe, Check, Mail } from 'lucide-react';
+/**
+ * GeoQueryResults 地理查询结果页面主组件
+ * 
+ * 功能：展示地理查询的完整结果页面
+ * - 接收用户查询，调用后端API获取结果
+ * - 智能地图可视化：自动选择最佳展示模式
+ * - 结果展示：单条结果详细说明，多条结果卡片列表
+ * - 交互功能：复制、分享、查看技术详情
+ * - 错误处理：友好的错误提示和加载状态
+ * 
+ * 页面结构：
+ * 1. ResultHeader: 查询标题和元信息
+ * 2. AdvancedMapCanvas: 智能地图可视化
+ * 3. 单条结果：大块reason说明区域
+ * 4. 多条结果：CountryCard网格布局
+ * 5. QueryDetails: SQL和推理技术详情
+ * 6. Toast: 操作反馈提示
+ * 
+ * 使用场景：用户提交地理查询后的结果展示页面
+ */
 
-// TypeScript interfaces
-interface RiverData {
-  id: string;
-  name: string;
-  length: string;
-  continent: string;
-  description: string;
-  coordinates?: [number, number];
-}
+"use client";
 
-interface ResultsProps {
+import React, { useEffect, useState } from "react";
+import { RowItem, ToastState, MetaData, ApiError } from '@/types/result';
+import { Toast } from '@/components/ui/Toast';
+import { ExportButton } from '@/components/ui/ExportButton';
+import ExportModal from '@/components/ui/ExportModal';
+import { LoadingBar } from '@/components/ui/LoadingBar';
+import { AdvancedMapCanvas, AdvancedMapCanvasControlsHandle } from '@/components/map/AdvancedMapCanvas';
+import { ZoomIn, ZoomOut, RotateCcw } from 'lucide-react';
+import { CountryCard } from '@/components/result/CountryCard';
+import { ResultHeader } from '@/components/result/ResultHeader';
+import { QueryDetails } from '@/components/result/QueryDetails';
+import { QueryService } from '@/services/queryService';
+
+interface GeoQueryResultsProps {
   query: string;
-  results: RiverData[];
-  generationTime: number;
+  testCase?: number;
 }
 
-// Mock data for demonstration
-const mockResults: RiverData[] = [
-  {
-    id: '1',
-    name: 'Amazon River',
-    length: '6,400 km',
-    continent: 'South America',
-    description: 'The Amazon River is the longest river in the world, flowing through Brazil, Peru, Colombia, and several other South American countries. It carries more water than any other river and supports the world\'s largest rainforest ecosystem, home to incredible biodiversity.'
-  },
-  {
-    id: '2',
-    name: 'Nile River',
-    length: '6,350 km',
-    continent: 'Africa',
-    description: 'The Nile River, traditionally considered the longest river in the world, flows northward through northeastern Africa. It has been the lifeline of Egyptian civilization for thousands of years, providing water and fertile soil for agriculture in an otherwise arid region.'
-  },
-  {
-    id: '3',
-    name: 'Yangtze River',
-    length: '6,300 km',
-    continent: 'Asia',
-    description: 'The Yangtze River is the longest river in Asia and the third-longest in the world. Flowing entirely within China, it serves as a crucial waterway for transportation and commerce, supporting over 400 million people along its basin.'
-  },
-  {
-    id: '4',
-    name: 'Mississippi River',
-    length: '6,275 km',
-    continent: 'North America',
-    description: 'The Mississippi River system is the second-longest river system in North America. It flows primarily through the United States, serving as a major transportation route and playing a crucial role in American history, culture, and economy.'
-  },
-  {
-    id: '5',
-    name: 'Yenisei River',
-    length: '5,539 km',
-    continent: 'Asia',
-    description: 'The Yenisei River is the largest river system flowing to the Arctic Ocean. It flows through Russia from south to north, draining a vast area of Siberia and playing a vital role in the region\'s ecosystem and transportation network.'
-  }
-];
+const GeoQueryResults: React.FC<GeoQueryResultsProps> = ({ query, testCase }) => {
+  const [items, setItems] = useState<RowItem[]>([]);
+  const [loading, setLoading] = useState(false);
+  const [toast, setToast] = useState<ToastState>({ message: "", isVisible: false });
+  const [meta, setMeta] = useState<MetaData>({});
 
-// Toast notification component
-const Toast: React.FC<{ message: string; isVisible: boolean; onClose: () => void }> = ({ 
-  message, 
-  isVisible, 
-  onClose 
-}) => {
-  React.useEffect(() => {
-    if (isVisible) {
-      const timer = setTimeout(onClose, 3000);
-      return () => clearTimeout(timer);
-    }
-  }, [isVisible, onClose]);
+  const showToast = (message: string) => setToast({ message, isVisible: true });
+  const hideToast = () => setToast({ message: "", isVisible: false });
 
-  return (
-    <div className={`fixed bottom-6 right-6 bg-green-600 text-white px-4 py-3 rounded-lg shadow-lg transition-transform duration-300 z-50 flex items-center gap-2 ${
-      isVisible ? 'translate-x-0' : 'translate-x-full'
-    }`}>
-      <Check className="w-4 h-4" />
-      {message}
-    </div>
-  );
-};
+  useEffect(() => {
+    if (!query) return;
 
-// Share modal component
-const ShareModal: React.FC<{ isOpen: boolean; onClose: () => void; onEmailShare: () => void }> = ({ 
-  isOpen, 
-  onClose, 
-  onEmailShare 
-}) => {
-  if (!isOpen) return null;
-
-  return (
-    <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50" onClick={onClose}>
-      <div className="bg-white rounded-2xl p-6 w-full max-w-md mx-4" onClick={(e) => e.stopPropagation()}>
-        <h3 className="text-xl font-semibold text-slate-900 mb-4">Share Results</h3>
-        <p className="text-slate-600 mb-6">Choose how you'd like to share these results:</p>
-        <div className="flex gap-3">
-          <button
-            onClick={onClose}
-            className="flex-1 px-4 py-2 border border-slate-300 text-slate-700 rounded-lg hover:bg-slate-50 transition-colors"
-          >
-            Cancel
-          </button>
-          <button
-            onClick={onEmailShare}
-            className="flex-1 px-4 py-2 bg-gradient-to-r from-purple-600 to-purple-700 text-white rounded-lg hover:from-purple-700 hover:to-purple-800 transition-all flex items-center justify-center gap-2"
-          >
-            <Mail className="w-4 h-4" />
-            Email
-          </button>
-        </div>
-      </div>
-    </div>
-  );
-};
-
-// Copy button component
-const CopyButton: React.FC<{ text: string; onCopy: (message: string) => void }> = ({ 
-  text, 
-  onCopy 
-}) => {
-  const handleCopy = async () => {
-    try {
-      await navigator.clipboard.writeText(text);
-      onCopy('Text copied to clipboard!');
-    } catch (err) {
-      onCopy('Failed to copy text');
-    }
-  };
-
-  return (
-    <button
-      onClick={handleCopy}
-      className="absolute top-4 right-4 p-2 bg-white border border-slate-300 rounded-md hover:bg-purple-600 hover:text-white transition-all opacity-70 hover:opacity-100"
-      title="Copy to clipboard"
-    >
-      <Copy className="w-4 h-4" />
-    </button>
-  );
-};
-
-// River detail card component
-const RiverCard: React.FC<{ river: RiverData; onCopy: (message: string) => void }> = ({ 
-  river, 
-  onCopy 
-}) => {
-  const cardText = `${river.name}\nLength: ${river.length}, Continent: ${river.continent}\n\n${river.description}`;
-
-  const handleCardCopy = async () => {
-    try {
-      await navigator.clipboard.writeText(cardText);
-      onCopy('River details copied to clipboard!');
-    } catch (err) {
-      onCopy('Failed to copy text');
-    }
-  };
-
-  return (
-    <div className="bg-white border border-slate-200 rounded-2xl overflow-hidden hover:shadow-lg hover:-translate-y-1 transition-all duration-300 relative">
-      {/* Map placeholder */}
-      <div className="h-48 bg-gradient-to-br from-purple-200 to-purple-300 flex items-center justify-center relative overflow-hidden">
-        <div className="absolute inset-0 opacity-30">
-          <svg 
-            className="w-full h-full" 
-            viewBox="0 0 400 200" 
-            fill="none"
-          >
-            <defs>
-              <pattern id={`grid-${river.id}`} x="0" y="0" width="40" height="40" patternUnits="userSpaceOnUse">
-                <circle cx="20" cy="20" r="1" fill="rgb(147 51 234 / 0.3)" />
-              </pattern>
-            </defs>
-            <rect width="100%" height="100%" fill={`url(#grid-${river.id})`} />
-            <path 
-              d="M50 100 Q200 80 350 100" 
-              stroke="rgb(147 51 234 / 0.6)" 
-              strokeWidth="3" 
-              fill="none"
-            />
-          </svg>
-        </div>
-        <MapPin className="w-12 h-12 text-purple-600 z-10" />
-      </div>
-      
-      {/* Content */}
-      <div className="p-6 relative">
-        <button
-          onClick={handleCardCopy}
-          className="absolute top-4 right-4 p-2 bg-slate-100 border border-slate-200 rounded-md hover:bg-purple-600 hover:text-white transition-all opacity-70 hover:opacity-100"
-          title="Copy river details"
-        >
-          <Copy className="w-3.5 h-3.5" />
-        </button>
+    const executeQuery = async () => {
+      try {
+        setLoading(true);
         
-        <h3 className="text-xl font-semibold text-slate-900 mb-4 pr-12">{river.name}</h3>
+        // 模拟最小加载时间，确保用户能看到加载动画
+        const [queryResult] = await Promise.all([
+          QueryService.executeQuery(query, testCase),
+          new Promise(resolve => setTimeout(resolve, 800)) // 最少显示800ms
+        ]);
         
-        {/* Stats */}
-        <div className="grid grid-cols-2 gap-3 mb-4">
-          <div className="bg-slate-50 rounded-lg p-3 text-center">
-            <div className="text-xs text-slate-500 uppercase tracking-wide font-medium">Length</div>
-            <div className="text-lg font-semibold text-purple-600">{river.length}</div>
-          </div>
-          <div className="bg-slate-50 rounded-lg p-3 text-center">
-            <div className="text-xs text-slate-500 uppercase tracking-wide font-medium">Continent</div>
-            <div className="text-lg font-semibold text-purple-600">{river.continent}</div>
-          </div>
-        </div>
-        
-        {/* Description */}
-        <p className="text-slate-600 leading-relaxed text-sm">{river.description}</p>
-      </div>
-    </div>
-  );
-};
+        const { items: resultItems, meta: resultMeta } = queryResult;
+        setItems(resultItems);
+        setMeta(resultMeta);
+      } catch (error: any) {
+        const msg = (error?.response?.data as ApiError)?.detail || error?.message || "查询失败，请重试";
+        showToast(msg);
+        setItems([]);
+      } finally {
+        setLoading(false);
+      }
+    };
 
-// Main Results component
-const GeoQueryResults: React.FC<ResultsProps> = ({ 
-  query = "Find the largest cities near rivers in Europe", 
-  results = mockResults, 
-  generationTime = 2.3 
-}) => {
-  const [toast, setToast] = useState({ message: '', isVisible: false });
-  const [isShareModalOpen, setIsShareModalOpen] = useState(false);
-  const [isExportModalOpen, setIsExportModalOpen] = useState(false);
+    executeQuery();
+  }, [query, testCase]);
 
-  const showToast = (message: string) => {
-    setToast({ message, isVisible: true });
-  };
-
-  const hideToast = () => {
-    setToast({ message: '', isVisible: false });
-  };
-
-  const handleExportPDF = async () => {
-    // In a real implementation, you would use a library like jsPDF or react-pdf
-    const content = `GeoQuery Results: ${query}\n\n` +
-      results.map((river, index) => 
-        `${index + 1}. ${river.name}\nLength: ${river.length} | Continent: ${river.continent}\n${river.description}\n\n`
-      ).join('');
-    
-    // Simulate PDF generation
-    const blob = new Blob([content], { type: 'text/plain' });
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement('a');
-    a.href = url;
-    a.download = 'geoquery-results.txt'; // In real app, this would be .pdf
-    a.click();
-    URL.revokeObjectURL(url);
-    
-    showToast('Results exported successfully!');
-    setIsExportModalOpen(false);
-  };
-
-  const handleEmailShare = () => {
-    const subject = encodeURIComponent('GeoQuery Results: World\'s Five Largest Rivers');
-    const body = encodeURIComponent('Here are the results from my GeoQuery search about the world\'s five largest rivers. View the full interactive results at: [URL would be here]');
-    window.open(`mailto:?subject=${subject}&body=${body}`);
-    setIsShareModalOpen(false);
-  };
-
-  const overviewText = "The world's five largest rivers by length are distributed across multiple continents, showcasing the diverse geography of our planet. These major waterways have played crucial roles in human civilization, supporting agriculture, transportation, and urban development throughout history. From the Amazon's vast basin in South America to the Nile's life-giving flow through Africa, each river represents a vital ecosystem and cultural landmark.";
+  const exportTargetRef = React.useRef<HTMLDivElement>(null);
+  const [isExportOpen, setExportOpen] = React.useState(false);
+  const mapRef = React.useRef<AdvancedMapCanvasControlsHandle>(null);
 
   return (
-    <div className="max-w-7xl mx-auto px-4 py-8 min-h-screen bg-white">
-      {/* Query Header - 保持原色彩，增加白色透明覆盖 */}
-      <div className="bg-gradient-to-br from-purple-600 to-purple-700 text-white rounded-2xl p-8 mb-8 relative overflow-hidden">
-        {/* 白色透明覆盖层 */}
-        <div className="absolute inset-0 bg-white/60 rounded-2xl"></div>
-        <div className="absolute inset-0 opacity-20">
-          <svg className="w-full h-full" viewBox="0 0 100 100">
-            <defs>
-              <pattern id="dots" x="0" y="0" width="20" height="20" patternUnits="userSpaceOnUse">
-                <circle cx="10" cy="10" r="1" fill="currentColor" />
-              </pattern>
-            </defs>
-            <rect width="100%" height="100%" fill="url(#dots)" />
-          </svg>
-        </div>
-        <div className="relative z-10">
-          <h1 className="text-3xl font-semibold mb-2 text-slate-800">Search Results</h1>
-          <p className="text-slate-700 text-lg">"{query}"</p>
-        </div>
-      </div>
-
-      {/* Actions Bar */}
-      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-8 p-4 bg-slate-50 rounded-xl">
-        <div className="text-slate-600 text-sm">
-          Found {results.length} results • Generated in {generationTime}s
-        </div>
-        <div className="flex gap-3">
-          <button
-            onClick={() => setIsShareModalOpen(true)}
-            className="flex items-center gap-2 px-4 py-2 bg-white border border-slate-300 text-slate-700 rounded-lg hover:bg-slate-50 transition-colors"
-          >
-            <Share2 className="w-4 h-4" />
-            Share
-          </button>
-          <button
-            onClick={() => setIsExportModalOpen(true)}
-            className="flex items-center gap-2 px-4 py-2 bg-gradient-to-r from-purple-600 to-purple-700 text-white rounded-lg hover:from-purple-700 hover:to-purple-800 transition-all shadow-sm hover:shadow-md hover:-translate-y-0.5"
-          >
-            <Download className="w-4 h-4" />
-            Export PDF
-          </button>
-        </div>
-      </div>
-
-      {/* Overview Section */}
-      <div className="mb-12">
-        <h2 className="flex items-center gap-3 text-2xl font-semibold text-slate-900 mb-6">
-          <div className="w-2 h-2 bg-gradient-to-r from-purple-600 to-purple-700 rounded-full"></div>
-          Overview Map
-        </h2>
-        
-        {/* Overview Map */}
-        <div className="w-full h-96 bg-gradient-to-br from-blue-50 to-blue-100 rounded-2xl flex items-center justify-center border-2 border-slate-200 mb-6 relative overflow-hidden">
-          <div className="absolute inset-0 opacity-30">
-            <svg className="w-full h-full" viewBox="0 0 800 400">
-              <defs>
-                <pattern id="world-grid" x="0" y="0" width="50" height="50" patternUnits="userSpaceOnUse">
-                  <path d="M 50 0 L 0 0 0 50" fill="none" stroke="rgb(59 130 246 / 0.3)" strokeWidth="1"/>
-                </pattern>
-              </defs>
-              <rect width="100%" height="100%" fill="url(#world-grid)" />
-              {/* Simulate river paths */}
-              <path d="M100 200 Q300 180 500 200 Q600 210 700 200" stroke="rgb(59 130 246 / 0.6)" strokeWidth="4" fill="none" />
-              <path d="M150 250 Q350 230 550 250" stroke="rgb(59 130 246 / 0.6)" strokeWidth="3" fill="none" />
-              <path d="M200 150 Q400 140 600 150" stroke="rgb(59 130 246 / 0.6)" strokeWidth="3" fill="none" />
-            </svg>
-          </div>
-          <div className="text-center z-10">
-            <Globe className="w-16 h-16 text-slate-400 mx-auto mb-4" />
-            <p className="text-slate-600 font-medium">Interactive World Map Showing the Five Largest Rivers</p>
-            <p className="text-slate-500 text-sm mt-2">Highlighted: Amazon, Nile, Yangtze, Mississippi, Yenisei</p>
-          </div>
-        </div>
-
-        {/* Overview Summary */}
-        <div className="bg-slate-50 rounded-2xl p-6 relative">
-          <CopyButton text={overviewText} onCopy={showToast} />
-          <p className="text-slate-700 leading-relaxed pr-12">{overviewText}</p>
-        </div>
-      </div>
-
-      {/* Detailed Results */}
-      <h2 className="flex items-center gap-3 text-2xl font-semibold text-slate-900 mb-6">
-        <div className="w-2 h-2 bg-gradient-to-r from-purple-600 to-purple-700 rounded-full"></div>
-        Detailed Results
-      </h2>
-      
-      <div className="grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-3 gap-6">
-        {results.map((river) => (
-          <RiverCard key={river.id} river={river} onCopy={showToast} />
-        ))}
-      </div>
-
-      {/* Toast Notification */}
-      <Toast 
-        message={toast.message} 
-        isVisible={toast.isVisible} 
-        onClose={hideToast} 
+    <div ref={exportTargetRef} className="mx-auto px-4 sm:px-6 lg:px-8 py-8 min-h-screen bg-white max-w-[1200px] lg:max-w-[1400px] xl:max-w-[1600px]">
+      {/* 加载进度条 */}
+      <LoadingBar 
+        isLoading={loading} 
+        message="Analyzing your geographic query..."
+        color="purple"
       />
+      {/* Header */}
+      <ResultHeader query={query} meta={meta} />
 
-      {/* Export Confirmation Modal */}
-      <ExportModal 
-        isOpen={isExportModalOpen} 
-        onClose={() => setIsExportModalOpen(false)} 
-        onConfirm={handleExportPDF} 
-      />
-
-      {/* Share Modal */}
-      <ShareModal 
-        isOpen={isShareModalOpen} 
-        onClose={() => setIsShareModalOpen(false)} 
-        onEmailShare={handleEmailShare} 
-      />
-    </div>
-  );
-};
-
-// Export Modal component
-const ExportModal: React.FC<{ isOpen: boolean; onClose: () => void; onConfirm: () => void }> = ({ 
-  isOpen, 
-  onClose, 
-  onConfirm 
-}) => {
-  if (!isOpen) return null;
-
-  return (
-    <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50" onClick={onClose}>
-      <div className="bg-white rounded-2xl p-6 w-full max-w-md mx-4" onClick={(e) => e.stopPropagation()}>
-        <h3 className="text-xl font-semibold text-slate-900 mb-4">Export Results</h3>
-        <p className="text-slate-600 mb-6">Are you sure you want to export these results?</p>
-        <div className="flex gap-3">
-          <button
-            onClick={onClose}
-            className="flex-1 px-4 py-2 border border-slate-300 text-slate-700 rounded-lg hover:bg-slate-50 transition-colors"
-          >
-            Cancel
-          </button>
-          <button
-            onClick={onConfirm}
-            className="flex-1 px-4 py-2 bg-gradient-to-r from-purple-600 to-purple-700 text-white rounded-lg hover:from-purple-700 hover:to-purple-800 transition-all"
-          >
-            Export
-          </button>
+      {/* 结果为空 */}
+      {items.length === 0 && (
+        <div className="bg-slate-50 rounded-2xl p-6 mb-12">
+          <p className="text-slate-700">No results.</p>
         </div>
-      </div>
+      )}
+
+      {/* 高级地图可视化：自动识别数据类型并选择合适的可视化模式 */}
+      {items.length >= 1 && (
+        <div className="rounded-2xl border border-slate-200 bg-slate-50 p-3 sm:p-4 relative mb-12">
+          {/* 标题 */}
+          <h2 className="text-2xl sm:text-3xl font-semibold text-slate-800 text-center mb-2">Interactive Geo Visualization</h2>
+          {/* 徽章 + 工具栏（同一行） */}
+          <div className="flex items-center justify-between mb-4 flex-wrap gap-2" >
+            {/* 左：Area Distribution 徽章 */}
+            <div className="px-2 py-1 text-xs font-medium rounded-full bg-white border border-slate-200 text-slate-700">
+              面积分析图
+            </div>
+            {/* 右：工具栏（不导出） */}
+            <div className="flex items-center gap-2 ml-auto" data-export-ignore>
+              <button
+                aria-label="Zoom in"
+                title="Zoom in"
+                onClick={() => mapRef.current?.zoomIn()}
+                className="p-2 rounded-md bg-white border border-slate-300 hover:bg-slate-50 focus:outline-none focus:ring-2 focus:ring-purple-500"
+              >
+                <ZoomIn className="w-4 h-4 text-slate-700" />
+              </button>
+              <button
+                aria-label="Zoom out"
+                title="Zoom out"
+                onClick={() => mapRef.current?.zoomOut()}
+                className="p-2 rounded-md bg-white border border-slate-300 hover:bg-slate-50 focus:outline-none focus:ring-2 focus:ring-purple-500"
+              >
+                <ZoomOut className="w-4 h-4 text-slate-700" />
+              </button>
+              <button
+                aria-label="Reset view"
+                title="Reset view"
+                onClick={() => mapRef.current?.reset()}
+                className="p-2 rounded-md bg-white border border-slate-300 hover:bg-slate-50 focus:outline-none focus:ring-2 focus:ring-purple-500"
+              >
+                <RotateCcw className="w-4 h-4 text-slate-700" />
+              </button>
+              <ExportButton onOpen={() => setExportOpen(true)} />
+            </div>
+          </div>
+          {/* 地图 */}
+          <div className="w-full flex justify-center">
+            <AdvancedMapCanvas ref={mapRef} items={items} width={1200} height={560} showInternalToolbar={false} />
+          </div>
+        </div>
+      )}
+
+      {/* 单条 → 大块 reason 区域（reason 始终显示） */}
+      {items.length === 1 && (
+        <div className="bg-slate-50 rounded-2xl p-6 relative mb-12">
+          <div className="absolute top-4 right-4">
+            <ExportButton onOpen={() => setExportOpen(true)} />
+          </div>
+          <p className="text-slate-700 leading-relaxed pr-12">
+            {items[0].reason ?? "暂无解释说明"}
+          </p>
+        </div>
+      )}
+
+      {/* Detailed Results：对每个结果渲染独立小地图 */}
+      {items.length >= 1 && (
+        <>
+          <h2 className="text-2xl font-semibold mb-6">Detailed Results</h2>
+          {items.length === 1 ? (
+            <div className="flex justify-center">
+              <div className="max-w-4xl w-full">
+                <CountryCard key={items[0].id} item={items[0]} showMiniMap={true} onCopy={showToast} large />
+              </div>
+            </div>
+          ) : (
+            <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6">
+              {items.map((item) => (
+                <CountryCard key={item.id} item={item} showMiniMap={true} onCopy={showToast} />
+              ))}
+            </div>
+          )}
+        </>
+      )}
+
+      {/* SQL & Reasoning（有就展示） */}
+      <QueryDetails meta={meta} />
+
+      <ExportModal isOpen={isExportOpen} onClose={() => setExportOpen(false)} targetRef={exportTargetRef} />
+      <Toast message={toast.message} isVisible={toast.isVisible} onClose={hideToast} />
     </div>
   );
 };
