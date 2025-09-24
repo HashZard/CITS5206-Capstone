@@ -8,15 +8,16 @@ import Login from "@/pages/Login";
 import Register from "@/pages/Register";
 import UserPage from "@/pages/User";
 import GeoQueryResults from "@/pages/Result";
+import HistoryPage from "@/pages/History";
 
 import { getStoredUser, setStoredUser, User } from "@/lib/auth";
 
-/** Top navigation links; TopNav will hide History for guests */
+/** Top navigation links */
 const links: TopNavLink[] = [
   { label: "Home" },
   { label: "Dashboard" },
   { label: "History" },
-  // { label: "Import" }, 
+  // { label: "Import" },
   { label: "Result" },
   { label: "Tutorials" },
   { label: "About" },
@@ -166,7 +167,6 @@ export default function App() {
     return () => window.removeEventListener("popstate", onPop);
   }, []);
 
-
   const isAuthed = !!user;
 
   /** Push-state navigation helper */
@@ -235,11 +235,12 @@ export default function App() {
 
         {path === "/result" && <GeoQueryResults query={userQuery} />}
 
-        {/* Default homepage */}
-        {path !== "/login" &&
-          path !== "/register" &&
-          path !== "/user" &&
-          path !== "/result" && <HomeView onQuery={handleQuery} />}
+        {path === "/history" && <HistoryPage />}
+
+        {/* Default homepage (mutually exclusive) */}
+        {["/login", "/register", "/user", "/result", "/history"].includes(path)
+          ? null
+          : <HomeView onQuery={handleQuery} />}
       </main>
 
       <Footer brand="GeoQuery" />
