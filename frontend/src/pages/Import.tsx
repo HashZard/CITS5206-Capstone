@@ -1,3 +1,16 @@
+/**
+ * @deprecated ImportPage
+ *
+ * This component was discussed and the team decided not to implement
+ * the Import feature in the current release.
+ *
+ * The file is kept for reference only and is no longer used in routes
+ * or navigation. Do not add new logic here.
+ *
+ * If the Import functionality is resumed in the future,
+ * please review this implementation carefully or consider a new design.
+ */
+
 import React, { useMemo, useState } from "react";
 
 /** Import page with custom English file upload UI */
