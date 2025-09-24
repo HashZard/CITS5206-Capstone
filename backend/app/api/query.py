@@ -1,7 +1,9 @@
 import json
 from typing import Any
-from flask import Blueprint, request, jsonify
-from app.models.dto import QueryIn, QueryOut, PreviewOut
+
+from flask import Blueprint, jsonify, request
+
+from app.models.dto import PreviewOut, QueryIn, QueryOut
 from app.services.geo_reasoning_service import GeoReasoningService
 from app.services.three_level_service import ThreeLevelService
 

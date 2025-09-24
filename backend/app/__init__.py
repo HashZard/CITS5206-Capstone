@@ -1,8 +1,9 @@
 from flask import Flask
-from config import config
-from .extensions import init_extensions
 
 from app.services.llm_service import LLMService
+from config import config
+
+from .extensions import init_extensions
 
 
 def create_app(config_name):

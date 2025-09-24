@@ -1,4 +1,5 @@
 from __future__ import annotations
+
 """
 init_tasks 三/四步 LLM 流水线执行脚本（中文说明）
 
@@ -50,10 +51,10 @@ init_tasks 三/四步 LLM 流水线执行脚本（中文说明）
 - 若数据库中相关列为 TEXT 而非 JSONB，脚本同样可运行；如需 JSONB 能力，建议在数据库层调整列类型。
 """
 import argparse
+import json
 import logging
 import time
 from typing import Any, Dict
-import json
 
 from sqlalchemy import text
 
@@ -99,7 +100,9 @@ def update_task(table_name: str, fields: Dict[str, Any]) -> None:
             params[k] = v
 
     sets = ", ".join([f"{k} = :{k}" for k in params.keys()])
-    sql = text(f"UPDATE public.init_tasks SET {sets}, updated_at = now() WHERE table_name = :table")
+    sql = text(
+        f"UPDATE public.init_tasks SET {sets}, updated_at = now() WHERE table_name = :table"
+    )
     params["table"] = table_name
     with db.engine.begin() as conn:
         conn.execute(sql, params)
@@ -107,12 +110,26 @@ def update_task(table_name: str, fields: Dict[str, Any]) -> None:
 
 import logging
 
-def call_llm(system: str, user: str, model: str | None, temperature: float | None, max_tokens: int | None) -> str:
-    logging.info("[LLM请求] system_prompt=%s, user=%s, model=%s, temperature=%s, max_tokens=%s", system, user, model, temperature, max_tokens)
+
+def call_llm(
+    system: str,
+    user: str,
+    model: str | None,
+    temperature: float | None,
+    max_tokens: int | None,
+) -> str:
+    logging.info(
+        "[LLM请求] system_prompt=%s, user=%s, model=%s, temperature=%s, max_tokens=%s",
+        system,
+        user,
+        model,
+        temperature,
+        max_tokens,
+    )
     resp = llm_service.generate(
         message=user,
         system_prompt=system,
-        model=model,    
+        model=model,
         temperature=temperature,
         max_tokens=max_tokens,
     )
@@ -129,7 +146,7 @@ def _strip_code_fences(s: str) -> str:
             txt = txt[first_nl + 1 :]
         # remove trailing fence if present
         if txt.endswith("```"):
-            txt = txt[: -3]
+            txt = txt[:-3]
     return txt.strip()
 
 
@@ -140,9 +157,13 @@ def _parse_json_output(s: str) -> Any:
         return json.loads(cleaned)
     except Exception:
         # 宽松提取：寻找首个 '{' 或 '[' 与对应的末尾 '}' 或 ']' 片段
-        start_obj = cleaned.find('{')
-        start_arr = cleaned.find('[')
-        start = min(x for x in [start_obj, start_arr] if x != -1) if (start_obj != -1 or start_arr != -1) else -1
+        start_obj = cleaned.find("{")
+        start_arr = cleaned.find("[")
+        start = (
+            min(x for x in [start_obj, start_arr] if x != -1)
+            if (start_obj != -1 or start_arr != -1)
+            else -1
+        )
         if start != -1:
             # 试着从末尾向前找到配对结束符
             for end in range(len(cleaned), start, -1):
@@ -172,7 +193,9 @@ def _truncate_text(s: str, max_chars: int) -> str:
     return s[: max_chars - 20] + "\n...\n[TRUNCATED]"
 
 
-def _prepare_inputs_for_step1(table: Dict[str, Any], max_chars: int, sample_items: int) -> tuple[str, str]:
+def _prepare_inputs_for_step1(
+    table: Dict[str, Any], max_chars: int, sample_items: int
+) -> tuple[str, str]:
     # schema_definition
     schema = table.get("schema_definition") or {}
     schema_s = _ensure_str(schema)
@@ -187,27 +210,53 @@ def _prepare_inputs_for_step1(table: Dict[str, Any], max_chars: int, sample_item
     return schema_s, sample_s
 
 
-def step1(table: Dict[str, Any], model: str | None, temperature: float | None, max_tokens: int | None, max_chars: int, sample_items: int) -> Dict[str, Any]:
-    schema_s, sample_s = _prepare_inputs_for_step1(table, max_chars=max_chars, sample_items=sample_items)
+def step1(
+    table: Dict[str, Any],
+    model: str | None,
+    temperature: float | None,
+    max_tokens: int | None,
+    max_chars: int,
+    sample_items: int,
+) -> Dict[str, Any]:
+    schema_s, sample_s = _prepare_inputs_for_step1(
+        table, max_chars=max_chars, sample_items=sample_items
+    )
     prompts = render_step1_prompt(
         table_name=table["table_name"],
         schema_definition=schema_s,
         sample_data=sample_s,
     )
-    content = call_llm(prompts["system"], prompts["user"], model, temperature, max_tokens)
+    content = call_llm(
+        prompts["system"], prompts["user"], model, temperature, max_tokens
+    )
     parsed = _parse_json_output(content)
     return {"step1_result": parsed}
 
 
-def step2(table: Dict[str, Any], model: str | None, temperature: float | None, max_tokens: int | None, max_chars: int) -> Dict[str, Any]:
+def step2(
+    table: Dict[str, Any],
+    model: str | None,
+    temperature: float | None,
+    max_tokens: int | None,
+    max_chars: int,
+) -> Dict[str, Any]:
     step1_r = table.get("step1_result") or {}
     step1_r_text = _truncate_text(_ensure_str(step1_r), max_chars)
     prompts = render_step2_prompt(step1_result=step1_r_text)
-    content = call_llm(prompts["system"], prompts["user"], model, temperature, max_tokens)
+    content = call_llm(
+        prompts["system"], prompts["user"], model, temperature, max_tokens
+    )
     parsed = _parse_json_output(content)
     return {"step2_result": parsed}
 
-def step3(table: Dict[str, Any], model: str | None, temperature: float | None, max_tokens: int | None, max_chars: int) -> Dict[str, Any]:
+
+def step3(
+    table: Dict[str, Any],
+    model: str | None,
+    temperature: float | None,
+    max_tokens: int | None,
+    max_chars: int,
+) -> Dict[str, Any]:
     step2_r = table.get("step2_result") or {}
     if isinstance(step2_r, dict):
         merged_result = step2_r.get("merged_result")
@@ -217,7 +266,9 @@ def step3(table: Dict[str, Any], model: str | None, temperature: float | None, m
         prompts = render_step3_prompt(step2_result=merged_result_text)
     else:
         raise ValueError("step2_result 类型不支持，必须为 dict")
-    content = call_llm(prompts["system"], prompts["user"], model, temperature, max_tokens)
+    content = call_llm(
+        prompts["system"], prompts["user"], model, temperature, max_tokens
+    )
     parsed = _parse_json_output(content)
     return {"step3_result": parsed}
 
@@ -225,7 +276,7 @@ def step3(table: Dict[str, Any], model: str | None, temperature: float | None, m
 def save_l3_table(table_name: str, llm_output: Dict[str, Any]) -> None:
     """
     将 LLM 输出保存到 l3_table 表。
-    
+
     Args:
         table_name: 表名
         llm_output: LLM 输出的表卡片数据
@@ -239,10 +290,11 @@ def save_l3_table(table_name: str, llm_output: Dict[str, Any]) -> None:
         "use_cases": llm_output.get("use_cases"),
         "active": True,
         "version": 1,
-        "updated_at": time.strftime('%Y-%m-%d %H:%M:%S%z'),
+        "updated_at": time.strftime("%Y-%m-%d %H:%M:%S%z"),
     }
-    
-    sql = text("""
+
+    sql = text(
+        """
         INSERT INTO l3_table (
             table_name, display_name, summary, core_fields, 
             keywords, use_cases, active, version, updated_at
@@ -258,32 +310,54 @@ def save_l3_table(table_name: str, llm_output: Dict[str, Any]) -> None:
             active = EXCLUDED.active,
             version = EXCLUDED.version,
             updated_at = EXCLUDED.updated_at
-    """)
-    
+    """
+    )
+
     with db.engine.begin() as conn:
         conn.execute(sql, l3_data)
 
 
-def step4(table: Dict[str, Any], model: str | None, temperature: float | None, max_tokens: int | None, max_chars: int) -> Dict[str, Any]:
+def step4(
+    table: Dict[str, Any],
+    model: str | None,
+    temperature: float | None,
+    max_tokens: int | None,
+    max_chars: int,
+) -> Dict[str, Any]:
     step3_r = table.get("step3_result") or {}
     cleaned_fields = None
     if isinstance(step3_r, dict):
         cleaned_fields = step3_r["cleaned_result"]
         if cleaned_fields is None:
-            raise ValueError("step3_result 中没有 cleaned_result 或 cleaned_fields 字段")
+            raise ValueError(
+                "step3_result 中没有 cleaned_result 或 cleaned_fields 字段"
+            )
     else:
         raise ValueError("step3_result 类型不支持，必须为 dict")
     step3_r_text = _truncate_text(_ensure_str(cleaned_fields), max_chars)
-    prompts = render_step4_prompt(table_name=table["table_name"], step3_result=step3_r_text)
-    content = call_llm(prompts["system"], prompts["user"], model, temperature, max_tokens)
+    prompts = render_step4_prompt(
+        table_name=table["table_name"], step3_result=step3_r_text
+    )
+    content = call_llm(
+        prompts["system"], prompts["user"], model, temperature, max_tokens
+    )
     parsed = _parse_json_output(content)
     return {"step4_tablecard": parsed, "is_done": True, "status": "done"}
 
 
-def process_table(table: Dict[str, Any], *, model: str | None, temperature: float | None, max_tokens: int | None, max_chars: int, sample_items: int, dry_run: bool = False) -> None:
+def process_table(
+    table: Dict[str, Any],
+    *,
+    model: str | None,
+    temperature: float | None,
+    max_tokens: int | None,
+    max_chars: int,
+    sample_items: int,
+    dry_run: bool = False,
+) -> None:
     """
     处理单个表的 LLM 流水线并更新到数据库。
-    
+
     Args:
         table: 表信息字典
         model: LLM 模型名称
@@ -295,15 +369,21 @@ def process_table(table: Dict[str, Any], *, model: str | None, temperature: floa
     """
     logging.info("Processing table: %s", table["table_name"])
     fields: Dict[str, Any] = {}
-    
+
     try:
         # Step 1: 基础分析
         if not table.get("step1_result"):
             r = step1(table, model, temperature, max_tokens, max_chars, sample_items)
             fields.update(r)
             if dry_run:
-                logging.info("[dry-run] step1_result length=%d", 
-                           len(json.dumps(r["step1_result"]) if isinstance(r["step1_result"], (dict, list)) else len(str(r["step1_result"]))))
+                logging.info(
+                    "[dry-run] step1_result length=%d",
+                    len(
+                        json.dumps(r["step1_result"])
+                        if isinstance(r["step1_result"], (dict, list))
+                        else len(str(r["step1_result"]))
+                    ),
+                )
             else:
                 time.sleep(1.0)
 
@@ -313,8 +393,14 @@ def process_table(table: Dict[str, Any], *, model: str | None, temperature: floa
             r = step2(table, model, temperature, max_tokens, max_chars)
             fields.update(r)
             if dry_run:
-                logging.info("[dry-run] step2_result length=%d",
-                           len(json.dumps(r["step2_result"]) if isinstance(r["step2_result"], (dict, list)) else len(str(r["step2_result"]))))
+                logging.info(
+                    "[dry-run] step2_result length=%d",
+                    len(
+                        json.dumps(r["step2_result"])
+                        if isinstance(r["step2_result"], (dict, list))
+                        else len(str(r["step2_result"]))
+                    ),
+                )
             else:
                 time.sleep(1.0)
 
@@ -324,8 +410,14 @@ def process_table(table: Dict[str, Any], *, model: str | None, temperature: floa
             r = step3(table, model, temperature, max_tokens, max_chars)
             fields.update(r)
             if dry_run:
-                logging.info("[dry-run] step3_result length=%d",
-                           len(json.dumps(r["step3_result"]) if isinstance(r["step3_result"], (dict, list)) else len(str(r["step3_result"]))))
+                logging.info(
+                    "[dry-run] step3_result length=%d",
+                    len(
+                        json.dumps(r["step3_result"])
+                        if isinstance(r["step3_result"], (dict, list))
+                        else len(str(r["step3_result"]))
+                    ),
+                )
             else:
                 time.sleep(1.0)
 
@@ -335,8 +427,14 @@ def process_table(table: Dict[str, Any], *, model: str | None, temperature: floa
             r = step4(table, model, temperature, max_tokens, max_chars)
             fields.update(r)
             if dry_run:
-                logging.info("[dry-run] step4_tablecard length=%d",
-                           len(json.dumps(r["step4_tablecard"]) if isinstance(r["step4_tablecard"], (dict, list)) else len(str(r["step4_tablecard"]))))
+                logging.info(
+                    "[dry-run] step4_tablecard length=%d",
+                    len(
+                        json.dumps(r["step4_tablecard"])
+                        if isinstance(r["step4_tablecard"], (dict, list))
+                        else len(str(r["step4_tablecard"]))
+                    ),
+                )
             else:
                 time.sleep(1.0)
 
@@ -345,11 +443,11 @@ def process_table(table: Dict[str, Any], *, model: str | None, temperature: floa
             if fields:
                 update_task(table["table_name"], fields)
                 logging.info("Updated table: %s", table["table_name"])
-            
+
             if "step4_tablecard" in fields:
                 save_l3_table(table["table_name"], fields["step4_tablecard"])
                 logging.info("l3_table updated: %s", table["table_name"])
-                
+
     except Exception as e:
         logging.exception("Failed processing table: %s", table["table_name"])
         if not dry_run:
@@ -366,13 +464,24 @@ def main() -> None:
     parser.add_argument("--dry-run", action="store_true", help="仅打印，不落库")
     parser.add_argument("--model", default=None, help="指定 LLM 模型（覆盖默认）")
     parser.add_argument("--temperature", type=float, default=None, help="LLM 温度")
-    parser.add_argument("--max-tokens", type=int, default=None, help="LLM 输出最大 tokens")
-    parser.add_argument("--max-chars", type=int, default=8000, help="拼装到提示的最长字符数（每块）")
-    parser.add_argument("--sample-items", type=int, default=10, help="sample_data 为数组时最多传入的条目数")
+    parser.add_argument(
+        "--max-tokens", type=int, default=None, help="LLM 输出最大 tokens"
+    )
+    parser.add_argument(
+        "--max-chars", type=int, default=8000, help="拼装到提示的最长字符数（每块）"
+    )
+    parser.add_argument(
+        "--sample-items",
+        type=int,
+        default=10,
+        help="sample_data 为数组时最多传入的条目数",
+    )
     parser.add_argument("--config", default="development", help="Flask 配置名")
     args = parser.parse_args()
 
-    logging.basicConfig(level=logging.INFO, format="%(asctime)s %(levelname)s %(message)s")
+    logging.basicConfig(
+        level=logging.INFO, format="%(asctime)s %(levelname)s %(message)s"
+    )
 
     app = create_app(args.config)
     with app.app_context():
@@ -394,5 +503,3 @@ def main() -> None:
 
 if __name__ == "__main__":
     main()
-
-

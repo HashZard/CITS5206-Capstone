@@ -1,11 +1,12 @@
+import asyncio
+import logging
 from abc import ABC, abstractmethod
-from functools import wraps
-from typing import Dict, Any, List
 from dataclasses import dataclass
+from functools import wraps
+from typing import Any
+
 import openai
 from google import genai
-import logging
-import asyncio
 
 logger = logging.getLogger(__name__)
 
@@ -90,7 +91,7 @@ def async_to_sync(func):
 class LLMProvider(ABC):
     """LLM Provider Abstract Base Class"""
 
-    def __init__(self, config: Dict[str, Any]):
+    def __init__(self, config: dict[str, Any]):
         self.config = config
 
     @abstractmethod
@@ -101,7 +102,7 @@ class LLMProvider(ABC):
 class OpenAIProvider(LLMProvider):
     """OpenAI Provider Implementation"""
 
-    def __init__(self, config: Dict[str, Any]):
+    def __init__(self, config: dict[str, Any]):
         super().__init__(config)
         self.client = openai.AsyncOpenAI(api_key=config["api_key"])
 
@@ -132,7 +133,7 @@ class OpenAIProvider(LLMProvider):
 class GeminiProvider(LLMProvider):
     """Gemini Provider Implementation"""
 
-    def __init__(self, config: Dict[str, Any]):
+    def __init__(self, config: dict[str, Any]):
         super().__init__(config)
         self.client = genai.Client(api_key=str(config["api_key"]))
 
@@ -223,6 +224,6 @@ class LLMService:
         """Sync generate text (internal conversion to async call)"""
         return await self.generate_async(*args, **kwargs)
 
-    def list_providers(self) -> List[str]:
+    def list_providers(self) -> list[str]:
         """List Available Providers"""
         return list(self.providers.keys())

@@ -1,24 +1,27 @@
 from __future__ import annotations
-import json
+
 from functools import lru_cache
-from typing import Any, Dict, Iterable, List, Mapping, Tuple
+from typing import Any, Iterable, Mapping
+
 from sqlalchemy import text
-from ..extensions import db
+
 from app.models.dto import ALLOWED_TABLES
-"""
-This module provides a single-table SQL query service.
+
+from ..extensions import db
+
+"""This module provides a single-table SQL query service.
 
 Interface function:
-    run_sql(sql: str, params: dict | None = None) -> Dict[str, Any]
+    run_sql(sql: str, params: dict | None = None) -> dict[str, Any]
 
 Return format:
     {
         "ok": bool,
         "results": {
-            "columns": List[str],
-            "rows": List[List[Any]]
+            "columns": list[str],
+            "rows": list[list[Any]]
         },
-        "meta": Dict,
+        "meta": dict,
         "error": str | None
     }
 
@@ -61,8 +64,7 @@ def get_columns(table: str) -> Iterable[str]:
 
 # SQL execution and lightweight verification
 def validate_sql(sql: str) -> None:
-    """
-    Lightweight SQL whitelist validation: 
+    """Lightweight SQL whitelist validation:
     must start with SELECT and must not contain semicolons or dangerous keywords.
     Used only as a final safeguard (core security still relies on build_select_sql).
     """
@@ -73,21 +75,26 @@ def validate_sql(sql: str) -> None:
     if ";" in check:
         raise ValueError("multiple statements are not allowed")
     banned = [
-        "insert", "update", "delete", "drop", "alter", "grant", "revoke",
-        "truncate"
+        "insert",
+        "update",
+        "delete",
+        "drop",
+        "alter",
+        "grant",
+        "revoke",
+        "truncate",
     ]
     if any(k in check for k in banned):
         raise ValueError("dangerous keyword detected in SQL")
 
 
 def execute(
-        sql: str,
-        params: Mapping[str,
-                        Any]) -> Tuple[List[Dict[str, Any]], Dict[str, Any]]:
+    sql: str, params: Mapping[str, Any]
+) -> tuple[list[dict[str, Any]], dict[str, Any]]:
     """
     Execute parameterized SQL and return (rows, meta):
-      - rows: List[Dict] (already mapped as dictionaries)
-      - meta: {"rows": len(rows)}; limit/offset handled by caller
+        - rows: list[dict] (already mapped as dictionaries)
+        - meta: {"rows": len(rows)}; limit/offset handled by caller
     No additional COUNT(*) is performed to avoid a second query; frontend pagination is based on limit/offset.
     """
     validate_sql(sql)
@@ -99,17 +106,17 @@ def execute(
 
 
 # Interface
-def run_sql(sql: str, params: dict | None = None) -> Dict[str, Any]:
+def run_sql(sql: str, params: dict | None = None) -> dict[str, Any]:
     """
     统一入口：验证 + 执行 SQL, 返回标准响应
     返回格式：
     {
         "ok": bool,
         "results": {
-            "columns": List[str],
-            "rows": List[List[Any]]
+            "columns": list[str],
+            "rows": list[list[Any]]
         },
-        "meta": Dict,
+        "meta": dict,
         "error": str | None
     }
     """
@@ -124,20 +131,14 @@ def run_sql(sql: str, params: dict | None = None) -> Dict[str, Any]:
 
         return {
             "ok": True,
-            "results": {
-                "columns": columns,
-                "rows": rows
-            },
+            "results": {"columns": columns, "rows": rows},
             "meta": meta,
-            "error": None
+            "error": None,
         }
     except Exception as e:
         return {
             "ok": False,
-            "results": {
-                "columns": [],
-                "rows": []
-            },
+            "results": {"columns": [], "rows": []},
             "meta": {},
-            "error": str(e)
+            "error": str(e),
         }

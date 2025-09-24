@@ -1,4 +1,5 @@
 from __future__ import annotations
+
 """
 Init Tasks Helper
 
@@ -38,8 +39,8 @@ Init Tasks Helper
 import argparse
 import logging
 from typing import List, Tuple
-from psycopg2.extras import Json
 
+from psycopg2.extras import Json
 from sqlalchemy import text
 
 from app import create_app
@@ -128,7 +129,9 @@ def ensure_schema_definition_jsonb() -> None:
         )
 
 
-def insert_init_tasks(tables: List[str], status: str = "pending", dry_run: bool = False) -> int:
+def insert_init_tasks(
+    tables: List[str], status: str = "pending", dry_run: bool = False
+) -> int:
     """把表名批量插入到 public.init_tasks 中（去重）。返回成功插入数量。"""
     if not tables:
         return 0
@@ -204,9 +207,11 @@ def table_has_rows(schema: str, table: str) -> bool:
 
 
 def get_existing_task_tables() -> set[str]:
-    sql = text("""
+    sql = text(
+        """
         SELECT table_name FROM public.init_tasks
-    """)
+    """
+    )
     with db.engine.connect() as conn:
         rows = conn.execute(sql).mappings().all()
     existing = {r["table_name"] for r in rows}
@@ -285,7 +290,9 @@ def upsert_and_get_sampling_targets(
     return targets
 
 
-def fill_sample_data_for_tables(tables: List[str], limit: int, dry_run: bool) -> Tuple[int, List[str]]:
+def fill_sample_data_for_tables(
+    tables: List[str], limit: int, dry_run: bool
+) -> Tuple[int, List[str]]:
     """对传入的目标表执行采样更新；调用方需已筛除 skip/已有 sample_data 的记录。"""
     updated = 0
     skipped: List[str] = []
@@ -298,7 +305,9 @@ def fill_sample_data_for_tables(tables: List[str], limit: int, dry_run: bool) ->
 
             if dry_run:
                 updated += 1
-                logging.info("[dry-run] 将更新 sample_data: %s (limit=%d)", table, limit)
+                logging.info(
+                    "[dry-run] 将更新 sample_data: %s (limit=%d)", table, limit
+                )
                 continue
 
             sample_rows = sample_table_as_jsonb("ne_data", table, limit)
@@ -315,15 +324,19 @@ def fill_sample_data_for_tables(tables: List[str], limit: int, dry_run: bool) ->
                     {"sample": Json(sample_rows), "table": table},
                 )
                 # 写入后验证存储条数
-                row = conn.execute(
-                    text(
-                        """
+                row = (
+                    conn.execute(
+                        text(
+                            """
                         SELECT jsonb_array_length(sample_data) AS n
                         FROM public.init_tasks WHERE table_name = :table
                         """
-                    ),
-                    {"table": table},
-                ).mappings().first()
+                        ),
+                        {"table": table},
+                    )
+                    .mappings()
+                    .first()
+                )
                 stored_n = row["n"] if row else None
             updated += 1
             logging.info(
@@ -341,6 +354,7 @@ def fill_sample_data_for_tables(tables: List[str], limit: int, dry_run: bool) ->
 
 def json_dumps(obj) -> str:
     import json as _json
+
     return _json.dumps(obj, ensure_ascii=False)
 
 
@@ -379,7 +393,9 @@ def build_table_schema_json(schema: str, table: str) -> dict:
     return {"schema": schema, "table": table, "columns": columns}
 
 
-def fill_schema_definition_for_tables(tables: List[str], dry_run: bool) -> Tuple[int, List[str]]:
+def fill_schema_definition_for_tables(
+    tables: List[str], dry_run: bool
+) -> Tuple[int, List[str]]:
     """为传入表填充 schema_definition。"""
     ensure_schema_definition_jsonb()
     updated = 0
@@ -403,20 +419,42 @@ def fill_schema_definition_for_tables(tables: List[str], dry_run: bool) -> Tuple
                     {"schema": Json(schema_json), "table": table},
                 )
             updated += 1
-            logging.info("完成 schema_definition 更新: %s, 列数=%d", table, len(schema_json.get("columns", [])))
+            logging.info(
+                "完成 schema_definition 更新: %s, 列数=%d",
+                table,
+                len(schema_json.get("columns", [])),
+            )
         except Exception:
             skipped.append(table)
             logging.exception("更新 schema_definition 发生异常: %s", table)
             continue
     return updated, skipped
+
+
 def main() -> None:
-    parser = argparse.ArgumentParser(description="Scan ne_data tables and import into public.init_tasks, then sample sample_data")
-    parser.add_argument("--dry-run", action="store_true", help="不执行写入，仅打印即将进行的操作")
-    parser.add_argument("--status", default="pending", help="插入的默认 status 字段值，默认 pending")
-    parser.add_argument("--sample-limit", type=int, default=10, help="每表抽样行数，默认 10")
-    parser.add_argument("--only-sample", action="store_true", help="只执行 sample_data 填充，跳过 init_tasks 插入")
-    parser.add_argument("--no-schema", action="store_true", help="跳过 schema_definition 填充")
-    parser.add_argument("--config", default="development", help="Flask 配置名，默认 development")
+    parser = argparse.ArgumentParser(
+        description="Scan ne_data tables and import into public.init_tasks, then sample sample_data"
+    )
+    parser.add_argument(
+        "--dry-run", action="store_true", help="不执行写入，仅打印即将进行的操作"
+    )
+    parser.add_argument(
+        "--status", default="pending", help="插入的默认 status 字段值，默认 pending"
+    )
+    parser.add_argument(
+        "--sample-limit", type=int, default=10, help="每表抽样行数，默认 10"
+    )
+    parser.add_argument(
+        "--only-sample",
+        action="store_true",
+        help="只执行 sample_data 填充，跳过 init_tasks 插入",
+    )
+    parser.add_argument(
+        "--no-schema", action="store_true", help="跳过 schema_definition 填充"
+    )
+    parser.add_argument(
+        "--config", default="development", help="Flask 配置名，默认 development"
+    )
     args = parser.parse_args()
 
     # 基本日志配置
@@ -442,26 +480,50 @@ def main() -> None:
             # dry-run 模式下仍报告如果执行将会插入多少（估算：缺失数=all - 已有）
             if not args.only_sample:
                 existing = get_existing_task_tables()
-                logging.info("[dry-run] 将新增 init_tasks 记录数: %d", len([t for t in tables if t not in existing]))
+                logging.info(
+                    "[dry-run] 将新增 init_tasks 记录数: %d",
+                    len([t for t in tables if t not in existing]),
+                )
             logging.info("[dry-run] 需要采样 sample_data 的表数量: %d", len(targets))
 
         # 对目标表逐表采样与更新
-        updated_count, skipped = fill_sample_data_for_tables(targets, limit=args.sample_limit, dry_run=args.dry_run)
+        updated_count, skipped = fill_sample_data_for_tables(
+            targets, limit=args.sample_limit, dry_run=args.dry_run
+        )
         if args.dry_run:
-            logging.info("[dry-run] 将更新 sample_data 的表数量: %d; 跳过: %d", updated_count, len(skipped))
+            logging.info(
+                "[dry-run] 将更新 sample_data 的表数量: %d; 跳过: %d",
+                updated_count,
+                len(skipped),
+            )
         else:
-            logging.info("已更新 sample_data 的表数量: %d; 跳过: %d", updated_count, len(skipped))
+            logging.info(
+                "已更新 sample_data 的表数量: %d; 跳过: %d", updated_count, len(skipped)
+            )
 
         # 第三步：为非 skip 且 schema_definition 为空的记录填充列定义
         if not args.no_schema:
             schema_targets = get_schema_targets(tables)
             if args.dry_run:
-                logging.info("[dry-run] 需要更新 schema_definition 的表数量: %d", len(schema_targets))
-            schema_updated, schema_skipped = fill_schema_definition_for_tables(schema_targets, dry_run=args.dry_run)
+                logging.info(
+                    "[dry-run] 需要更新 schema_definition 的表数量: %d",
+                    len(schema_targets),
+                )
+            schema_updated, schema_skipped = fill_schema_definition_for_tables(
+                schema_targets, dry_run=args.dry_run
+            )
             if args.dry_run:
-                logging.info("[dry-run] 将更新 schema_definition 的表数量: %d; 跳过: %d", schema_updated, len(schema_skipped))
+                logging.info(
+                    "[dry-run] 将更新 schema_definition 的表数量: %d; 跳过: %d",
+                    schema_updated,
+                    len(schema_skipped),
+                )
             else:
-                logging.info("已更新 schema_definition 的表数量: %d; 跳过: %d", schema_updated, len(schema_skipped))
+                logging.info(
+                    "已更新 schema_definition 的表数量: %d; 跳过: %d",
+                    schema_updated,
+                    len(schema_skipped),
+                )
 
 
 if __name__ == "__main__":

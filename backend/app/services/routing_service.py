@@ -1,12 +1,12 @@
 from __future__ import annotations
-import json
-from typing import Any
-from textwrap import dedent
 
-from app.extensions import db
-from app.extensions import llm_service
-from app.services.three_level_service import ThreeLevelService
+import json
+from textwrap import dedent
+from typing import Any
+
+from app.extensions import db, llm_service
 from app.services.llm_service import LLMResponse
+from app.services.three_level_service import ThreeLevelService
 
 
 class RoutingService:

@@ -4,6 +4,7 @@
 """
 
 from typing import List, Optional
+
 from app.extensions import db
 from app.models.three_level_models import (
     L1Category,

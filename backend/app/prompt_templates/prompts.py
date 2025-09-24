@@ -13,11 +13,12 @@ L1_PROMPT_TEMPLATE = (
     "  - reasons: array of strings\n\n"
     "Output Example:\n"
     "{\n"
-    "    \"l1_selected\": [\n"
-    "        {\"id\": 1, \"name\": \"Natural Geography / Lakes\"}\n"
+    '    "l1_selected": [\n'
+    '        {"id": 1, "name": "Natural Geography / Lakes"}\n'
     "    ],\n"
-    "    \"reasons\": [\"The question is about lakes and names, matching this L1 keyword\"]\n"
-    "}")
+    '    "reasons": ["The question is about lakes and names, matching this L1 keyword"]\n'
+    "}"
+)
 
 
 L2_PROMPT_TEMPLATE = (
@@ -35,11 +36,12 @@ L2_PROMPT_TEMPLATE = (
     "  - reasons: array of strings\n"
     "Output Example:\n"
     "{\n"
-    "  \"l2_selected\": [\n"
-    "    {\"id\": 2, \"name\": \"Lake Boundaries and Attributes\"}\n"
+    '  "l2_selected": [\n'
+    '    {"id": 2, "name": "Lake Boundaries and Attributes"}\n'
     "  ],\n"
-    "  \"reasons\": [\"The question is about lake names, matching this L2 keywords\"]\n"
-    "}\n")
+    '  "reasons": ["The question is about lake names, matching this L2 keywords"]\n'
+    "}\n"
+)
 
 
 L3_PROMPT_TEMPLATE = (
@@ -57,13 +59,14 @@ L3_PROMPT_TEMPLATE = (
     "  - reasons: array of strings\n"
     "Output Example:\n"
     "{\n"
-    "  \"l3_selected\": [{\n"
-    "    \"id\": 5,\n"
-    "    \"table_name\": \"ne_10m_lakes\",\n"
-    "    \"display_name\": \"Global Lakes Data\"\n"
+    '  "l3_selected": [{\n'
+    '    "id": 5,\n'
+    '    "table_name": "ne_10m_lakes",\n'
+    '    "display_name": "Global Lakes Data"\n'
     "  }],\n"
-    "  \"reasons\": [\"Contains fields name/name_alt, suitable for lake name queries\"]\n"
-    "}\n")
+    '  "reasons": ["Contains fields name/name_alt, suitable for lake name queries"]\n'
+    "}\n"
+)
 
 
 SQL_PROMPT_TEMPLATE = (
@@ -89,10 +92,11 @@ SQL_PROMPT_TEMPLATE = (
     "  - notes: array of strings\n"
     "Output Example:\n"
     "{\n"
-    "  \"final_sql\": {\n"
-    "    \"sql\": \"SELECT gid, name, name_alt FROM public.ne_10m_lakes WHERE (name ILIKE :q OR COALESCE(name_alt,'') ILIKE :q) LIMIT :limit;\",\n"
-    "    \"params\": { \"q\": \"%Victoria%\", \"limit\": 100 }\n"
+    '  "final_sql": {\n'
+    '    "sql": "SELECT gid, name, name_alt FROM public.ne_10m_lakes WHERE (name ILIKE :q OR COALESCE(name_alt,\'\') ILIKE :q) LIMIT :limit;",\n'
+    '    "params": { "q": "%Victoria%", "limit": 100 }\n'
     "  },\n"
-    "  \"assumptions\": [\"Multilingual names handled by name and name_alt fields\"],\n"
-    "  \"notes\": [\"Recommend index on name column to improve fuzzy matching performance\"]\n"
-    "}")
+    '  "assumptions": ["Multilingual names handled by name and name_alt fields"],\n'
+    '  "notes": ["Recommend index on name column to improve fuzzy matching performance"]\n'
+    "}"
+)

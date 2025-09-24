@@ -1,4 +1,5 @@
 from flask import Blueprint, jsonify
+
 from app.models.dto import ALLOWED_TABLES
 from app.services.sql_service import get_columns
 

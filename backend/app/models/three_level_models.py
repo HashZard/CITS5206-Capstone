@@ -3,9 +3,9 @@
 基于 initial_table.sql 的表结构设计
 用于承接从 SQL 查询返回的三层架构数据对象
 """
-from datetime import datetime
-from typing import Any, List, Optional
+
 from dataclasses import dataclass
+from datetime import datetime
 
 
 @dataclass
@@ -14,13 +14,13 @@ class L1Category:
 
     id: int
     name: str
-    description: Optional[str] = None
-    dimension: Optional[str] = None
-    keywords: List[str] = None
+    description: str | None = None
+    dimension: str | None = None
+    keywords: list[str] = None
     weight: int = 100
     active: bool = True
     version: int = 1
-    updated_at: Optional[datetime] = None
+    updated_at: datetime | None = None
 
     def __post_init__(self):
         if self.keywords is None:
@@ -34,12 +34,12 @@ class L2Card:
     id: int
     name: str
     description_short: str
-    keywords: List[str] = None
-    allowed_dimensions: List[str] = None
+    keywords: list[str] = None
+    allowed_dimensions: list[str] = None
     weight: int = 100
     active: bool = True
     version: int = 1
-    updated_at: Optional[datetime] = None
+    updated_at: datetime | None = None
 
     def __post_init__(self):
         if self.keywords is None:
@@ -56,14 +56,14 @@ class L3Table:
     table_name: str
     display_name: str
     summary: str
-    core_fields: List[str]
-    keywords: List[str] = None
-    use_cases: List[str] = None
+    core_fields: list[str]
+    keywords: list[str] = None
+    use_cases: list[str] = None
     tablecard_detail_md: str = ""
-    schema_ref: Optional[str] = None
+    schema_ref: str | None = None
     active: bool = True
     version: int = 1
-    updated_at: Optional[datetime] = None
+    updated_at: datetime | None = None
 
     def __post_init__(self):
         if self.keywords is None:
@@ -100,8 +100,8 @@ class PromptTemplate:
     system_text: str = ""
     context_tmpl: str = ""
     user_tmpl: str = ""
-    json_schema: Optional[str] = None
-    updated_at: Optional[datetime] = None
+    json_schema: str | None = None
+    updated_at: datetime | None = None
 
 
 # 三层架构数据转换工具函数
@@ -200,31 +200,31 @@ def dict_to_prompt_template(data: dict) -> PromptTemplate:
 
 
 # 三层架构批量转换函数
-def rows_to_l1_categories(rows: List[dict]) -> List[L1Category]:
+def rows_to_l1_categories(rows: list[dict]) -> list[L1Category]:
     """批量转换 L1Category 列表"""
     return [dict_to_l1_category(row) for row in rows]
 
 
-def rows_to_l2_cards(rows: List[dict]) -> List[L2Card]:
+def rows_to_l2_cards(rows: list[dict]) -> list[L2Card]:
     """批量转换 L2Card 列表"""
     return [dict_to_l2_card(row) for row in rows]
 
 
-def rows_to_l3_tables(rows: List[dict]) -> List[L3Table]:
+def rows_to_l3_tables(rows: list[dict]) -> list[L3Table]:
     """批量转换 L3Table 列表"""
     return [dict_to_l3_table(row) for row in rows]
 
 
-def rows_to_map_l1_l2(rows: List[dict]) -> List[MapL1L2]:
+def rows_to_map_l1_l2(rows: list[dict]) -> list[MapL1L2]:
     """批量转换 MapL1L2 列表"""
     return [dict_to_map_l1_l2(row) for row in rows]
 
 
-def rows_to_map_l2_l3(rows: List[dict]) -> List[MapL2L3]:
+def rows_to_map_l2_l3(rows: list[dict]) -> list[MapL2L3]:
     """批量转换 MapL2L3 列表"""
     return [dict_to_map_l2_l3(row) for row in rows]
 
 
-def rows_to_prompt_templates(rows: List[dict]) -> List[PromptTemplate]:
+def rows_to_prompt_templates(rows: list[dict]) -> list[PromptTemplate]:
     """批量转换 PromptTemplate 列表"""
     return [dict_to_prompt_template(row) for row in rows]

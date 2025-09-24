@@ -1,8 +1,9 @@
+import logging
+import os
+
 import dotenv
 import geopandas as gpd
 from sqlalchemy import create_engine
-import logging
-import os
 
 dotenv.load_dotenv()
 

@@ -1,10 +1,11 @@
+import json
 import os
 import sys
-import json
+
 import pytest
 
 # 添加项目根目录到 Python 路径（使得 `config.py` 与 `app` 可被导入）
-sys.path.insert(0, os.path.join(os.path.dirname(__file__), '..'))
+sys.path.insert(0, os.path.join(os.path.dirname(__file__), ".."))
 
 from app import create_app
 from app.services.three_level_service import ThreeLevelService
@@ -72,7 +73,9 @@ def test_get_prompt_template_and_search():
 
         # keyword search：以常见词作为示例；若为空仅打印
         results = ThreeLevelService.search_tables_by_keyword("lake")
-        _print("Search tables by keyword 'lake' (top 5)", [x.__dict__ for x in results[:5]])
+        _print(
+            "Search tables by keyword 'lake' (top 5)", [x.__dict__ for x in results[:5]]
+        )
         assert isinstance(results, list)
 
 
@@ -83,8 +86,9 @@ def test_get_full_hierarchy():
         # 仅校验结构类型，避免对数据规模做强约束
         assert isinstance(data, dict)
         assert "hierarchy" in data
-        _print("Full hierarchy (truncated)", {
-            "l1_count": len(data.get("hierarchy", [])),
-        })
-
-
+        _print(
+            "Full hierarchy (truncated)",
+            {
+                "l1_count": len(data.get("hierarchy", [])),
+            },
+        )

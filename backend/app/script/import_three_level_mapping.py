@@ -1,4 +1,5 @@
 from __future__ import annotations
+
 """
 从 JSON 文件导入三层架构（L1/L2/L3）映射关系
 
@@ -114,7 +115,7 @@ import argparse
 import json
 import logging
 from pathlib import Path
-from typing import Dict, List, Any
+from typing import Any, Dict, List
 
 from sqlalchemy import text
 from sqlalchemy.exc import SQLAlchemyError
@@ -122,14 +123,17 @@ from sqlalchemy.exc import SQLAlchemyError
 from app import create_app
 from app.extensions import db
 from app.models.three_level_models import (
-    L1Category, L2Card, L3Table,
-    dict_to_l1_category, dict_to_l2_card
+    L1Category,
+    L2Card,
+    L3Table,
+    dict_to_l1_category,
+    dict_to_l2_card,
 )
 
 
 def load_json_file(file_path: str) -> dict:
     """加载并解析 JSON 文件"""
-    with open(file_path, 'r', encoding='utf-8') as f:
+    with open(file_path, "r", encoding="utf-8") as f:
         return json.load(f)
 
 
@@ -141,13 +145,13 @@ def get_or_create_l1(l1_data: dict, dry_run: bool = False) -> int:
         "description": l1_data.get("description", ""),
         "keywords": l1_data.get("keywords", []),
         "active": True,
-        "version": 1
+        "version": 1,
     }
-    
+
     if dry_run:
         logging.info(f"[dry-run] 将创建 L1: {l1}")
         return -1
-    
+
     try:
         with db.engine.begin() as conn:
             # 先查找是否存在
@@ -155,9 +159,10 @@ def get_or_create_l1(l1_data: dict, dry_run: bool = False) -> int:
             result = conn.execute(sql, {"name": l1["name"]}).first()
             if result:
                 return result[0]
-            
+
             # 不存在则创建
-            sql = text("""
+            sql = text(
+                """
                 INSERT INTO l1_category (
                     name, description, keywords, 
                     active, version, updated_at
@@ -165,7 +170,8 @@ def get_or_create_l1(l1_data: dict, dry_run: bool = False) -> int:
                     :name, :description, :keywords, 
                     :active, :version, NOW()
                 ) RETURNING id
-            """)
+            """
+            )
             result = conn.execute(sql, l1).first()
             if not result:
                 raise ValueError(f"创建 L1 类别失败: {l1['name']}")
@@ -183,13 +189,13 @@ def get_or_create_l2(l2_data: dict, dry_run: bool = False) -> int:
         "description_short": l2_data.get("description", ""),
         "keywords": l2_data.get("keywords", []),
         "active": True,
-        "version": 1
+        "version": 1,
     }
-    
+
     if dry_run:
         logging.info(f"[dry-run] 将创建 L2: {l2}")
         return -1
-    
+
     try:
         with db.engine.begin() as conn:
             # 先查找是否存在
@@ -197,9 +203,10 @@ def get_or_create_l2(l2_data: dict, dry_run: bool = False) -> int:
             result = conn.execute(sql, {"name": l2["name"]}).first()
             if result:
                 return result[0]
-            
+
             # 不存在则创建
-            sql = text("""
+            sql = text(
+                """
                 INSERT INTO l2_card (
                     name, description_short, keywords, 
                     active, version, updated_at
@@ -207,7 +214,8 @@ def get_or_create_l2(l2_data: dict, dry_run: bool = False) -> int:
                     :name, :description_short, :keywords, 
                     :active, :version, NOW()
                 ) RETURNING id
-            """)
+            """
+            )
             result = conn.execute(sql, l2).first()
             if not result:
                 raise ValueError(f"创建 L2 卡片失败: {l2['name']}")
@@ -221,16 +229,18 @@ def get_l3_ids(table_names: List[str]) -> List[int]:
     """获取 L3 表的 id 列表"""
     if not table_names:
         return []
-        
-    sql = text("""
+
+    sql = text(
+        """
         SELECT id, table_name 
         FROM l3_table 
         WHERE table_name = ANY(:table_names)
-    """)
-    
+    """
+    )
+
     with db.engine.connect() as conn:
         result = conn.execute(sql, {"table_names": table_names}).mappings().all()
-        return [row['id'] for row in result]
+        return [row["id"] for row in result]
 
 
 def create_l1_l2_mapping(l1_id: int, l2_id: int, dry_run: bool = False) -> None:
@@ -238,13 +248,15 @@ def create_l1_l2_mapping(l1_id: int, l2_id: int, dry_run: bool = False) -> None:
     if dry_run:
         logging.info(f"[dry-run] 将创建 L1-L2 映射: {l1_id} -> {l2_id}")
         return
-        
-    sql = text("""
+
+    sql = text(
+        """
         INSERT INTO map_l1_l2 (l1_id, l2_id, weight)
         VALUES (:l1_id, :l2_id, 100)
         ON CONFLICT (l1_id, l2_id) DO NOTHING
-    """)
-    
+    """
+    )
+
     with db.engine.begin() as conn:
         conn.execute(sql, {"l1_id": l1_id, "l2_id": l2_id})
 
@@ -254,13 +266,15 @@ def create_l2_l3_mapping(l2_id: int, l3_id: int, dry_run: bool = False) -> None:
     if dry_run:
         logging.info(f"[dry-run] 将创建 L2-L3 映射: {l2_id} -> {l3_id}")
         return
-        
-    sql = text("""
+
+    sql = text(
+        """
         INSERT INTO map_l2_l3 (l2_id, l3_id, weight)
         VALUES (:l2_id, :l3_id, 100)
         ON CONFLICT (l2_id, l3_id) DO NOTHING
-    """)
-    
+    """
+    )
+
     with db.engine.begin() as conn:
         conn.execute(sql, {"l2_id": l2_id, "l3_id": l3_id})
 
@@ -283,11 +297,11 @@ def clear_existing_data(dry_run: bool = False) -> None:
         # 2. 再清空 L1 和 L2 表
         conn.execute(text("DELETE FROM l2_card"))
         conn.execute(text("DELETE FROM l1_category"))
-        
+
         # 重置序列（如果使用）
         conn.execute(text("ALTER SEQUENCE l1_category_id_seq RESTART WITH 1"))
         conn.execute(text("ALTER SEQUENCE l2_card_id_seq RESTART WITH 1"))
-        
+
         logging.info("已清空所有相关表")
 
 
@@ -299,26 +313,26 @@ def process_mapping(mapping: dict, dry_run: bool = False) -> None:
         try:
             # 创建或获取 L1
             l1_id = get_or_create_l1(l1_item, dry_run)
-            
+
             # 处理 L2 列表
             for l2_item in l1_item.get("l2", []):
                 # 创建或获取 L2
                 l2_id = get_or_create_l2(l2_item, dry_run)
-                
+
                 # 创建 L1-L2 映射
                 create_l1_l2_mapping(l1_id, l2_id, dry_run)
-                
+
                 # 获取 L3 ID 并创建 L2-L3 映射
                 l3_table_names = l2_item.get("l3", [])
                 l3_ids = [] if dry_run else get_l3_ids(l3_table_names)
-                
+
                 if len(l3_ids) != len(l3_table_names):
                     missing = set(l3_table_names) - set(l3_ids)
                     logging.warning(f"部分 L3 表未找到: {missing}")
-                
+
                 for l3_id in l3_ids:
                     create_l2_l3_mapping(l2_id, l3_id, dry_run)
-                    
+
         except SQLAlchemyError as e:
             logging.error(f"处理 L1 {l1_item['name']} 时发生错误: {e}")
             continue
@@ -328,13 +342,16 @@ def main() -> None:
     parser = argparse.ArgumentParser(description="导入三层架构映射关系")
     parser.add_argument("json_file", help="JSON 映射文件路径")
     parser.add_argument("--dry-run", action="store_true", help="仅打印，不更新数据库")
-    parser.add_argument("--keep-existing", action="store_true", help="保留现有数据（默认会清空已有数据）")
+    parser.add_argument(
+        "--keep-existing",
+        action="store_true",
+        help="保留现有数据（默认会清空已有数据）",
+    )
     parser.add_argument("--config", default="development", help="Flask 配置名")
     args = parser.parse_args()
 
     logging.basicConfig(
-        level=logging.INFO,
-        format="%(asctime)s %(levelname)s %(message)s"
+        level=logging.INFO, format="%(asctime)s %(levelname)s %(message)s"
     )
 
     # 检查文件是否存在
@@ -345,7 +362,7 @@ def main() -> None:
     try:
         # 加载 JSON 文件
         mapping = load_json_file(args.json_file)
-        
+
         # 创建 Flask 应用上下文
         app = create_app(args.config)
         with app.app_context():
@@ -354,7 +371,7 @@ def main() -> None:
                 clear_existing_data(args.dry_run)
             # 处理映射关系
             process_mapping(mapping, args.dry_run)
-            
+
     except json.JSONDecodeError:
         logging.error(f"无法解析 JSON 文件: {args.json_file}")
     except Exception as e:

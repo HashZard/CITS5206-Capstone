@@ -1,4 +1,5 @@
 import unittest
+
 from backend.app.services import sql_service
 
 
@@ -28,7 +29,7 @@ class TestSqlService(unittest.TestCase):
         clause, params = sql_service.build_where_and_params(
             table="dummy",
             filters={"active": True, "name": "Alice"},
-            valid_cols=["active", "name"]
+            valid_cols=["active", "name"],
         )
         self.assertEqual(clause, 'WHERE "active" = :p0 AND "name" = :p1')
         self.assertEqual(params, {"p0": True, "p1": "Alice"})
@@ -38,9 +39,9 @@ class TestSqlService(unittest.TestCase):
             table="dummy",
             filters={
                 "age": {"op": ">=", "value": 18},
-                "name": {"op": "ilike", "value": "%al%"}
+                "name": {"op": "ilike", "value": "%al%"},
             },
-            valid_cols=["age", "name"]
+            valid_cols=["age", "name"],
         )
         self.assertIn("age", clause.lower())
         self.assertIn("ilike", clause.lower())
@@ -65,7 +66,7 @@ class TestSqlService(unittest.TestCase):
             columns=["id", "name"],
             filters={"active": True},
             limit=5,
-            offset=0
+            offset=0,
         )
 
         self.assertTrue(sql.startswith("SELECT"))
@@ -75,9 +76,8 @@ class TestSqlService(unittest.TestCase):
         self.assertEqual(params["_limit"], 5)
         self.assertEqual(params["_offset"], 0)
 
+
 # Add setUp and tearDown if there are more tests relied on ALLOWED_TABLES or get_columns
 
 if __name__ == "__main__":
     unittest.main()
-
-
