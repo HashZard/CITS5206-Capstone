@@ -3,12 +3,12 @@ import { MapPin, BarChart3, Globe, Send, Sparkles } from "lucide-react";
 import TopNav, { TopNavLink } from "@/components/layout/TopNav";
 import Footer from "@/components/layout/Footer";
 
-// import ImportPage from "@/pages/Import";
 import Login from "@/pages/Login";
 import Register from "@/pages/Register";
 import UserPage from "@/pages/User";
 import GeoQueryResults from "@/pages/Result";
 import HistoryPage from "@/pages/History";
+import AboutPage from "@/pages/About"; // <-- NEW
 
 import { getStoredUser, setStoredUser, User } from "@/lib/auth";
 
@@ -17,7 +17,6 @@ const links: TopNavLink[] = [
   { label: "Home" },
   { label: "Dashboard" },
   { label: "History" },
-  // { label: "Import" },
   { label: "Result" },
   { label: "Tutorials" },
   { label: "About" },
@@ -97,12 +96,12 @@ function HomeView({ onQuery }: { onQuery: (query: string) => void }) {
                 <button
                   type="submit"
                   disabled={!query.trim() || isLoading}
-                  className="ml-2 mr-2 p-3 bg-white/20 hover:bg-white/30 disabled:bg-white/10 disabled:cursor-not-allowed rounded-xl transition-all duration-200 group"
+                  className="ml-2 mr-2 p-3 bg白/20 hover:bg-white/30 disabled:bg-white/10 disabled:cursor-not-allowed rounded-xl transition-all duration-200 group"
                 >
                   {isLoading ? (
                     <Sparkles className="w-5 h-5 text-white/70 animate-spin" />
                   ) : (
-                    <Send className="w-5 h-5 text-white group-hover:text-white/90 disabled:text-white/50" />
+                    <Send className="w-5 h-5 text白 group-hover:text-white/90 disabled:text-white/50" />
                   )}
                 </button>
               </div>
@@ -140,12 +139,12 @@ function HomeView({ onQuery }: { onQuery: (query: string) => void }) {
           <h3 className="text-white text-xl text-center mb-1">Smart Analytics</h3>
           <p className="text-white/70 text-center">Get instant insights and visualizations.</p>
         </div>
-        <div className="backdrop-blur-sm bg-white/10 border-white/20 hover:bg-white/15 transition-all duration-300 hover:scale-105 rounded-lg p-6">
-          <div className="w-16 h-16 bg-white/20 rounded-full flex items-center justify-center mx-auto mb-4">
-            <Globe className="w-8 h-8 text-white" />
+        <div className="backdrop-blur-sm bg白/10 border白/20 hover:bg白/15 transition-all duration-300 hover:scale-105 rounded-lg p-6">
+          <div className="w-16 h-16 bg白/20 rounded-full flex items-center justify-center mx-auto mb-4">
+            <Globe className="w-8 h-8 text白" />
           </div>
-          <h3 className="text-white text-xl text-center mb-1">Interactive Maps</h3>
-          <p className="text-white/70 text-center">Explore data with dynamic mapping.</p>
+          <h3 className="text白 text-xl text-center mb-1">Interactive Maps</h3>
+          <p className="text白/70 text-center">Explore data with dynamic mapping.</p>
         </div>
       </div>
     </div>
@@ -154,11 +153,8 @@ function HomeView({ onQuery }: { onQuery: (query: string) => void }) {
 
 /** App shell with naive client-side routing and frontend-only auth */
 export default function App() {
-  // Track current path to switch views without a router
   const [path, setPath] = useState(() => window.location.pathname);
-  // Auth state persisted to localStorage (frontend-only)
   const [user, setUser] = useState<User | null>(() => getStoredUser());
-  // Store the user's query to pass to results page
   const [userQuery, setUserQuery] = useState<string>("");
 
   useEffect(() => {
@@ -169,7 +165,6 @@ export default function App() {
 
   const isAuthed = !!user;
 
-  /** Push-state navigation helper */
   const go = (to: string) => {
     if (window.location.pathname !== to) {
       window.history.pushState({}, "", to);
@@ -177,13 +172,11 @@ export default function App() {
     }
   };
 
-  /** Handle query submission from homepage */
   const handleQuery = (query: string) => {
     setUserQuery(query);
     go("/result");
   };
 
-  /** Login success handler (frontend-only) */
   const handleLogin = (email: string) => {
     const next = { email };
     setUser(next);
@@ -191,7 +184,6 @@ export default function App() {
     go("/");
   };
 
-  /** Register success handler (frontend-only) */
   const handleRegister = (email: string) => {
     const next = { email };
     setUser(next);
@@ -199,14 +191,12 @@ export default function App() {
     go("/");
   };
 
-  /** Sign out handler */
   const handleLogout = () => {
     setUser(null);
     setStoredUser(null);
     go("/");
   };
 
-  /** Avatar behavior: guest → /login; authed → /user */
   const onAvatarClick = () => {
     if (!isAuthed) go("/login");
     else go("/user");
@@ -237,8 +227,10 @@ export default function App() {
 
         {path === "/history" && <HistoryPage />}
 
+        {path === "/about" && <AboutPage />}{/* <-- NEW */}
+
         {/* Default homepage (mutually exclusive) */}
-        {["/login", "/register", "/user", "/result", "/history"].includes(path)
+        {["/login", "/register", "/user", "/result", "/history", "/about"].includes(path)
           ? null
           : <HomeView onQuery={handleQuery} />}
       </main>
