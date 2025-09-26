@@ -195,14 +195,22 @@ class RoutingService:
             - Understand the intent: lookup / filter / aggregate / spatial.
             - Generate fully executable SQL (no parameters like $1 or ?).
             - Avoid SELECT *; only include the necessary fields based on schema and question.
-            - If spatial, assume SRID=4326 and use appropriate PostGIS functions.
             - Decide the LIMIT value based on the user's question; otherwise use the provided optional constraints.
             - Do not generate DDL, EXPLAIN, or comments in SQL.
             - Only one query should be returned inside "final_sql".
             
+            PostGIS Best Practices:
+            - All geometry columns are in SRID 4326 (latitude/longitude).
+            - **For accurate area or distance calculations** (e.g., using ST_Area, ST_Distance, ST_DWithin), cast the geometry column to the `geography` type. This correctly handles calculations on the earth's curved surface and returns results in meters.
+              - Correct: `ST_Area(geom::geography)`
+              - Correct: `ST_DWithin(geom_a::geography, geom_b::geography, 1000)` (for a 1km distance)
+            - **Do not use `ST_Transform`** to a projected CRS (like 3857) for the purpose of calculation. Use the `geography` type instead.
+            - **Ensure precision in calculations.** When performing division or rounding on the output of a spatial function like `ST_Area`, cast the result to `numeric` to avoid floating-point inaccuracies.
+              - Example: `ROUND(ST_Area(geom::geography)::numeric / 1000000.0, 2) AS area_in_km2`
+            
             Example of correct JSON:
             {
-              "final_sql": "SELECT id, name, geom FROM places WHERE ST_Within(geom, ST_GeomFromText('POLYGON((...))', 4326)) LIMIT 50;",
+              "final_sql": "SELECT name, ROUND(ST_Area(geom::geography)::numeric / 1000000.0, 2) AS area_km2 FROM admin_boundaries WHERE lower(name) = 'california' LIMIT 1;"
             }
         """
         user = f"""
