@@ -1,0 +1,740 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SQL Generation Performance Analysis</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/3.9.1/chart.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+    <link rel="stylesheet"
+        href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/styles/atom-one-dark.min.css">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/highlight.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/languages/sql.min.js"></script>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+            background: linear-gradient(180deg, #0f0f23 0%, #1a1a3e 100%);
+            min-height: 100vh;
+            padding: 40px 20px;
+            color: #e0e0e0;
+        }
+
+        .container {
+            max-width: 1600px;
+            margin: 0 auto;
+        }
+
+        .header {
+            margin-bottom: 40px;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+            padding-bottom: 20px;
+        }
+
+        .header h1 {
+            font-size: 2rem;
+            font-weight: 300;
+            letter-spacing: -0.5px;
+            color: #ffffff;
+            margin-bottom: 8px;
+        }
+
+        .header p {
+            font-size: 0.95rem;
+            color: #8b8b8b;
+            letter-spacing: 0.2px;
+        }
+
+        .metrics-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+            gap: 20px;
+            margin-bottom: 40px;
+        }
+
+        .metric-card {
+            background: rgba(255, 255, 255, 0.03);
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(255, 255, 255, 0.08);
+            border-radius: 12px;
+            padding: 24px;
+            transition: all 0.3s ease;
+        }
+
+        .metric-card:hover {
+            background: rgba(255, 255, 255, 0.05);
+            transform: translateY(-2px);
+            border-color: rgba(255, 255, 255, 0.12);
+        }
+
+        .metric-label {
+            font-size: 0.75rem;
+            text-transform: uppercase;
+            letter-spacing: 1.2px;
+            color: #8b8b8b;
+            margin-bottom: 8px;
+        }
+
+        .metric-value {
+            font-size: 2.5rem;
+            font-weight: 200;
+            color: #ffffff;
+            margin-bottom: 4px;
+        }
+
+        .metric-sublabel {
+            font-size: 0.85rem;
+            color: #6b6b6b;
+        }
+
+        .chart-section {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 30px;
+            margin-bottom: 40px;
+        }
+
+        .chart-container {
+            background: rgba(255, 255, 255, 0.02);
+            border: 1px solid rgba(255, 255, 255, 0.08);
+            border-radius: 12px;
+            padding: 30px;
+        }
+
+        .chart-container.full-width {
+            grid-column: span 2;
+        }
+
+        .chart-title {
+            font-size: 1.1rem;
+            font-weight: 400;
+            color: #ffffff;
+            margin-bottom: 20px;
+            letter-spacing: -0.2px;
+        }
+
+        .chart-wrapper {
+            position: relative;
+            height: 350px;
+        }
+
+        .sheet-cards {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 20px;
+            margin-bottom: 40px;
+        }
+
+        .sheet-card {
+            background: rgba(255, 255, 255, 0.02);
+            border: 1px solid rgba(255, 255, 255, 0.08);
+            border-radius: 12px;
+            padding: 20px;
+        }
+
+        .sheet-name {
+            font-size: 0.9rem;
+            color: #8b8b8b;
+            margin-bottom: 12px;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        .sheet-stats {
+            display: flex;
+            justify-content: space-between;
+            gap: 15px;
+        }
+
+        .stat {
+            flex: 1;
+        }
+
+        .stat-value {
+            font-size: 1.8rem;
+            font-weight: 300;
+            color: #ffffff;
+        }
+
+        .stat-label {
+            font-size: 0.7rem;
+            color: #6b6b6b;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            margin-top: 4px;
+        }
+
+        .examples-section {
+            background: rgba(255, 255, 255, 0.02);
+            border: 1px solid rgba(255, 255, 255, 0.08);
+            border-radius: 12px;
+            padding: 30px;
+            margin-top: 40px;
+        }
+
+        .examples-title {
+            font-size: 1.1rem;
+            font-weight: 400;
+            color: #ffffff;
+            margin-bottom: 25px;
+            letter-spacing: -0.2px;
+        }
+
+        .example-item {
+            background: rgba(0, 0, 0, 0.3);
+            border-radius: 8px;
+            padding: 20px;
+            margin-bottom: 20px;
+            border-left: 3px solid rgba(255, 255, 255, 0.2);
+        }
+
+        .example-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 15px;
+        }
+
+        .example-source {
+            font-size: 0.8rem;
+            color: #8b8b8b;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        .example-status {
+            display: inline-block;
+            padding: 4px 12px;
+            border-radius: 4px;
+            font-size: 0.75rem;
+            font-weight: 500;
+            letter-spacing: 0.5px;
+        }
+
+        .status-effective {
+            background: rgba(34, 197, 94, 0.15);
+            color: #22c55e;
+            border: 1px solid rgba(34, 197, 94, 0.3);
+        }
+
+        .status-partial {
+            background: rgba(251, 191, 36, 0.15);
+            color: #fbbf24;
+            border: 1px solid rgba(251, 191, 36, 0.3);
+        }
+
+        .status-ineffective {
+            background: rgba(239, 68, 68, 0.15);
+            color: #ef4444;
+            border: 1px solid rgba(239, 68, 68, 0.3);
+        }
+
+        .example-content {
+            margin-top: 15px;
+        }
+
+        .example-field {
+            margin-bottom: 12px;
+        }
+
+        .field-label {
+            font-size: 0.75rem;
+            color: #6b6b6b;
+            text-transform: uppercase;
+            letter-spacing: 0.8px;
+            margin-bottom: 6px;
+        }
+
+        .field-value {
+            font-size: 0.9rem;
+            color: #e0e0e0;
+            line-height: 1.5;
+        }
+
+        .sql-block {
+            background: rgba(255, 255, 255, 0.02);
+            border: 1px solid rgba(255, 255, 255, 0.08);
+            border-radius: 8px;
+            padding: 14px 16px;
+            font-family: 'JetBrains Mono', 'Courier New', monospace;
+            font-size: 0.85rem;
+            color: #e0e0e0;
+            overflow-x: auto;
+            white-space: pre-wrap;
+            word-wrap: break-word;
+            line-height: 1.6;
+            backdrop-filter: blur(4px);
+        }
+
+        /* Make highlight.js blend with container */
+        .sql-block code.hljs {
+            background: transparent !important;
+            color: inherit;
+            display: block;
+        }
+
+        /* Subtle scrollbars to match theme */
+        .sql-block::-webkit-scrollbar {
+            height: 8px;
+        }
+
+        .sql-block::-webkit-scrollbar-track {
+            background: rgba(255, 255, 255, 0.04);
+            border-radius: 8px;
+        }
+
+        .sql-block::-webkit-scrollbar-thumb {
+            background: rgba(255, 255, 255, 0.12);
+            border-radius: 8px;
+        }
+
+        .loading {
+            text-align: center;
+            color: #8b8b8b;
+            font-size: 1rem;
+            margin-top: 60px;
+            letter-spacing: 0.5px;
+        }
+
+        .error {
+            background: rgba(239, 68, 68, 0.1);
+            border: 1px solid rgba(239, 68, 68, 0.3);
+            color: #ef4444;
+            padding: 15px 20px;
+            border-radius: 8px;
+            margin: 30px 0;
+        }
+
+        @media (max-width: 768px) {
+            .chart-section {
+                grid-template-columns: 1fr;
+            }
+
+            .chart-container.full-width {
+                grid-column: span 1;
+            }
+        }
+    </style>
+</head>
+
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>SQL Generation Performance Analysis</h1>
+            <p>Comprehensive evaluation of automated SQL query generation effectiveness</p>
+        </div>
+
+        <div id="loading" class="loading">Analyzing data...</div>
+        <div id="error" class="error" style="display: none;"></div>
+
+        <div id="metrics" class="metrics-grid" style="display: none;"></div>
+        <div id="charts" class="chart-section" style="display: none;"></div>
+        <div id="sheets" class="sheet-cards" style="display: none;"></div>
+        <div id="examples" class="examples-section" style="display: none;">
+            <h2 class="examples-title">Query Generation Examples</h2>
+            <div id="examples-content"></div>
+        </div>
+    </div>
+
+    <script>
+        let allData = {};
+        let charts = [];
+
+        function escapeHtml(str) {
+            if (str == null) return '';
+            return String(str)
+                .replace(/&/g, '&amp;')
+                .replace(/</g, '&lt;')
+                .replace(/>/g, '&gt;')
+                .replace(/"/g, '&quot;')
+                .replace(/'/g, '&#39;');
+        }
+
+        async function loadExcelFile() {
+            try {
+                const response = await fetch("sql_results.xlsx");
+                const arrayBuffer = await response.arrayBuffer();
+                const workbook = XLSX.read(arrayBuffer, { type: "array" });
+
+                const sheetNames = workbook.SheetNames.slice(0, 5);
+
+                sheetNames.forEach(sheetName => {
+                    const worksheet = workbook.Sheets[sheetName];
+                    const jsonData = XLSX.utils.sheet_to_json(worksheet, { raw: false });
+                    allData[sheetName] = jsonData;
+                });
+
+                displayAnalysis();
+            } catch (error) {
+                console.error('Error:', error);
+                document.getElementById('loading').style.display = 'none';
+                document.getElementById('error').style.display = 'block';
+                document.getElementById('error').textContent = 'Failed to load data: ' + error.message;
+            }
+        }
+
+        function calculateStats(data) {
+            const total = data.length;
+            let trueCount = 0;
+            let falseCount = 0;
+            let neutralCount = 0;
+
+            data.forEach(row => {
+                const value = String(row.is_effective || '').toUpperCase();
+                if (value === 'TRUE') trueCount++;
+                else if (value === 'FALSE') falseCount++;
+                else if (value === 'NEUTRAL') neutralCount++;
+            });
+
+            return {
+                total,
+                trueCount,
+                falseCount,
+                neutralCount,
+                truePercentage: total > 0 ? ((trueCount / total) * 100).toFixed(1) : '0',
+                falsePercentage: total > 0 ? ((falseCount / total) * 100).toFixed(1) : '0',
+                neutralPercentage: total > 0 ? ((neutralCount / total) * 100).toFixed(1) : '0'
+            };
+        }
+
+        function createDoughnutChart(canvasId, stats) {
+            const ctx = document.getElementById(canvasId).getContext('2d');
+
+            const chart = new Chart(ctx, {
+                type: 'doughnut',
+                data: {
+                    labels: ['Effective', 'Ineffective', 'Partial/Empty'],
+                    datasets: [{
+                        data: [stats.trueCount, stats.falseCount, stats.neutralCount],
+                        backgroundColor: [
+                            'rgba(34, 197, 94, 0.7)',
+                            'rgba(239, 68, 68, 0.7)',
+                            'rgba(251, 191, 36, 0.7)'
+                        ],
+                        borderColor: [
+                            'rgba(34, 197, 94, 1)',
+                            'rgba(239, 68, 68, 1)',
+                            'rgba(251, 191, 36, 1)'
+                        ],
+                        borderWidth: 1
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: {
+                            position: 'bottom',
+                            labels: {
+                                color: '#8b8b8b',
+                                padding: 20,
+                                font: {
+                                    size: 11
+                                }
+                            }
+                        },
+                        tooltip: {
+                            callbacks: {
+                                label: function (context) {
+                                    const value = context.parsed;
+                                    const total = context.dataset.data.reduce((a, b) => a + b, 0);
+                                    const percentage = ((value / total) * 100).toFixed(1);
+                                    return context.label + ': ' + value + ' (' + percentage + '%)';
+                                }
+                            }
+                        }
+                    }
+                }
+            });
+
+            charts.push(chart);
+            return chart;
+        }
+
+        function createComparisonChart(canvasId, allStats) {
+            const ctx = document.getElementById(canvasId).getContext('2d');
+
+            const labels = Object.keys(allStats);
+            const trueData = labels.map(key => parseFloat(allStats[key].truePercentage));
+            const falseData = labels.map(key => parseFloat(allStats[key].falsePercentage));
+            const neutralData = labels.map(key => parseFloat(allStats[key].neutralPercentage));
+
+            const chart = new Chart(ctx, {
+                type: 'bar',
+                data: {
+                    labels: labels,
+                    datasets: [
+                        {
+                            label: 'Effective',
+                            data: trueData,
+                            backgroundColor: 'rgba(34, 197, 94, 0.7)',
+                            borderColor: 'rgba(34, 197, 94, 1)',
+                            borderWidth: 1
+                        },
+                        {
+                            label: 'Ineffective',
+                            data: falseData,
+                            backgroundColor: 'rgba(239, 68, 68, 0.7)',
+                            borderColor: 'rgba(239, 68, 68, 1)',
+                            borderWidth: 1
+                        },
+                        {
+                            label: 'Partial/Empty',
+                            data: neutralData,
+                            backgroundColor: 'rgba(251, 191, 36, 0.7)',
+                            borderColor: 'rgba(251, 191, 36, 1)',
+                            borderWidth: 1
+                        }
+                    ]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    scales: {
+                        x: {
+                            grid: {
+                                color: 'rgba(255, 255, 255, 0.05)'
+                            },
+                            ticks: {
+                                color: '#8b8b8b'
+                            }
+                        },
+                        y: {
+                            beginAtZero: true,
+                            max: 100,
+                            grid: {
+                                color: 'rgba(255, 255, 255, 0.05)'
+                            },
+                            ticks: {
+                                color: '#8b8b8b',
+                                callback: function (value) {
+                                    return value + '%';
+                                }
+                            }
+                        }
+                    },
+                    plugins: {
+                        legend: {
+                            labels: {
+                                color: '#8b8b8b',
+                                padding: 15,
+                                font: {
+                                    size: 11
+                                }
+                            }
+                        },
+                        tooltip: {
+                            callbacks: {
+                                label: function (context) {
+                                    return context.dataset.label + ': ' + context.parsed.y.toFixed(1) + '%';
+                                }
+                            }
+                        }
+                    }
+                }
+            });
+
+            charts.push(chart);
+            return chart;
+        }
+
+        function getExamples() {
+            const examples = [];
+            const sheetsToSample = Object.keys(allData).slice(0, 5);
+
+            sheetsToSample.forEach(sheetName => {
+                const data = allData[sheetName];
+
+                // Try to get diverse examples
+                const trueExample = data.find(row =>
+                    String(row.is_effective).toUpperCase() === 'TRUE' &&
+                    row.Query && row.SQL && row.generated_sql
+                );
+                const falseExample = data.find(row =>
+                    String(row.is_effective).toUpperCase() === 'FALSE' &&
+                    row.Query && row.SQL && row.generated_sql
+                );
+                const neutralExample = data.find(row =>
+                    String(row.is_effective).toUpperCase() === 'NEUTRAL' &&
+                    row.Query && row.SQL && row.generated_sql
+                );
+
+                [trueExample, neutralExample, falseExample].forEach(example => {
+                    if (example && examples.length < 6) {
+                        const status = String(example.is_effective).toUpperCase();
+                        examples.push({
+                            sheet: sheetName,
+                            status: status,
+                            query: example.Query || example.Question || 'N/A',
+                            originalSQL: example.SQL || 'N/A',
+                            generatedSQL: example.generated_sql || 'N/A',
+                            note: example.note || example.Note || example.notes || example.Notes || example.comment || example.Comment || ''
+                        });
+                    }
+                });
+            });
+
+            return examples.slice(0, 6);
+        }
+
+        function displayAnalysis() {
+            document.getElementById('loading').style.display = 'none';
+
+            // Calculate overall stats
+            let overallData = [];
+            const sheetStats = {};
+
+            Object.keys(allData).forEach(sheetName => {
+                const data = allData[sheetName];
+                overallData = overallData.concat(data);
+                sheetStats[sheetName] = calculateStats(data);
+            });
+
+            const overallStats = calculateStats(overallData);
+
+            // Display metrics
+            const metricsDiv = document.getElementById('metrics');
+            metricsDiv.style.display = 'grid';
+            metricsDiv.innerHTML = `
+                <div class="metric-card">
+                    <div class="metric-label">Total Queries Analyzed</div>
+                    <div class="metric-value">${overallStats.total.toLocaleString()}</div>
+                    <div class="metric-sublabel">Across ${Object.keys(allData).length} datasets</div>
+                </div>
+                <div class="metric-card">
+                    <div class="metric-label">Effective Generation Rate</div>
+                    <div class="metric-value">${overallStats.truePercentage}%</div>
+                    <div class="metric-sublabel">${overallStats.trueCount.toLocaleString()} successful queries</div>
+                </div>
+                <div class="metric-card">
+                    <div class="metric-label">Partial Success Rate</div>
+                    <div class="metric-value">${overallStats.neutralPercentage}%</div>
+                    <div class="metric-sublabel">Syntax modifications or empty results</div>
+                </div>
+                <div class="metric-card">
+                    <div class="metric-label">Failure Rate</div>
+                    <div class="metric-value">${overallStats.falsePercentage}%</div>
+                    <div class="metric-sublabel">${overallStats.falseCount.toLocaleString()} ineffective queries</div>
+                </div>
+            `;
+
+            // Display charts
+            const chartsDiv = document.getElementById('charts');
+            chartsDiv.style.display = 'grid';
+            chartsDiv.innerHTML = `
+                <div class="chart-container">
+                    <h3 class="chart-title">Overall Performance Distribution</h3>
+                    <div class="chart-wrapper">
+                        <canvas id="overall-chart"></canvas>
+                    </div>
+                </div>
+                <div class="chart-container">
+                    <h3 class="chart-title">Dataset Comparison</h3>
+                    <div class="chart-wrapper">
+                        <canvas id="comparison-chart"></canvas>
+                    </div>
+                </div>
+            `;
+
+            // Display sheet cards
+            const sheetsDiv = document.getElementById('sheets');
+            sheetsDiv.style.display = 'grid';
+            sheetsDiv.innerHTML = Object.keys(sheetStats).map(sheetName => {
+                const stats = sheetStats[sheetName];
+                return `
+                    <div class="sheet-card">
+                        <div class="sheet-name">${sheetName}</div>
+                        <div class="sheet-stats">
+                            <div class="stat">
+                                <div class="stat-value">${stats.truePercentage}%</div>
+                                <div class="stat-label">Effective</div>
+                            </div>
+                            <div class="stat">
+                                <div class="stat-value">${stats.neutralPercentage}%</div>
+                                <div class="stat-label">Partial</div>
+                            </div>
+                            <div class="stat">
+                                <div class="stat-value">${stats.total}</div>
+                                <div class="stat-label">Total</div>
+                            </div>
+                        </div>
+                    </div>
+                `;
+            }).join('');
+
+            // Create charts
+            setTimeout(() => {
+                createDoughnutChart('overall-chart', overallStats);
+                createComparisonChart('comparison-chart', sheetStats);
+
+                // Display examples
+                const examples = getExamples();
+                if (examples.length > 0) {
+                    const examplesDiv = document.getElementById('examples');
+                    const examplesContent = document.getElementById('examples-content');
+
+                    examplesContent.innerHTML = examples.map(example => {
+                        let statusClass = '';
+                        let statusText = '';
+
+                        if (example.status === 'TRUE') {
+                            statusClass = 'status-effective';
+                            statusText = 'EFFECTIVE';
+                        } else if (example.status === 'FALSE') {
+                            statusClass = 'status-ineffective';
+                            statusText = 'INEFFECTIVE';
+                        } else {
+                            statusClass = 'status-partial';
+                            statusText = 'PARTIAL/EMPTY';
+                        }
+
+                        return `
+                            <div class="example-item">
+                                <div class="example-header">
+                                    <span class="example-source">${example.sheet}</span>
+                                    <span class="example-status ${statusClass}">${statusText}</span>
+                                </div>
+                                <div class="example-content">
+                                    <div class="example-field">
+                                        <div class="field-label">Query</div>
+                                        <div class="field-value">${example.query}</div>
+                                    </div>
+                                    <div class="example-field">
+                                        <div class="field-label">Expected SQL</div>
+                                        <pre class="sql-block"><code class="language-sql">${escapeHtml(example.originalSQL)}</code></pre>
+                                    </div>
+                                    <div class="example-field">
+                                        <div class="field-label">Generated SQL</div>
+                                        <pre class="sql-block"><code class="language-sql">${escapeHtml(example.generatedSQL)}</code></pre>
+                                    </div>
+                                    ${((example.status === 'FALSE' || example.status === 'NEUTRAL') && example.note)
+                                ? `
+                                        <div class="example-field">
+                                            <div class="field-label">Note</div>
+                                            <div class="field-value">${example.note}</div>
+                                        </div>
+                                        `
+                                : ''}
+                                </div>
+                            </div>
+                        `;
+                    }).join('');
+
+                    examplesDiv.style.display = 'block';
+                    if (window.hljs) { hljs.highlightAll(); }
+                }
+            }, 100);
+        }
+
+        // Initialize
+        loadExcelFile();
+    </script>
+</body>
+
+</html>
