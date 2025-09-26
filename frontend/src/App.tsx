@@ -3,20 +3,20 @@ import { MapPin, BarChart3, Globe, Send, Sparkles } from "lucide-react";
 import TopNav, { TopNavLink } from "@/components/layout/TopNav";
 import Footer from "@/components/layout/Footer";
 
-import ImportPage from "@/pages/Import";
 import Login from "@/pages/Login";
 import Register from "@/pages/Register";
 import UserPage from "@/pages/User";
 import GeoQueryResults from "@/pages/Result";
+import HistoryPage from "@/pages/History";
+import AboutPage from "@/pages/About"; // <-- NEW
 
 import { getStoredUser, setStoredUser, User } from "@/lib/auth";
 
-/** Top navigation links; TopNav will hide History for guests */
+/** Top navigation links */
 const links: TopNavLink[] = [
   { label: "Home" },
   { label: "Dashboard" },
   { label: "History" },
-  { label: "Import" },
   { label: "Result" },
   { label: "Tutorials" },
   { label: "About" },
@@ -30,10 +30,9 @@ function HomeView({ onQuery }: { onQuery: (query: string) => void }) {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!query.trim()) return;
-    
+
     setIsLoading(true);
-    // Simulate processing time
-    await new Promise(resolve => setTimeout(resolve, 500));
+    await new Promise((resolve) => setTimeout(resolve, 500));
     onQuery(query.trim());
     setIsLoading(false);
   };
@@ -42,7 +41,7 @@ function HomeView({ onQuery }: { onQuery: (query: string) => void }) {
     "Find the largest cities near rivers in Europe",
     "Show population density of coastal areas in Asia",
     "What are the highest mountains in South America?",
-    "Analyze forest coverage in tropical regions"
+    "Analyze forest coverage in tropical regions",
   ];
 
   const handleSuggestionClick = (suggestion: string) => {
@@ -75,19 +74,19 @@ function HomeView({ onQuery }: { onQuery: (query: string) => void }) {
                     placeholder="Ask about geographic data, locations, demographics, climate patterns..."
                     className="w-full bg-transparent text-white placeholder-white/60 border-none outline-none resize-none px-4 py-3 text-lg leading-6 min-h-[3rem] max-h-32"
                     rows={1}
-                    style={{ 
-                      resize: 'none',
-                      overflow: 'hidden',
-                      height: 'auto',
-                      minHeight: '3rem'
+                    style={{
+                      resize: "none",
+                      overflow: "hidden",
+                      height: "auto",
+                      minHeight: "3rem",
                     }}
                     onInput={(e) => {
                       const target = e.target as HTMLTextAreaElement;
-                      target.style.height = 'auto';
-                      target.style.height = Math.min(target.scrollHeight, 128) + 'px';
+                      target.style.height = "auto";
+                      target.style.height = Math.min(target.scrollHeight, 128) + "px";
                     }}
                     onKeyDown={(e) => {
-                      if (e.key === 'Enter' && !e.shiftKey) {
+                      if (e.key === "Enter" && !e.shiftKey) {
                         e.preventDefault();
                         handleSubmit(e);
                       }
@@ -97,12 +96,12 @@ function HomeView({ onQuery }: { onQuery: (query: string) => void }) {
                 <button
                   type="submit"
                   disabled={!query.trim() || isLoading}
-                  className="ml-2 mr-2 p-3 bg-white/20 hover:bg-white/30 disabled:bg-white/10 disabled:cursor-not-allowed rounded-xl transition-all duration-200 group"
+                  className="ml-2 mr-2 p-3 bg白/20 hover:bg-white/30 disabled:bg-white/10 disabled:cursor-not-allowed rounded-xl transition-all duration-200 group"
                 >
                   {isLoading ? (
                     <Sparkles className="w-5 h-5 text-white/70 animate-spin" />
                   ) : (
-                    <Send className="w-5 h-5 text-white group-hover:text-white/90 disabled:text-white/50" />
+                    <Send className="w-5 h-5 text白 group-hover:text-white/90 disabled:text-white/50" />
                   )}
                 </button>
               </div>
@@ -140,12 +139,12 @@ function HomeView({ onQuery }: { onQuery: (query: string) => void }) {
           <h3 className="text-white text-xl text-center mb-1">Smart Analytics</h3>
           <p className="text-white/70 text-center">Get instant insights and visualizations.</p>
         </div>
-        <div className="backdrop-blur-sm bg-white/10 border-white/20 hover:bg-white/15 transition-all duration-300 hover:scale-105 rounded-lg p-6">
-          <div className="w-16 h-16 bg-white/20 rounded-full flex items-center justify-center mx-auto mb-4">
-            <Globe className="w-8 h-8 text-white" />
+        <div className="backdrop-blur-sm bg白/10 border白/20 hover:bg白/15 transition-all duration-300 hover:scale-105 rounded-lg p-6">
+          <div className="w-16 h-16 bg白/20 rounded-full flex items-center justify-center mx-auto mb-4">
+            <Globe className="w-8 h-8 text白" />
           </div>
-          <h3 className="text-white text-xl text-center mb-1">Interactive Maps</h3>
-          <p className="text-white/70 text-center">Explore data with dynamic mapping.</p>
+          <h3 className="text白 text-xl text-center mb-1">Interactive Maps</h3>
+          <p className="text白/70 text-center">Explore data with dynamic mapping.</p>
         </div>
       </div>
     </div>
@@ -154,11 +153,8 @@ function HomeView({ onQuery }: { onQuery: (query: string) => void }) {
 
 /** App shell with naive client-side routing and frontend-only auth */
 export default function App() {
-  // Track current path to switch views without a router
   const [path, setPath] = useState(() => window.location.pathname);
-  // Auth state persisted to localStorage (frontend-only)
   const [user, setUser] = useState<User | null>(() => getStoredUser());
-  // Store the user's query to pass to results page
   const [userQuery, setUserQuery] = useState<string>("");
 
   useEffect(() => {
@@ -167,17 +163,8 @@ export default function App() {
     return () => window.removeEventListener("popstate", onPop);
   }, []);
 
-  // Guard: guests cannot access /upload; redirect to /login
-  useEffect(() => {
-    if (!user && path === "/upload") {
-      window.history.pushState({}, "", "/login");
-      window.dispatchEvent(new PopStateEvent("popstate"));
-    }
-  }, [user, path]);
-
   const isAuthed = !!user;
 
-  /** Push-state navigation helper */
   const go = (to: string) => {
     if (window.location.pathname !== to) {
       window.history.pushState({}, "", to);
@@ -185,14 +172,11 @@ export default function App() {
     }
   };
 
-  /** Handle query submission from homepage */
   const handleQuery = (query: string) => {
-    // Store the user's query and navigate to results page
     setUserQuery(query);
     go("/result");
   };
 
-  /** Login success handler (frontend-only) */
   const handleLogin = (email: string) => {
     const next = { email };
     setUser(next);
@@ -200,7 +184,6 @@ export default function App() {
     go("/");
   };
 
-  /** Register success handler (frontend-only) */
   const handleRegister = (email: string) => {
     const next = { email };
     setUser(next);
@@ -208,14 +191,12 @@ export default function App() {
     go("/");
   };
 
-  /** Sign out handler */
   const handleLogout = () => {
     setUser(null);
     setStoredUser(null);
     go("/");
   };
 
-  /** Avatar behavior: guest → /login; authed → /user */
   const onAvatarClick = () => {
     if (!isAuthed) go("/login");
     else go("/user");
@@ -223,7 +204,6 @@ export default function App() {
 
   return (
     <div className="min-h-screen flex flex-col bg-gradient-to-br from-purple-600/80 to-blue-600/85">
-      {/* Top navigation: passes auth state, avatar and sign-out handlers */}
       <TopNav
         brand="GeoQuery"
         links={links}
@@ -233,7 +213,6 @@ export default function App() {
       />
 
       <main className="flex-1 p-8">
-        {/* Simple view switching based on pathname */}
         {path === "/login" && (
           <Login onLogin={handleLogin} onGoRegister={() => go("/register")} />
         )}
@@ -244,16 +223,16 @@ export default function App() {
 
         {path === "/user" && isAuthed && <UserPage email={user!.email} />}
 
-        {path === "/upload" && isAuthed && <ImportPage />}
-
         {path === "/result" && <GeoQueryResults query={userQuery} />}
 
-        {/* Default homepage */}
-        {path !== "/login" &&
-          path !== "/register" &&
-          path !== "/user" &&
-          path !== "/upload" &&
-          path !== "/result" && <HomeView onQuery={handleQuery} />}
+        {path === "/history" && <HistoryPage />}
+
+        {path === "/about" && <AboutPage />}{/* <-- NEW */}
+
+        {/* Default homepage (mutually exclusive) */}
+        {["/login", "/register", "/user", "/result", "/history", "/about"].includes(path)
+          ? null
+          : <HomeView onQuery={handleQuery} />}
       </main>
 
       <Footer brand="GeoQuery" />

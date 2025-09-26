@@ -6,7 +6,6 @@ export type TopNavLink = {
     | "Home"
     | "Dashboard"
     | "History"
-    | "Import"
     | "Result"
     | "Tutorials"
     | "About";
@@ -19,15 +18,14 @@ export type TopNavProps = {
   rightArea?: React.ReactNode;
   isAuthenticated?: boolean;
   onAvatarClick?: () => void;
-  onSignOut?: () => void; // NEW: sign out handler
+  onSignOut?: () => void;
 };
 
-// Map labels to default paths
+// Map labels to default paths (Import removed)
 const LABEL_TO_PATH: Record<TopNavLink["label"], string> = {
   Home: "/",
   Dashboard: "/dashboard",
   History: "/history",
-  Import: "/upload",
   Result: "/result",
   Tutorials: "/tutorials",
   About: "/about",
@@ -122,17 +120,11 @@ export default function TopNav({
   const activePath = useActivePath();
   const [open, setOpen] = useState(false);
 
-  // Filter links: hide History if not authenticated; Import goes to /login for guests
+  // Filter links: hide History if not authenticated
   const filtered = useMemo(() => {
     return links
       .filter((l) => (l.label === "History" ? isAuthenticated : true))
-      .map((l) => {
-        let href = LABEL_TO_PATH[l.label];
-        if (!isAuthenticated && l.label === "Import") {
-          href = "/login";
-        }
-        return { ...l, href };
-      });
+      .map((l) => ({ ...l, href: LABEL_TO_PATH[l.label] }));
   }, [links, isAuthenticated]);
 
   // Handle navigation (pushState)
@@ -150,16 +142,13 @@ export default function TopNav({
   };
 
   return (
-    <header
-      role="banner"
-      className="sticky top-0 z-50 bg-background border-b border-border"
-    >
+    <header role="banner" className="sticky top-0 z-50 bg-background border-b border-border">
       <nav
         className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 h-14 flex items-center"
         aria-label="Top Navigation"
         role="navigation"
       >
-        {/* Brand name on the left */}
+        {/* Brand */}
         <div className="flex items-center gap-2">
           <a
             href="/"
@@ -181,13 +170,9 @@ export default function TopNav({
               <button
                 key={label}
                 onClick={() => handleNavigate(href, onClick)}
-                className={`px-3 py-2 rounded-md text-sm font-medium transition-colors
-                  ${
-                    active
-                      ? "bg-accent text-foreground"
-                      : "text-foreground/80 hover:bg-accent"
-                  }
-                `}
+                className={`px-3 py-2 rounded-md text-sm font-medium transition-colors ${
+                  active ? "bg-accent text-foreground" : "text-foreground/80 hover:bg-accent"
+                }`}
                 aria-current={active ? "page" : undefined}
               >
                 {label}
@@ -231,16 +216,16 @@ export default function TopNav({
                 <button
                   key={label}
                   onClick={() => handleNavigate(href, onClick)}
-                  className={`w-full text-left px-3 py-2 rounded-md text-sm font-medium
-                    ${active ? "bg-accent" : "hover:bg-accent"}
-                  `}
+                  className={`w-full text-left px-3 py-2 rounded-md text-sm font-medium ${
+                    active ? "bg-accent" : "hover:bg-accent"
+                  }`}
                   aria-current={active ? "page" : undefined}
                 >
                   {label}
                 </button>
               );
             })}
-            {/* Mobile right area (theme, sign out, avatar) */}
+            {/* Mobile right area */}
             <div className="pt-2 flex items-center gap-3">
               {rightArea ?? (
                 <div className="flex items-center gap-3">
@@ -272,4 +257,5 @@ export default function TopNav({
     </header>
   );
 }
+
 
