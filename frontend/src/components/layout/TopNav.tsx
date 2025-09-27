@@ -120,9 +120,12 @@ export default function TopNav({
   const activePath = useActivePath();
   const [open, setOpen] = useState(false);
 
-  // Filter links: hide History if not authenticated
+  // Filter links:
+  // 1) Always hide Dashboard (per latest decision)
+  // 2) Hide History when not authenticated (keep original behavior)
   const filtered = useMemo(() => {
     return links
+      .filter((l) => l.label !== "Dashboard")
       .filter((l) => (l.label === "History" ? isAuthenticated : true))
       .map((l) => ({ ...l, href: LABEL_TO_PATH[l.label] }));
   }, [links, isAuthenticated]);
@@ -234,7 +237,7 @@ export default function TopNav({
                     <button
                       type="button"
                       onClick={onSignOut}
-                      className="inline-flex items-center justify-center h-9 px-3 rounded-md border border-border bg-background hover:bg-accent text-sm font-medium"
+                      className="inline-flex items-center justify中心 h-9 px-3 rounded-md border border-border bg-background hover:bg-accent text-sm font-medium"
                       aria-label="Sign out"
                     >
                       Sign out
@@ -257,5 +260,3 @@ export default function TopNav({
     </header>
   );
 }
-
-
