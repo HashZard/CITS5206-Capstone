@@ -53,100 +53,125 @@ export default function Register({
     !submitting;
 
   return (
-    <div className="max-w-md mx-auto bg-white/10 border border-white/20 rounded-2xl p-6 text-white shadow-sm">
-      <h1 className="text-2xl font-semibold mb-1">Create your account</h1>
-      <p className="text-white/70 text-sm mb-4">Join GeoQuery and start exploring</p>
+    <div className="min-h-screen relative">
+      {/* Background Image with Overlay */}
+      <div 
+        className="fixed inset-0 z-0"
+        style={{
+          backgroundImage: 'url("/earth.jpg")',
+          backgroundSize: 'cover',
+          backgroundPosition: 'center',
+          backgroundAttachment: 'fixed',
+        }}
+      >
+        <div className="absolute inset-0 bg-black/60 backdrop-blur-[1px]"></div>
+      </div>
 
-      {err && (
-        <div className="mb-4 rounded-lg border border-red-300/40 bg-red-500/10 px-3 py-2 text-sm">
-          {err}
-        </div>
-      )}
+      {/* Content */}
+      <div className="relative z-10 flex items-center justify-center min-h-screen px-4 sm:px-6 lg:px-8 py-8">
+        <div className="max-w-md w-full bg-black/40 backdrop-blur-sm border border-white/20 rounded-2xl p-8 text-white shadow-lg">
+          <h1 className="text-2xl font-bold mb-2 bg-gradient-to-r from-blue-200 to-green-200 bg-clip-text text-transparent">Create your account</h1>
+          <p className="text-white/70 text-sm mb-6">Join GeoQuery and start exploring</p>
 
-      <form onSubmit={submit} className="space-y-4" noValidate>
-        <div>
-          <label htmlFor="email" className="block text-sm mb-1 text-white/80">Email</label>
-          <input
-            id="email"
-            type="email"
-            className="w-full rounded-xl px-3 py-2 bg-white/90 text-gray-900 placeholder-gray-500 shadow-sm focus:outline-none focus:ring-2 focus:ring-gray-300"
-            placeholder="you@example.com"
-            value={email}
-            onChange={(e) => setEmail(e.target.value)}
-            autoComplete="email"
-          />
-        </div>
+          {err && (
+            <div className="mb-6 rounded-xl border border-red-400/40 bg-red-500/20 px-4 py-3 text-sm text-white">
+              {err}
+            </div>
+          )}
 
-        <div>
-          <label htmlFor="password" className="block text-sm mb-1 text-white/80">Password</label>
-          <div className="relative">
-            <input
-              id="password"
-              type={showPwd ? "text" : "password"}
-              className="w-full rounded-xl px-3 py-2 bg-white/90 text-gray-900 placeholder-gray-500 shadow-sm focus:outline-none focus:ring-2 focus:ring-gray-300 pr-24"
-              placeholder="At least 8 characters"
-              value={pwd}
-              onChange={(e) => setPwd(e.target.value)}
-              autoComplete="new-password"
-            />
-            <button
-              type="button"
-              onClick={() => setShowPwd((v) => !v)}
-              className="absolute right-2 top-1/2 -translate-y-1/2 rounded-lg px-2 py-1 text-xs font-medium bg-gray-900/80 text-white hover:bg-gray-900"
-              aria-label={showPwd ? "Hide password" : "Show password"}
-            >
-              {showPwd ? "Hide" : "Show"}
-            </button>
-          </div>
-
-          {/* Strength meter */}
-          <div className="mt-2">
-            <div className="h-1.5 w-full bg-white/20 rounded-full overflow-hidden">
-              <div
-                className="h-full transition-all"
-                style={{
-                  width: `${(strength / 5) * 100}%`,
-                  background:
-                    strength < 3 ? "rgba(239,68,68,0.9)" : strength < 4 ? "rgba(234,179,8,0.95)" : "rgba(34,197,94,0.95)",
-                }}
+          <form onSubmit={submit} className="space-y-6" noValidate>
+            <div>
+              <label htmlFor="email" className="block text-sm mb-2 text-white/80">Email</label>
+              <input
+                id="email"
+                type="email"
+                className="w-full rounded-xl px-4 py-3 bg-black/60 border border-white/20 text-white placeholder-white/50 focus:outline-none focus:ring-2 focus:ring-blue-400 focus:border-transparent"
+                placeholder="you@example.com"
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
+                autoComplete="email"
               />
             </div>
-            <p className="mt-1 text-xs text-white/70">
-              {strength < 3 ? "Weak" : strength < 4 ? "Medium" : "Strong"} password
-            </p>
+
+            <div>
+              <label htmlFor="password" className="block text-sm mb-2 text-white/80">Password</label>
+              <div className="relative">
+                <input
+                  id="password"
+                  type={showPwd ? "text" : "password"}
+                  className="w-full rounded-xl px-4 py-3 bg-black/60 border border-white/20 text-white placeholder-white/50 focus:outline-none focus:ring-2 focus:ring-blue-400 focus:border-transparent pr-24"
+                  placeholder="At least 8 characters"
+                  value={pwd}
+                  onChange={(e) => setPwd(e.target.value)}
+                  autoComplete="new-password"
+                />
+                <button
+                  type="button"
+                  onClick={() => setShowPwd((v) => !v)}
+                  className="absolute right-2 top-1/2 -translate-y-1/2 rounded-lg px-3 py-1.5 text-sm font-medium bg-black/80 border border-white/20 text-white hover:bg-black/60 transition-colors"
+                  aria-label={showPwd ? "Hide password" : "Show password"}
+                >
+                  {showPwd ? "Hide" : "Show"}
+                </button>
+              </div>
+
+              {/* Strength meter */}
+              <div className="mt-3">
+                <div className="h-2 w-full bg-black/60 border border-white/20 rounded-full overflow-hidden">
+                  <div
+                    className="h-full transition-all"
+                    style={{
+                      width: `${(strength / 5) * 100}%`,
+                      background:
+                        strength < 3 ? "rgba(239,68,68,0.9)" : strength < 4 ? "rgba(234,179,8,0.95)" : "rgba(34,197,94,0.95)",
+                    }}
+                  />
+                </div>
+                <p className="mt-2 text-xs text-white/70">
+                  {strength < 3 ? "Weak" : strength < 4 ? "Medium" : "Strong"} password
+                </p>
+              </div>
+            </div>
+
+            <div>
+              <label htmlFor="password2" className="block text-sm mb-2 text-white/80">Confirm password</label>
+              <input
+                id="password2"
+                type="password"
+                className="w-full rounded-xl px-4 py-3 bg-black/60 border border-white/20 text-white placeholder-white/50 focus:outline-none focus:ring-2 focus:ring-blue-400 focus:border-transparent"
+                placeholder="Re-enter your password"
+                value={pwd2}
+                onChange={(e) => setPwd2(e.target.value)}
+                autoComplete="new-password"
+              />
+            </div>
+
+            <label className="inline-flex items-center gap-3 text-sm text-white/80 p-3 bg-black/60 rounded-xl border border-white/20">
+              <input 
+                type="checkbox" 
+                checked={agree} 
+                onChange={(e) => setAgree(e.target.checked)}
+                className="rounded border-white/30 bg-black/40"
+              />
+              I agree to the Terms and Privacy Policy
+            </label>
+
+            <button
+              type="submit"
+              disabled={!canSubmit}
+              className="w-full rounded-xl bg-white text-black font-semibold py-3.5 hover:bg-white/90 disabled:opacity-50 disabled:cursor-not-allowed transition-colors shadow-lg"
+            >
+              {submitting ? "Creating…" : "Create account"}
+            </button>
+          </form>
+
+          <div className="mt-6 text-sm text-white/80 text-center">
+            Already have an account?{" "}
+            <button onClick={onGoLogin} className="underline hover:text-white transition-colors font-medium">
+              Sign in
+            </button>
           </div>
         </div>
-
-        <div>
-          <label htmlFor="password2" className="block text-sm mb-1 text-white/80">Confirm password</label>
-          <input
-            id="password2"
-            type="password"
-            className="w-full rounded-xl px-3 py-2 bg-white/90 text-gray-900 placeholder-gray-500 shadow-sm focus:outline-none focus:ring-2 focus:ring-gray-300"
-            placeholder="Re-enter your password"
-            value={pwd2}
-            onChange={(e) => setPwd2(e.target.value)}
-            autoComplete="new-password"
-          />
-        </div>
-
-        <label className="inline-flex items-center gap-2 text-sm text-white/80">
-          <input type="checkbox" checked={agree} onChange={(e) => setAgree(e.target.checked)} />
-          I agree to the Terms and Privacy Policy
-        </label>
-
-        <button
-          type="submit"
-          disabled={!canSubmit}
-          className="w-full rounded-xl bg-white text-purple-700 font-medium py-2.5 shadow-sm hover:bg-gray-100 disabled:opacity-60 disabled:cursor-not-allowed"
-        >
-          {submitting ? "Creating…" : "Create account"}
-        </button>
-      </form>
-
-      <div className="mt-4 text-sm text-white/80">
-        Already have an account?{" "}
-        <button onClick={onGoLogin} className="underline hover:text-white">Sign in</button>
       </div>
     </div>
   );

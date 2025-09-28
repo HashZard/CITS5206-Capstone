@@ -36,10 +36,10 @@ function HomeView({ onQuery }: { onQuery: (query: string) => void }) {
   };
 
   const suggestions = [
-    "Find the largest cities near rivers in Europe",
-    "Show population density of coastal areas in Asia",
-    "What are the highest mountains in South America?",
-    "Analyze forest coverage in tropical regions",
+    "Show the biggest continents or land regions by area (over 500,000 km²).",
+    "List countries in the Southern Hemisphere.",
+    "Highlight countries whose GDP is above their continent’s average.",
+    "Show major mountain ranges worldwide."
   ];
 
   return (
