@@ -11,7 +11,6 @@ import HistoryPage from "@/pages/History";
 import AboutPage from "@/pages/About";
 import TutorialsPage from "@/pages/Tutorials";
 
-
 import { getStoredUser, setStoredUser, User } from "@/lib/auth";
 import "@/styles/theme.css"; // your palette utilities (btn-primary, chip, card-glass, etc.)
 
@@ -65,7 +64,7 @@ function HomeView({ onQuery }: { onQuery: (query: string) => void }) {
 
               <div className="max-w-4xl mx-auto mb-8">
                 <form onSubmit={handleSubmit} className="relative">
-                  <div className="relative card-glass rounded-2xl p-2">
+                  <div className="relative bg-black/40 backdrop-blur-sm rounded-2xl p-2 border border-white/20">
                     <div className="flex items-center">
                       <div className="flex-1 relative">
                         <textarea
@@ -124,7 +123,7 @@ function HomeView({ onQuery }: { onQuery: (query: string) => void }) {
       {/* black section below hero */}
       <div className="-mx-8 bg-black">
         <div className="grid md:grid-cols-3 gap-8 max-w-6xl mx-auto py-12 px-8">
-          <div className="backdrop-blur-sm bg-white/10 border-white/20 hover:bg-white/15 transition-all duration-300 hover:scale-105 rounded-lg p-6">
+          <div className="backdrop-blur-sm bg-black/40 border border-white/20 hover:bg-black/50 transition-all duration-300 hover:scale-105 rounded-lg p-6">
             <div
               className="w-16 h-16 rounded-full flex items-center justify-center mx-auto mb-4"
               style={{ background: "rgba(178,201,173,.28)" }}
@@ -135,7 +134,7 @@ function HomeView({ onQuery }: { onQuery: (query: string) => void }) {
             <p className="text-white/75 text-center">Ask questions in plain English.</p>
           </div>
 
-          <div className="backdrop-blur-sm bg-white/10 border-white/20 hover:bg-white/15 transition-all duration-300 hover:scale-105 rounded-lg p-6">
+          <div className="backdrop-blur-sm bg-black/40 border border-white/20 hover:bg-black/50 transition-all duration-300 hover:scale-105 rounded-lg p-6">
             <div
               className="w-16 h-16 rounded-full flex items-center justify-center mx-auto mb-4"
               style={{ background: "rgba(178,201,173,.28)" }}
@@ -146,7 +145,7 @@ function HomeView({ onQuery }: { onQuery: (query: string) => void }) {
             <p className="text-white/75 text-center">Get instant insights and visualizations.</p>
           </div>
 
-          <div className="backdrop-blur-sm bg-white/10 border-white/20 hover:bg-white/15 transition-all duration-300 hover:scale-105 rounded-lg p-6">
+          <div className="backdrop-blur-sm bg-black/40 border border-white/20 hover:bg-black/50 transition-all duration-300 hover:scale-105 rounded-lg p-6">
             <div
               className="w-16 h-16 rounded-full flex items-center justify-center mx-auto mb-4"
               style={{ background: "rgba(178,201,173,.28)" }}
@@ -248,7 +247,7 @@ export default function App() {
             "/result",
             "/history",
             "/about",
-            "/tutorials"       // <-- add this
+            "/tutorials"
           ].includes(path)
             ? null
             : <HomeView onQuery={handleQuery} />}

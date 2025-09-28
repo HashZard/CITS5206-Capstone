@@ -22,7 +22,7 @@ export default function AboutPage() {
       <div className="relative z-10 max-w-5xl mx-auto text-white px-4 sm:px-6 lg:px-8 py-12">
         {/* Hero Section */}
         <section className="text-center mb-16">
-          <div className="inline-flex items-center gap-3 mb-4 px-4 py-2 rounded-full bg-blue-500/20 border border-blue-400/30">
+          <div className="inline-flex items-center gap-3 mb-4 px-4 py-2 rounded-full bg-black/40 border border-white/20">
             <Globe className="w-5 h-5 text-blue-300" />
             <span className="text-blue-200 text-sm font-medium">CITS5206 Capstone Project</span>
           </div>
@@ -37,7 +37,7 @@ export default function AboutPage() {
 
         {/* Project overview */}
         <section className="mb-16">
-          <div className="bg-white/10 backdrop-blur-sm rounded-2xl border border-white/20 p-8 shadow-2xl">
+          <div className="bg-black/40 backdrop-blur-sm rounded-2xl border border-white/20 p-8 shadow-2xl">
             <div className="flex items-center gap-3 mb-6">
               <MapPin className="w-6 h-6 text-green-400" />
               <h2 className="text-2xl font-bold">Project Overview</h2>
@@ -130,7 +130,7 @@ function Member({
   linkedin?: string;
 }) {
   return (
-    <div className="group rounded-2xl border border-white/20 bg-white/10 backdrop-blur-sm p-6 shadow-lg hover:bg-white/15 hover:border-white/30 transition-all duration-300 hover:scale-[1.02]">
+    <div className="group rounded-2xl border border-white/20 bg-black/40 backdrop-blur-sm p-6 shadow-lg hover:bg-black/50 hover:border-white/30 transition-all duration-300 hover:scale-[1.02]">
       <p className="font-semibold text-lg mb-4 text-white group-hover:text-blue-200 transition-colors">
         {name}
       </p>
@@ -140,7 +140,7 @@ function Member({
             href={github}
             target="_blank"
             rel="noopener noreferrer"
-            className="p-3 rounded-xl bg-white/10 hover:bg-white/20 hover:scale-110 transition-all duration-200 group"
+            className="p-3 rounded-xl bg-black/40 hover:bg-black/60 hover:scale-110 transition-all duration-200 group"
             aria-label="GitHub"
           >
             <Github className="w-5 h-5 group-hover:text-purple-300 transition-colors" />
@@ -151,7 +151,7 @@ function Member({
             href={linkedin}
             target="_blank"
             rel="noopener noreferrer"
-            className="p-3 rounded-xl bg-white/10 hover:bg-white/20 hover:scale-110 transition-all duration-200 group"
+            className="p-3 rounded-xl bg-black/40 hover:bg-black/60 hover:scale-110 transition-all duration-200 group"
             aria-label="LinkedIn"
           >
             <Linkedin className="w-5 h-5 group-hover:text-blue-300 transition-colors" />

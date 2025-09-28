@@ -2,7 +2,7 @@ import React from "react";
 import { BookOpen, MapPin, Send, FileDown, MousePointer2, Info } from "lucide-react";
 
 const Section: React.FC<{ title: string; children: React.ReactNode }> = ({ title, children }) => (
-  <section className="bg-white/10 backdrop-blur-sm rounded-2xl border border-white/20 p-6 md:p-8">
+  <section className="bg-black/40 backdrop-blur-sm rounded-2xl border border-white/20 p-6 md:p-8">
     <h2 className="text-xl md:text-2xl font-semibold text-white mb-4 flex items-center gap-2">
       <span className="inline-flex h-8 w-8 items-center justify-center rounded-full bg-white/10">
         <BookOpen className="h-4 w-4 text-white" />
@@ -103,26 +103,26 @@ const TutorialsPage: React.FC = () => {
         {/* Understanding the Result page */}
         <Section title="Understanding the Result page">
           <div className="grid md:grid-cols-2 gap-6">
-            <div className="bg-white/10 rounded-xl p-4">
+            <div className="bg-black/40 rounded-xl p-4 border border-white/20">
               <h3 className="font-semibold text-white mb-2">Interactive Map</h3>
               <p className="text-white/80">
                 The map adapts to your data (countries, regions, features). Use the controls to zoom or reset.
               </p>
             </div>
-            <div className="bg-white/10 rounded-xl p-4">
+            <div className="bg-black/40 rounded-xl p-4 border border-white/20">
               <h3 className="font-semibold text-white mb-2">Detailed Cards</h3>
               <p className="text-white/80">
                 Each item shows a mini-map and key attributes (name, region, population, etc.). Use the copy
                 button on a card to grab a summary quickly.
               </p>
             </div>
-            <div className="bg-white/10 rounded-xl p-4">
+            <div className="bg-black/40 rounded-xl p-4 border border-white/20">
               <h3 className="font-semibold text-white mb-2">SQL & Reasoning</h3>
               <p className="text-white/80">
                 The <em>Query Details</em> panel shows the SQL and the reasoning used to derive it—great for audits and debugging.
               </p>
             </div>
-            <div className="bg-white/10 rounded-xl p-4">
+            <div className="bg-black/40 rounded-xl p-4 border border-white/20">
               <h3 className="font-semibold text-white mb-2">Export</h3>
               <p className="text-white/80 flex items-center gap-2">
                 <FileDown className="h-4 w-4 text-white" />

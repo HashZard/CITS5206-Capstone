@@ -121,14 +121,14 @@ const GeoQueryResults: React.FC<GeoQueryResultsProps> = ({ query, testCase }) =>
         <div className="flex items-center justify-between gap-4 mb-8">
           <ResultHeader query={query} meta={meta} />
           <div className="shrink-0 flex items-center gap-3">
-            <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-blue-500/20 border border-blue-400/30">
+            <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-black/40 border border-white/20">
               <Globe className="w-4 h-4 text-blue-300" />
               <span className="text-blue-200 text-sm font-medium">Live Results</span>
             </div>
             <div>
               <label className="text-sm text-white/80 mr-2">Mock case</label>
               <select
-                className="border border-white/30 rounded-md px-2 py-1 text-sm bg-white/10 text-white backdrop-blur-sm"
+                className="border border-white/30 rounded-md px-2 py-1 text-sm bg-black/40 text-white backdrop-blur-sm"
                 value={mockCase}
                 onChange={(e) => {
                   const next = Number(e.target.value);
@@ -150,21 +150,21 @@ const GeoQueryResults: React.FC<GeoQueryResultsProps> = ({ query, testCase }) =>
 
         {/* No results */}
         {items.length === 0 && !loading && (
-          <div className="bg-white/10 backdrop-blur-sm rounded-2xl p-8 mb-12 border border-white/20">
+          <div className="bg-black/40 backdrop-blur-sm rounded-2xl p-8 mb-12 border border-white/20">
             <p className="text-white/80 text-center text-lg">No results found for your query.</p>
           </div>
         )}
 
         {/* Map */}
         {items.length >= 1 && (
-          <div className="rounded-2xl border border-white/20 bg-white/10 backdrop-blur-sm p-4 sm:p-6 relative mb-12">
+          <div className="rounded-2xl border border-white/20 bg-black/40 backdrop-blur-sm p-4 sm:p-6 relative mb-12">
             <h2 className="text-2xl sm:text-3xl font-semibold text-white text-center mb-4 bg-gradient-to-r from-blue-200 to-green-200 bg-clip-text text-transparent">
               Interactive Geo Visualization
             </h2>
 
             <div className="flex items-center justify-between mb-6 flex-wrap gap-3">
               {/* Badge */}
-              <div className="px-3 py-1 text-sm font-medium rounded-full bg-white/10 border border-white/20 text-white/90">
+              <div className="px-3 py-1 text-sm font-medium rounded-full bg-black/40 border border-white/20 text-white/90">
                 Area Analysis
               </div>
 
@@ -173,7 +173,7 @@ const GeoQueryResults: React.FC<GeoQueryResultsProps> = ({ query, testCase }) =>
                   aria-label="Zoom in"
                   title="Zoom in"
                   onClick={() => mapRef.current?.zoomIn()}
-                  className="p-2 rounded-lg bg-white/10 border border-white/20 hover:bg-white/20 hover:scale-105 transition-all duration-200"
+                  className="p-2 rounded-lg bg-black/40 border border-white/20 hover:bg-black/60 hover:scale-105 transition-all duration-200"
                 >
                   <ZoomIn className="w-4 h-4 text-white" />
                 </button>
@@ -181,7 +181,7 @@ const GeoQueryResults: React.FC<GeoQueryResultsProps> = ({ query, testCase }) =>
                   aria-label="Zoom out"
                   title="Zoom out"
                   onClick={() => mapRef.current?.zoomOut()}
-                  className="p-2 rounded-lg bg-white/10 border border-white/20 hover:bg-white/20 hover:scale-105 transition-all duration-200"
+                  className="p-2 rounded-lg bg-black/40 border border-white/20 hover:bg-black/60 hover:scale-105 transition-all duration-200"
                 >
                   <ZoomOut className="w-4 h-4 text-white" />
                 </button>
@@ -189,7 +189,7 @@ const GeoQueryResults: React.FC<GeoQueryResultsProps> = ({ query, testCase }) =>
                   aria-label="Reset view"
                   title="Reset view"
                   onClick={() => mapRef.current?.reset()}
-                  className="p-2 rounded-lg bg-white/10 border border-white/20 hover:bg-white/20 hover:scale-105 transition-all duration-200"
+                  className="p-2 rounded-lg bg-black/40 border border-white/20 hover:bg-black/60 hover:scale-105 transition-all duration-200"
                 >
                   <RotateCcw className="w-4 h-4 text-white" />
                 </button>
@@ -218,7 +218,7 @@ const GeoQueryResults: React.FC<GeoQueryResultsProps> = ({ query, testCase }) =>
 
         {/* Single item explanation */}
         {items.length === 1 && (
-          <div className="bg-white/10 backdrop-blur-sm rounded-2xl p-6 relative mb-12 border border-white/20">
+          <div className="bg-black/40 backdrop-blur-sm rounded-2xl p-6 relative mb-12 border border-white/20">
             <div className="absolute top-4 right-4">
               <ExportButton onOpen={() => setExportOpen(true)} />
             </div>

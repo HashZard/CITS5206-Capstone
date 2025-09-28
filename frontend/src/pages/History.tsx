@@ -48,7 +48,7 @@ export default function HistoryPage() {
             {questions.map((q, idx) => (
               <li
                 key={idx}
-                className="flex justify-between items-center rounded-xl bg-white/10 backdrop-blur-sm border border-white/20 px-5 py-4 hover:bg-white/15 hover:border-white/30 transition-all duration-200"
+                className="flex justify-between items-center rounded-xl bg-black/40 backdrop-blur-sm border border-white/20 px-5 py-4 hover:bg-black/50 hover:border-white/30 transition-all duration-200"
               >
                 <span className="text-white/90 flex-1 pr-4">{q}</span>
                 <button
