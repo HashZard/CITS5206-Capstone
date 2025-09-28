@@ -1,0 +1,56 @@
+/* ---- Brand palette (your colors) ---- */
+:root{
+  --brand-1: #4B5945; /* deep olive */
+  --brand-2: #66785F; /* olive green */
+  --brand-3: #91AC8F; /* soft sage */
+  --brand-4: #B2C9AD; /* light sage */
+
+  --text-on-dark: #F7FAF7;
+  --glass-bg: rgba(255,255,255,0.12);
+  --glass-border: rgba(255,255,255,0.26);
+}
+
+/* App background (replaces purple/blue gradient) */
+.bg-app{
+  background: linear-gradient(135deg, var(--brand-1) 0%, var(--brand-2) 45%, var(--brand-3) 100%);
+}
+
+/* Glassy card used in hero */
+.card-glass{
+  background: var(--glass-bg);
+  border: 1px solid var(--glass-border);
+  backdrop-filter: blur(10px);
+  color: var(--text-on-dark);
+}
+
+/* Primary CTA button in hero */
+.btn-primary{
+  height: 54px;
+  padding: 0 20px;
+  border: 0;
+  border-radius: 14px;
+  font-weight: 700;
+  letter-spacing: 0.2px;
+  cursor: pointer;
+  color: #1a2318;
+  background: var(--brand-4);
+  transition: transform 0.05s ease, box-shadow 0.2s ease, background 0.2s ease;
+  box-shadow: 0 10px 30px rgba(0,0,0,.25);
+}
+.btn-primary:hover { background: var(--brand-3); transform: translateY(-1px); }
+.btn-primary:active { transform: translateY(0); }
+
+/* Suggestion chips */
+.chip{
+  padding: 8px 12px;
+  border-radius: 999px;
+  background: rgba(178,201,173,.18);         /* brand-4 with alpha */
+  color: #eef3ee;
+  border: 1px solid rgba(178,201,173,.45);
+  transition: background .2s ease, border-color .2s ease, color .2s ease;
+}
+.chip:hover{
+  background: rgba(145,172,143,.26);         /* brand-3 with alpha */
+  border-color: rgba(145,172,143,.55);
+  color: white;
+}
