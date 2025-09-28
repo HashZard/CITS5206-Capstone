@@ -1,22 +1,22 @@
 /**
- * AdvancedMapCanvas 高级地图画布组件
- * 
- * 功能：智能地图可视化的核心组件
- * - 自动识别数据类型，选择最佳可视化模式（面积/国家/经济/地形/通用）
- * - 解析WKB几何数据，渲染真实国家边界
- * - 交互功能：缩放、平移、重置、点击选择
- * - 支持4种专业可视化模式：
- *   • 面积分布图：按国家面积大小着色
- *   • 国家分布图：按大洲分类着色  
- *   • 经济热力图：按GDP水平着色
- *   • 地形特征图：按地理特征着色
- * - 动态图例和模式指示器
- * 
- * 使用场景：查询结果的主要地图展示区域
+ * AdvancedMapCanvas — advanced map canvas component
+ *
+ * What it does (smart visualization core):
+ * - Detects data type and picks the best visualization mode (area / countries / economy / terrain / general)
+ * - Parses WKB geometry to render real boundaries
+ * - Interactions: zoom, pan, reset, click-to-select
+ * - Four professional visualization modes:
+ *   • Area distribution: color by country area size
+ *   • Country distribution: color by continent
+ *   • Economic heatmap: color by GDP level
+ *   • Terrain features: color by geographic feature type
+ * - Dynamic legend and mode indicator
+ *
+ * Usage: main map display area for query results
  */
 
 import React, { useEffect, useMemo, useRef, useState, useImperativeHandle } from "react";
-// toolbar icons are encapsulated inside VerticalToolbar
+// Toolbar icons are encapsulated inside VerticalToolbar
 import VerticalToolbar from '@/components/ui/VerticalToolbar';
 import { RowItem, VisualizationMode } from '@/types/result';
 import { parseWKBGeometry, calculateOptimalLabelAnchor } from '@/utils/geometry';
@@ -40,7 +40,8 @@ interface AdvancedMapCanvasProps {
   width?: number;
   height?: number;
   className?: string;
-  showInternalToolbar?: boolean; // 是否显示内部右侧垂直工具栏（默认显示）
+  // Whether to show the internal right-docked vertical toolbar (default: true)
+  showInternalToolbar?: boolean;
 }
 
 export const AdvancedMapCanvas = React.forwardRef<AdvancedMapCanvasControlsHandle, AdvancedMapCanvasProps>(({ 
@@ -59,7 +60,7 @@ export const AdvancedMapCanvas = React.forwardRef<AdvancedMapCanvasControlsHandl
   
   const mode = getVisualizationMode(items);
   
-  // 解析几何数据并提取坐标
+  // Parse geometry and extract coordinates
   const processedItems = useMemo(() => {
     return items.map(item => {
       console.log('Processing item:', item.name, 'has geometry:', !!item.raw?.geometry);
@@ -80,7 +81,7 @@ export const AdvancedMapCanvas = React.forwardRef<AdvancedMapCanvasControlsHandl
     });
   }, [items]);
 
-  // 渲染函数
+  // Render function
   const renderMap = () => {
     const canvas = canvasRef.current;
     if (!canvas) return;
@@ -93,17 +94,17 @@ export const AdvancedMapCanvas = React.forwardRef<AdvancedMapCanvasControlsHandl
     ctx.scale(dpr, dpr);
     ctx.clearRect(0, 0, width, height);
     
-    // 应用缩放和平移
+    // Apply zoom and pan
     ctx.save();
     ctx.translate(width / 2 + panX, height / 2 + panY);
     ctx.scale(zoom, zoom);
     ctx.translate(-width / 2, -height / 2);
     
-    // 背景
+    // Background
     ctx.fillStyle = "#F1F5F9"; // slate-100
     ctx.fillRect(0, 0, width, height);
     
-    // 网格
+    // Grid
     ctx.strokeStyle = "#CBD5E1"; // slate-300
     ctx.lineWidth = 0.5;
     for (let lon = -180; lon <= 180; lon += 30) {
@@ -121,7 +122,7 @@ export const AdvancedMapCanvas = React.forwardRef<AdvancedMapCanvasControlsHandl
       ctx.stroke();
     }
     
-    // 根据不同模式渲染
+    // Render by visualization mode
     console.log('Rendering mode:', mode, 'with', processedItems.length, 'processed items');
     switch (mode) {
       case 'area':
@@ -142,13 +143,13 @@ export const AdvancedMapCanvas = React.forwardRef<AdvancedMapCanvasControlsHandl
     
     ctx.restore();
     
-    // 渲染选中项信息
+    // Selected item info
     if (selectedItem) {
       renderSelectedInfo(ctx, selectedItem, width, height);
     }
   };
 
-  // 渲染选中项信息
+  // Draw selected item info box
   const renderSelectedInfo = (ctx: CanvasRenderingContext2D, item: RowItem, _w: number, h: number) => {
     const infoText = `${item.name || 'Unknown'}`;
     ctx.fillStyle = 'rgba(0,0,0,0.8)';
@@ -158,7 +159,7 @@ export const AdvancedMapCanvas = React.forwardRef<AdvancedMapCanvasControlsHandl
     ctx.fillText(infoText, 20, h - 35);
   };
 
-  // 鼠标事件处理
+  // Mouse click handler — find nearest point
   const handleCanvasClick = (event: React.MouseEvent<HTMLCanvasElement>) => {
     const rect = canvasRef.current?.getBoundingClientRect();
     if (!rect) return;
@@ -166,7 +167,6 @@ export const AdvancedMapCanvas = React.forwardRef<AdvancedMapCanvasControlsHandl
     const x = event.clientX - rect.left;
     const y = event.clientY - rect.top;
     
-    // 找到最近的数据点
     let closestItem: RowItem | null = null;
     let minDistance = Infinity;
     
@@ -190,7 +190,7 @@ export const AdvancedMapCanvas = React.forwardRef<AdvancedMapCanvasControlsHandl
     renderMap();
   }, [processedItems, zoom, panX, panY, selectedItem, width, height]);
 
-  // 暴露外部控制句柄
+  // Expose external controls
   useImperativeHandle(ref, () => ({
     zoomIn: () => setZoom(z => Math.min(z * 1.2, 5)),
     zoomOut: () => setZoom(z => Math.max(z / 1.2, 0.5)),
@@ -199,7 +199,7 @@ export const AdvancedMapCanvas = React.forwardRef<AdvancedMapCanvasControlsHandl
 
   return (
     <div className="relative w-full flex justify-center">
-      {/* 垂直工具栏（右侧停靠） */}
+      {/* Right-docked vertical toolbar */}
       {showInternalToolbar && (
         <VerticalToolbar
           onZoomIn={() => setZoom(z => Math.min(z * 1.2, 5))}
@@ -208,23 +208,23 @@ export const AdvancedMapCanvas = React.forwardRef<AdvancedMapCanvasControlsHandl
         />
       )}
       
-      {/* 地图模式指示器 */}
+      {/* Mode indicator */}
       <div className="absolute top-4 left-4 bg-white/90 px-3 py-1 rounded-md text-sm font-medium">
-        {mode === 'countries' && '🌍 国家分布图'}
-        {mode === 'economy' && '💰 经济热力图'}
-        {mode === 'terrain' && '🏔️ 地形特征图'}
-        {mode === 'general' && '📍 通用地图'}
-        {mode === 'empty' && '⚪ 无数据'}
+        {mode === 'countries' && '🌍 Country distribution'}
+        {mode === 'economy' && '💰 Economic heatmap'}
+        {mode === 'terrain' && '🏔️ Terrain features'}
+        {mode === 'general' && '📍 General map'}
+        {mode === 'empty' && '⚪ No data'}
       </div>
       
       <canvas
         ref={canvasRef}
         style={{ width, height, maxWidth: '100%' }}
-        className={`border border-slate-200 rounded-xl cursor-crosshair ${className}`}
+        className={`border border-slate-200 rounded-xl cursor-crosshair ${className ?? ''}`}
         onClick={handleCanvasClick}
       />
       
-      {/* 图例 */}
+      {/* Legend */}
       <MapLegend mode={mode} />
     </div>
   );
@@ -232,31 +232,31 @@ export const AdvancedMapCanvas = React.forwardRef<AdvancedMapCanvasControlsHandl
 
 AdvancedMapCanvas.displayName = 'AdvancedMapCanvas';
 
-// 地图图例组件
+// Map legend component
 const MapLegend: React.FC<{ mode: VisualizationMode }> = ({ mode }) => (
   <div className="mt-4 text-sm text-slate-600">
     {mode === 'countries' && (
       <div className="flex items-center gap-4 flex-wrap">
-        <span>🔴 亚洲</span>
-        <span>🔵 欧洲</span>
-        <span>🟢 非洲</span>
-        <span>🟡 北美洲</span>
-        <span>🟣 南美洲</span>
-        <span>🩶 南极洲</span>
+        <span>🔴 Asia</span>
+        <span>🔵 Europe</span>
+        <span>🟢 Africa</span>
+        <span>🟡 North America</span>
+        <span>🟣 South America</span>
+        <span>🩶 Antarctica</span>
       </div>
     )}
     {mode === 'economy' && (
       <div className="flex items-center gap-4">
-        <span>🟢 低GDP</span>
-        <span>🟡 中等GDP</span>
-        <span>🔴 高GDP</span>
+        <span>🟢 Low GDP</span>
+        <span>🟡 Medium GDP</span>
+        <span>🔴 High GDP</span>
       </div>
     )}
     {mode === 'terrain' && (
       <div className="flex items-center gap-4">
-        <span>🔺 山峰</span>
-        <span>🟤 山脉</span>
-        <span>🟫 高原</span>
+        <span>🔺 Peaks</span>
+        <span>🟤 Mountain ranges</span>
+        <span>🟫 Plateaus</span>
       </div>
     )}
   </div>
