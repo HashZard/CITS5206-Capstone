@@ -8,7 +8,6 @@ from sqlalchemy import text
 from app.models.dto import ALLOWED_TABLES
 
 from ..extensions import db
-
 """This module provides a single-table SQL query service.
 
 Interface function:
@@ -89,8 +88,9 @@ def validate_sql(sql: str) -> None:
 
 
 def execute(
-    sql: str, params: Mapping[str, Any]
-) -> tuple[list[dict[str, Any]], dict[str, Any]]:
+        sql: str,
+        params: Mapping[str,
+                        Any]) -> tuple[list[dict[str, Any]], dict[str, Any]]:
     """
     Execute parameterized SQL and return (rows, meta):
         - rows: list[dict] (already mapped as dictionaries)
@@ -112,10 +112,7 @@ def run_sql(sql: str, params: dict | None = None) -> dict[str, Any]:
     返回格式：
     {
         "ok": bool,
-        "results": {
-            "columns": list[str],
-            "rows": list[list[Any]]
-        },
+        "results": list[dict[str, Any]], # 直接返回字典列表
         "meta": dict,
         "error": str | None
     }
@@ -123,22 +120,22 @@ def run_sql(sql: str, params: dict | None = None) -> dict[str, Any]:
     try:
         rows_dicts, meta = execute(sql, params or {})
 
-        if rows_dicts:
-            columns = list(rows_dicts[0].keys())
-            rows = [[row.get(c) for c in columns] for row in rows_dicts]
-        else:
-            columns, rows = [], []
+        # if rows_dicts:
+        #     columns = list(rows_dicts[0].keys())
+        #     rows = [[row.get(c) for c in columns] for row in rows_dicts]
+        # else:
+        #     columns, rows = [], []
 
         return {
             "ok": True,
-            "results": {"columns": columns, "rows": rows},
+            "results": rows_dicts,
             "meta": meta,
             "error": None,
         }
     except Exception as e:
         return {
             "ok": False,
-            "results": {"columns": [], "rows": []},
+            "results": [],
             "meta": {},
             "error": str(e),
         }
