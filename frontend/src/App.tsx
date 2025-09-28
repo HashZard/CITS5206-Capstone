@@ -11,8 +11,8 @@ import HistoryPage from "@/pages/History";
 import AboutPage from "@/pages/About";
 
 import { getStoredUser, setStoredUser, User } from "@/lib/auth";
+import "@/styles/theme.css"; // your palette utilities (btn-primary, chip, card-glass, etc.)
 
-/** Top navigation links (Dashboard removed) */
 const links: TopNavLink[] = [
   { label: "Home" },
   { label: "History" },
@@ -21,7 +21,6 @@ const links: TopNavLink[] = [
   { label: "About" },
 ];
 
-/** Homepage content extracted for conditional rendering */
 function HomeView({ onQuery }: { onQuery: (query: string) => void }) {
   const [query, setQuery] = useState("");
   const [isLoading, setIsLoading] = useState(false);
@@ -29,9 +28,8 @@ function HomeView({ onQuery }: { onQuery: (query: string) => void }) {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!query.trim()) return;
-
     setIsLoading(true);
-    await new Promise((resolve) => setTimeout(resolve, 500));
+    await new Promise((r) => setTimeout(r, 500));
     onQuery(query.trim());
     setIsLoading(false);
   };
@@ -43,114 +41,125 @@ function HomeView({ onQuery }: { onQuery: (query: string) => void }) {
     "Analyze forest coverage in tropical regions",
   ];
 
-  const handleSuggestionClick = (suggestion: string) => {
-    setQuery(suggestion);
-  };
-
   return (
-    <div className="max-w-6xl mx-auto">
-      {/* Hero */}
-      <div className="text-center mb-12">
-        <div className="flex items-center justify-center mb-6">
-          <MapPin className="w-12 h-12 text-white mr-3" />
-          <h1 className="text-5xl font-bold text-white">GeoQuery</h1>
-        </div>
-        <p className="text-xl text-white/90 mb-2">Ask Your Map Anything</p>
-        <p className="text-white/80 max-w-2xl mx-auto mb-8">
-          Transform natural language into powerful geographic insights. Query,
-          analyze, and visualize spatial data like never before.
-        </p>
+    <>
+      <div className="relative -mx-8 -mt-8">
+        <section
+          className="relative min-h-[75vh] bg-cover bg-center"
+          style={{ backgroundImage: "url(/earth.jpg)" }}
+        >
+          <div className="absolute inset-0 bg-gradient-to-b from-black/40 to-black/70" />
+          <div className="relative z-10 max-w-6xl mx-auto px-8 py-16">
+            <div className="text-center mb-12">
+              <div className="flex items-center justify-center mb-6">
+                <MapPin className="w-12 h-12 text-white mr-3" />
+                <h1 className="text-5xl font-bold text-white">GeoQuery</h1>
+              </div>
+              <p className="text-xl text-white/90 mb-2">Ask Your Map Anything</p>
+              <p className="text-white/85 max-w-2xl mx-auto mb-8">
+                Transform natural language into powerful geographic insights. Query,
+                analyze, and visualize spatial data like never before.
+              </p>
 
-        {/* Query Input Section */}
-        <div className="max-w-4xl mx-auto mb-8">
-          <form onSubmit={handleSubmit} className="relative">
-            <div className="relative backdrop-blur-sm bg-white/10 border border-white/20 rounded-2xl p-2">
-              <div className="flex items-center">
-                <div className="flex-1 relative">
-                  <textarea
-                    value={query}
-                    onChange={(e) => setQuery(e.target.value)}
-                    placeholder="Ask about geographic data, locations, demographics, climate patterns..."
-                    className="w-full bg-transparent text-white placeholder-white/60 border-none outline-none resize-none px-4 py-3 text-lg leading-6 min-h-[3rem] max-h-32"
-                    rows={1}
-                    style={{
-                      resize: "none",
-                      overflow: "hidden",
-                      height: "auto",
-                      minHeight: "3rem",
-                    }}
-                    onInput={(e) => {
-                      const target = e.target as HTMLTextAreaElement;
-                      target.style.height = "auto";
-                      target.style.height = Math.min(target.scrollHeight, 128) + "px";
-                    }}
-                    onKeyDown={(e) => {
-                      if (e.key === "Enter" && !e.shiftKey) {
-                        e.preventDefault();
-                        handleSubmit(e);
-                      }
-                    }}
-                  />
+              <div className="max-w-4xl mx-auto mb-8">
+                <form onSubmit={handleSubmit} className="relative">
+                  <div className="relative card-glass rounded-2xl p-2">
+                    <div className="flex items-center">
+                      <div className="flex-1 relative">
+                        <textarea
+                          value={query}
+                          onChange={(e) => setQuery(e.target.value)}
+                          placeholder="Ask about geographic data, locations, demographics, climate patterns..."
+                          className="w-full bg-transparent text-white placeholder-white/65 border-none outline-none resize-none px-4 py-3 text-lg leading-6 min-h-[3rem] max-h-32"
+                          rows={1}
+                          style={{
+                            resize: "none",
+                            overflow: "hidden",
+                            height: "auto",
+                            minHeight: "3rem",
+                          }}
+                          onInput={(e) => {
+                            const t = e.target as HTMLTextAreaElement;
+                            t.style.height = "auto";
+                            t.style.height = Math.min(t.scrollHeight, 128) + "px";
+                          }}
+                          onKeyDown={(e) => {
+                            if (e.key === "Enter" && !e.shiftKey) {
+                              e.preventDefault();
+                              handleSubmit(e);
+                            }
+                          }}
+                        />
+                      </div>
+                      <button
+                        type="submit"
+                        disabled={!query.trim() || isLoading}
+                        className="ml-2 mr-2 btn-primary disabled:opacity-70 disabled:cursor-not-allowed"
+                      >
+                        {isLoading ? (
+                          <Sparkles className="w-5 h-5 text-black/60 animate-spin" />
+                        ) : (
+                          <Send className="w-5 h-5 text-black/80" />
+                        )}
+                      </button>
+                    </div>
+                  </div>
+                </form>
+
+                <div className="mt-6 flex flex-wrap gap-2 justify-center">
+                  {suggestions.map((s, i) => (
+                    <button key={i} className="chip" onClick={() => setQuery(s)}>
+                      {s}
+                    </button>
+                  ))}
                 </div>
-                <button
-                  type="submit"
-                  disabled={!query.trim() || isLoading}
-                  className="ml-2 mr-2 p-3 bg-white/20 hover:bg-white/30 disabled:bg-white/10 disabled:cursor-not-allowed rounded-xl transition-all duration-200 group"
-                >
-                  {isLoading ? (
-                    <Sparkles className="w-5 h-5 text-white/70 animate-spin" />
-                  ) : (
-                    <Send className="w-5 h-5 text-white group-hover:text-white/90 disabled:text-white/50" />
-                  )}
-                </button>
               </div>
             </div>
-          </form>
+          </div>
+        </section>
+      </div>
 
-          {/* Query Suggestions */}
-          <div className="mt-6 flex flex-wrap gap-2 justify-center">
-            {suggestions.map((suggestion, index) => (
-              <button
-                key={index}
-                onClick={() => handleSuggestionClick(suggestion)}
-                className="px-4 py-2 bg-white/10 hover:bg-white/20 text-white/80 hover:text-white text-sm rounded-full border border-white/20 hover:border-white/30 transition-all duration-200"
-              >
-                {suggestion}
-              </button>
-            ))}
+      {/* black section below hero */}
+      <div className="-mx-8 bg-black">
+        <div className="grid md:grid-cols-3 gap-8 max-w-6xl mx-auto py-12 px-8">
+          <div className="backdrop-blur-sm bg-white/10 border-white/20 hover:bg-white/15 transition-all duration-300 hover:scale-105 rounded-lg p-6">
+            <div
+              className="w-16 h-16 rounded-full flex items-center justify-center mx-auto mb-4"
+              style={{ background: "rgba(178,201,173,.28)" }}
+            >
+              <MapPin className="w-8 h-8 text-white" />
+            </div>
+            <h3 className="text-white text-xl text-center mb-1">Natural Language</h3>
+            <p className="text-white/75 text-center">Ask questions in plain English.</p>
+          </div>
+
+          <div className="backdrop-blur-sm bg-white/10 border-white/20 hover:bg-white/15 transition-all duration-300 hover:scale-105 rounded-lg p-6">
+            <div
+              className="w-16 h-16 rounded-full flex items-center justify-center mx-auto mb-4"
+              style={{ background: "rgba(178,201,173,.28)" }}
+            >
+              <BarChart3 className="w-8 h-8 text-white" />
+            </div>
+            <h3 className="text-white text-xl text-center mb-1">Smart Analytics</h3>
+            <p className="text-white/75 text-center">Get instant insights and visualizations.</p>
+          </div>
+
+          <div className="backdrop-blur-sm bg-white/10 border-white/20 hover:bg-white/15 transition-all duration-300 hover:scale-105 rounded-lg p-6">
+            <div
+              className="w-16 h-16 rounded-full flex items-center justify-center mx-auto mb-4"
+              style={{ background: "rgba(178,201,173,.28)" }}
+            >
+              <Globe className="w-8 h-8 text-white" />
+            </div>
+            <h3 className="text-white text-xl text-center mb-1">Interactive Maps</h3>
+            <p className="text-white/75 text-center">Explore data with dynamic mapping.</p>
           </div>
         </div>
       </div>
-
-      {/* Feature cards */}
-      <div className="grid md:grid-cols-3 gap-8 max-w-6xl mx-auto">
-        <div className="backdrop-blur-sm bg-white/10 border-white/20 hover:bg-white/15 transition-all duration-300 hover:scale-105 rounded-lg p-6">
-          <div className="w-16 h-16 bg-white/20 rounded-full flex items-center justify-center mx-auto mb-4">
-            <MapPin className="w-8 h-8 text-white" />
-          </div>
-          <h3 className="text-white text-xl text-center mb-1">Natural Language</h3>
-          <p className="text-white/70 text-center">Ask questions in plain English.</p>
-        </div>
-        <div className="backdrop-blur-sm bg-white/10 border-white/20 hover:bg-white/15 transition-all duration-300 hover:scale-105 rounded-lg p-6">
-          <div className="w-16 h-16 bg-white/20 rounded-full flex items-center justify-center mx-auto mb-4">
-            <BarChart3 className="w-8 h-8 text-white" />
-          </div>
-          <h3 className="text-white text-xl text-center mb-1">Smart Analytics</h3>
-          <p className="text-white/70 text-center">Get instant insights and visualizations.</p>
-        </div>
-        <div className="backdrop-blur-sm bg-white/10 border-white/20 hover:bg-white/15 transition-all duration-300 hover:scale-105 rounded-lg p-6">
-          <div className="w-16 h-16 bg-white/20 rounded-full flex items-center justify-center mx-auto mb-4">
-            <Globe className="w-8 h-8 text-white" />
-          </div>
-          <h3 className="text-white text-xl text-center mb-1">Interactive Maps</h3>
-          <p className="text-white/70 text-center">Explore data with dynamic mapping.</p>
-        </div>
-      </div>
-    </div>
+    </>
   );
 }
 
-/** App shell with naive client-side routing and frontend-only auth */
 export default function App() {
   const [path, setPath] = useState(() => window.location.pathname);
   const [user, setUser] = useState<User | null>(() => getStoredUser());
@@ -202,7 +211,7 @@ export default function App() {
   };
 
   return (
-    <div className="min-h-screen flex flex-col bg-gradient-to-br from-purple-600/80 to-blue-600/85">
+    <div className="min-h-screen flex flex-col bg-black">
       <TopNav
         brand="GeoQuery"
         links={links}
@@ -228,8 +237,9 @@ export default function App() {
 
         {path === "/about" && <AboutPage />}
 
-        {/* Default homepage (mutually exclusive) */}
-        {["/login", "/register", "/user", "/result", "/history", "/about"].includes(path)
+        {["/login", "/register", "/user", "/result", "/history", "/about"].includes(
+          path
+        )
           ? null
           : <HomeView onQuery={handleQuery} />}
       </main>
