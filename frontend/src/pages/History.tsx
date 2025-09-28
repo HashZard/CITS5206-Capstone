@@ -18,29 +18,50 @@ export default function HistoryPage() {
   };
 
   return (
-    <div className="max-w-3xl mx-auto text-white">
-      <h1 className="text-2xl font-semibold mb-6">History</h1>
+    <div className="min-h-screen relative">
+      {/* Background Image with Overlay */}
+      <div 
+        className="fixed inset-0 z-0"
+        style={{
+          backgroundImage: 'url("/earth.jpg")',
+          backgroundSize: 'cover',
+          backgroundPosition: 'center',
+          backgroundAttachment: 'fixed',
+        }}
+      >
+        <div className="absolute inset-0 bg-black/60 backdrop-blur-[1px]"></div>
+      </div>
 
-      {questions.length === 0 ? (
-        <p className="text-white/70">No questions yet.</p>
-      ) : (
-        <ul className="space-y-3">
-          {questions.map((q, idx) => (
-            <li
-              key={idx}
-              className="flex justify-between items-center rounded-xl bg-white/10 border border-white/20 px-4 py-3"
-            >
-              <span className="text-white/90">{q}</span>
-              <button
-                onClick={() => handleDelete(idx)}
-                className="ml-4 px-3 py-1 text-sm rounded-lg bg-red-500/20 hover:bg-red-500/30 border border-red-500/30 text-red-200"
+      {/* Content */}
+      <div className="relative z-10 max-w-3xl mx-auto text-white px-4 sm:px-6 lg:px-8 py-12">
+        <h1 className="text-3xl font-bold mb-8 bg-gradient-to-r from-blue-200 to-green-200 bg-clip-text text-transparent">
+          Query History
+        </h1>
+
+        {questions.length === 0 ? (
+          <div className="text-center py-12">
+            <p className="text-white/70 text-lg">No questions yet.</p>
+            <p className="text-white/50 text-sm mt-2">Your search history will appear here</p>
+          </div>
+        ) : (
+          <ul className="space-y-4">
+            {questions.map((q, idx) => (
+              <li
+                key={idx}
+                className="flex justify-between items-center rounded-xl bg-white/10 backdrop-blur-sm border border-white/20 px-5 py-4 hover:bg-white/15 hover:border-white/30 transition-all duration-200"
               >
-                Delete
-              </button>
-            </li>
-          ))}
-        </ul>
-      )}
+                <span className="text-white/90 flex-1 pr-4">{q}</span>
+                <button
+                  onClick={() => handleDelete(idx)}
+                  className="px-4 py-2 text-sm rounded-lg bg-red-500/20 hover:bg-red-500/30 border border-red-500/30 text-red-200 hover:text-red-100 hover:scale-105 transition-all duration-200"
+                >
+                  Delete
+                </button>
+              </li>
+            ))}
+          </ul>
+        )}
+      </div>
     </div>
   );
 }
