@@ -1,12 +1,11 @@
 import json
 import re
 
-from flask import Blueprint, jsonify, request
+from flask import Blueprint, jsonify, request, current_app
 
 from app.models.dto import QueryIn, QueryOut
 from app.services.routing_service import RoutingService
-from backend import app
-from backend.app.services import sql_service
+from app.services import sql_service
 
 query_bp = Blueprint("query", __name__)
 
@@ -40,7 +39,8 @@ def geo_reason():
         qin.validate()
 
         question = qin.question.strip()
-        geo_reason_result = RoutingService.route(question)
+        rs = RoutingService()
+        geo_reason_result = rs.route(user_question=question)
         step3_out = geo_reason_result["outputs"]["step3"]
         reasons = step3_out.get("reasons", [])
         step4_out = geo_reason_result["outputs"]["step4"]
@@ -68,7 +68,8 @@ def geo_reason():
         results = run_sql_results.get("results", [])
 
         # Load from config
-        llm_config = app.config.get("LLM_CONFIG", {})
+        print(current_app.config.get("LLM_CONFIG", {}))
+        llm_config = current_app.config.get("LLM_CONFIG", {})
         model_provider = llm_config.get("default", "unknown")
         model_used = llm_config.get(model_provider,
                                     {}).get("default_model", "unknown")

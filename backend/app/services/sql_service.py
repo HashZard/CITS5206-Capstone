@@ -61,52 +61,22 @@ def get_columns(table: str) -> Iterable[str]:
     return tuple(r["column_name"] for r in rows)
 
 
-# SQL execution and lightweight verification
-def validate_sql(sql: str) -> None:
-    """Lightweight SQL whitelist validation:
-    must start with SELECT and must not contain semicolons or dangerous keywords.
-    Used only as a final safeguard (core security still relies on build_select_sql).
-    """
-    check = sql.strip().lower()
-    if not check.startswith("select"):
-        raise ValueError("only SELECT statements are allowed")
-    # Prohibit multiple statements and dangerous keywords
-    if ";" in check:
-        raise ValueError("multiple statements are not allowed")
-    banned = [
-        "insert",
-        "update",
-        "delete",
-        "drop",
-        "alter",
-        "grant",
-        "revoke",
-        "truncate",
-    ]
-    if any(k in check for k in banned):
-        raise ValueError("dangerous keyword detected in SQL")
-
-
-def execute(
-        sql: str,
-        params: Mapping[str,
-                        Any]) -> tuple[list[dict[str, Any]], dict[str, Any]]:
+def execute(sql: str) -> tuple[list[dict[str, Any]], dict[str, Any]]:
     """
     Execute parameterized SQL and return (rows, meta):
         - rows: list[dict] (already mapped as dictionaries)
         - meta: {"rows": len(rows)}; limit/offset handled by caller
     No additional COUNT(*) is performed to avoid a second query; frontend pagination is based on limit/offset.
     """
-    validate_sql(sql)
     with db.engine.connect() as conn:
-        result = conn.execute(text(sql), dict(params))
+        result = conn.execute(text(sql))
         rows = result.mappings().all()
     meta = {"rows": len(rows)}
     return [dict(r) for r in rows], meta
 
 
 # Interface
-def run_sql(sql: str, params: dict | None = None) -> dict[str, Any]:
+def run_sql(sql: str) -> dict[str, Any]:
     """
     统一入口：验证 + 执行 SQL, 返回标准响应
     返回格式：
@@ -118,7 +88,7 @@ def run_sql(sql: str, params: dict | None = None) -> dict[str, Any]:
     }
     """
     try:
-        rows_dicts, meta = execute(sql, params or {})
+        rows_dicts, meta = execute(sql)
 
         # if rows_dicts:
         #     columns = list(rows_dicts[0].keys())
