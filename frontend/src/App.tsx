@@ -9,6 +9,8 @@ import UserPage from "@/pages/User";
 import GeoQueryResults from "@/pages/Result";
 import HistoryPage from "@/pages/History";
 import AboutPage from "@/pages/About";
+import TutorialsPage from "@/pages/Tutorials";
+
 
 import { getStoredUser, setStoredUser, User } from "@/lib/auth";
 import "@/styles/theme.css"; // your palette utilities (btn-primary, chip, card-glass, etc.)
@@ -237,11 +239,20 @@ export default function App() {
 
         {path === "/about" && <AboutPage />}
 
-        {["/login", "/register", "/user", "/result", "/history", "/about"].includes(
-          path
-        )
-          ? null
-          : <HomeView onQuery={handleQuery} />}
+        {path === "/tutorials" && <TutorialsPage />}
+
+        {[
+            "/login",
+            "/register",
+            "/user",
+            "/result",
+            "/history",
+            "/about",
+            "/tutorials"       // <-- add this
+          ].includes(path)
+            ? null
+            : <HomeView onQuery={handleQuery} />}
+
       </main>
 
       <Footer brand="GeoQuery" />
