@@ -132,25 +132,10 @@ def geo_reason_mock():
     Return format（JSON）：
     {
         "sql": str,
-        "results": list[dict[str, Any]], # Table results of SQL execution
-        "reasoning": list[str], # The model's reasons for generating this SQL
+        "results": list[dict[str, Any]],
+        "reasoning": list[str],
         "model_used": str,
-        "is_fallback": bool # If SQL sentence falls back to SELECT * FROM ...
-    }
-
-    Example (JSON):
-    {
-        "sql": "SELECT * FROM ne_data.ne_cities WHERE name LIKE 'S%' ORDER BY population DESC LIMIT 10",
-        "results": [
-            {"name": "San Francisco", "population": 883305, ...},
-            {"name": "Seattle", "population": 744955, ...},
-        ],
-        "reasoning": [
-            "The question is about cities in the United States.",
-            "The SQL sentence falls back to SELECT * FROM ne_data.ne_cities.",
-        ],
-        "model_used": "gpt-5",
-        "is_fallback": true
+        "is_fallback": bool
     }
     """
     try:
