@@ -23,7 +23,7 @@ import {
   AdvancedMapCanvas,
   AdvancedMapCanvasControlsHandle,
 } from "@/components/map/AdvancedMapCanvas";
-import { ZoomIn, ZoomOut, RotateCcw } from "lucide-react";
+import { ZoomIn, ZoomOut, RotateCcw, Globe } from "lucide-react";
 import { CountryCard } from "@/components/result/CountryCard";
 import { ResultHeader } from "@/components/result/ResultHeader";
 import { QueryDetails } from "@/components/result/QueryDetails";
@@ -92,161 +92,183 @@ const GeoQueryResults: React.FC<GeoQueryResultsProps> = ({ query, testCase }) =>
   const mapRef = React.useRef<AdvancedMapCanvasControlsHandle>(null);
 
   return (
-    <div
-      ref={exportTargetRef}
-      className="mx-auto px-4 sm:px-6 lg:px-8 py-8 min-h-screen bg-white max-w-[1200px] lg:max-w-[1400px] xl:max-w-[1600px]"
-    >
-      <LoadingBar
-        isLoading={loading}
-        message="Analyzing your geographic query..."
-        color="purple"
-      />
-
-      {/* Header + mock case picker */}
-      <div className="flex items-center justify-between gap-4">
-        <ResultHeader query={query} meta={meta} />
-        <div className="shrink-0">
-          <label className="text-sm text-slate-600 mr-2">Mock case</label>
-          <select
-            className="border rounded-md px-2 py-1 text-sm"
-            value={mockCase}
-            onChange={(e) => {
-              const next = Number(e.target.value);
-              setMockCase(next);
-              updateQueryString(next);
-            }}
-            title="Select mock test_case (backend /api/query/mock)"
-          >
-            {/* Adjust to match the number of cases in mock.json */}
-            {[1, 2, 3, 4, 5].map((n) => (
-              <option key={n} value={n}>
-                #{n}
-              </option>
-            ))}
-          </select>
-        </div>
+    <div className="min-h-screen relative">
+      {/* Background Image with Overlay */}
+      <div 
+        className="fixed inset-0 z-0"
+        style={{
+          backgroundImage: 'url("/earth.jpg")',
+          backgroundSize: 'cover',
+          backgroundPosition: 'center',
+          backgroundAttachment: 'fixed',
+        }}
+      >
+        <div className="absolute inset-0 bg-black/60 backdrop-blur-[1px]"></div>
       </div>
 
-      {/* No results */}
-      {items.length === 0 && (
-        <div className="bg-slate-50 rounded-2xl p-6 mb-12">
-          <p className="text-slate-700">No results.</p>
-        </div>
-      )}
+      {/* Content */}
+      <div 
+        ref={exportTargetRef}
+        className="relative z-10 mx-auto px-4 sm:px-6 lg:px-8 py-8 min-h-screen max-w-[1200px] lg:max-w-[1400px] xl:max-w-[1600px]"
+      >
+        <LoadingBar
+          isLoading={loading}
+          message="Analyzing your geographic query..."
+          color="blue"
+        />
 
-      {/* Map */}
-      {items.length >= 1 && (
-        <div className="rounded-2xl border border-slate-200 bg-slate-50 p-3 sm:p-4 relative mb-12">
-          <h2 className="text-2xl sm:text-3xl font-semibold text-slate-800 text-center mb-2">
-            Interactive Geo Visualization
-          </h2>
-
-          <div className="flex items-center justify-between mb-4 flex-wrap gap-2">
-            {/* Badge */}
-            <div className="px-2 py-1 text-xs font-medium rounded-full bg-white border border-slate-200 text-slate-700">
-              Area Analysis
+        {/* Header + mock case picker */}
+        <div className="flex items-center justify-between gap-4 mb-8">
+          <ResultHeader query={query} meta={meta} />
+          <div className="shrink-0 flex items-center gap-3">
+            <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-blue-500/20 border border-blue-400/30">
+              <Globe className="w-4 h-4 text-blue-300" />
+              <span className="text-blue-200 text-sm font-medium">Live Results</span>
             </div>
-
-            <div className="flex items-center gap-2 ml-auto" data-export-ignore>
-              <button
-                aria-label="Zoom in"
-                title="Zoom in"
-                onClick={() => mapRef.current?.zoomIn()}
-                className="p-2 rounded-md bg-white border border-slate-300 hover:bg-slate-50 focus:outline-none focus:ring-2 focus:ring-purple-500"
+            <div>
+              <label className="text-sm text-white/80 mr-2">Mock case</label>
+              <select
+                className="border border-white/30 rounded-md px-2 py-1 text-sm bg-white/10 text-white backdrop-blur-sm"
+                value={mockCase}
+                onChange={(e) => {
+                  const next = Number(e.target.value);
+                  setMockCase(next);
+                  updateQueryString(next);
+                }}
+                title="Select mock test_case (backend /api/query/mock)"
               >
-                <ZoomIn className="w-4 h-4 text-slate-700" />
-              </button>
-              <button
-                aria-label="Zoom out"
-                title="Zoom out"
-                onClick={() => mapRef.current?.zoomOut()}
-                className="p-2 rounded-md bg-white border border-slate-300 hover:bg-slate-50 focus:outline-none focus:ring-2 focus:ring-purple-500"
-              >
-                <ZoomOut className="w-4 h-4 text-slate-700" />
-              </button>
-              <button
-                aria-label="Reset view"
-                title="Reset view"
-                onClick={() => mapRef.current?.reset()}
-                className="p-2 rounded-md bg-white border border-slate-300 hover:bg-slate-50 focus:outline-none focus:ring-2 focus:ring-purple-500"
-              >
-                <RotateCcw className="w-4 h-4 text-slate-700" />
-              </button>
-              <ExportButton onOpen={() => setExportOpen(true)} />
+                {/* Adjust to match the number of cases in mock.json */}
+                {[1, 2, 3, 4, 5].map((n) => (
+                  <option key={n} value={n} className="bg-gray-800">
+                    #{n}
+                  </option>
+                ))}
+              </select>
             </div>
           </div>
+        </div>
 
-          <div className="w-full flex justify-center">
-            <AdvancedMapCanvas
-              ref={mapRef}
-              items={items}
-              width={1200}
-              height={560}
-              showInternalToolbar={false}
-            />
+        {/* No results */}
+        {items.length === 0 && !loading && (
+          <div className="bg-white/10 backdrop-blur-sm rounded-2xl p-8 mb-12 border border-white/20">
+            <p className="text-white/80 text-center text-lg">No results found for your query.</p>
           </div>
-        </div>
-      )}
+        )}
 
-      {/* Tabular results (always when items exist) */}
-      {items.length >= 1 && (
-        <div className="mb-12">
-          <ResultsTable rows={items} title="Tabular Results" />
-        </div>
-      )}
+        {/* Map */}
+        {items.length >= 1 && (
+          <div className="rounded-2xl border border-white/20 bg-white/10 backdrop-blur-sm p-4 sm:p-6 relative mb-12">
+            <h2 className="text-2xl sm:text-3xl font-semibold text-white text-center mb-4 bg-gradient-to-r from-blue-200 to-green-200 bg-clip-text text-transparent">
+              Interactive Geo Visualization
+            </h2>
 
-      {/* Single item explanation */}
-      {items.length === 1 && (
-        <div className="bg-slate-50 rounded-2xl p-6 relative mb-12">
-          <div className="absolute top-4 right-4">
-            <ExportButton onOpen={() => setExportOpen(true)} />
-          </div>
-          <p className="text-slate-700 leading-relaxed pr-12">
-            {items[0].reason ?? "No explanation available"}
-          </p>
-        </div>
-      )}
+            <div className="flex items-center justify-between mb-6 flex-wrap gap-3">
+              {/* Badge */}
+              <div className="px-3 py-1 text-sm font-medium rounded-full bg-white/10 border border-white/20 text-white/90">
+                Area Analysis
+              </div>
 
-      {/* Detailed results */}
-      {items.length >= 1 && (
-        <>
-          <h2 className="text-2xl font-semibold mb-6">Detailed Results</h2>
-          {items.length === 1 ? (
-            <div className="flex justify-center">
-              <div className="max-w-4xl w-full">
-                <CountryCard
-                  key={items[0].id}
-                  item={items[0]}
-                  showMiniMap={true}
-                  onCopy={showToast}
-                  large
-                />
+              <div className="flex items-center gap-2 ml-auto" data-export-ignore>
+                <button
+                  aria-label="Zoom in"
+                  title="Zoom in"
+                  onClick={() => mapRef.current?.zoomIn()}
+                  className="p-2 rounded-lg bg-white/10 border border-white/20 hover:bg-white/20 hover:scale-105 transition-all duration-200"
+                >
+                  <ZoomIn className="w-4 h-4 text-white" />
+                </button>
+                <button
+                  aria-label="Zoom out"
+                  title="Zoom out"
+                  onClick={() => mapRef.current?.zoomOut()}
+                  className="p-2 rounded-lg bg-white/10 border border-white/20 hover:bg-white/20 hover:scale-105 transition-all duration-200"
+                >
+                  <ZoomOut className="w-4 h-4 text-white" />
+                </button>
+                <button
+                  aria-label="Reset view"
+                  title="Reset view"
+                  onClick={() => mapRef.current?.reset()}
+                  className="p-2 rounded-lg bg-white/10 border border-white/20 hover:bg-white/20 hover:scale-105 transition-all duration-200"
+                >
+                  <RotateCcw className="w-4 h-4 text-white" />
+                </button>
+                <ExportButton onOpen={() => setExportOpen(true)} />
               </div>
             </div>
-          ) : (
-            <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6">
-              {items.map((item) => (
-                <CountryCard
-                  key={item.id}
-                  item={item}
-                  showMiniMap={true}
-                  onCopy={showToast}
-                />
-              ))}
+
+            <div className="w-full flex justify-center">
+              <AdvancedMapCanvas
+                ref={mapRef}
+                items={items}
+                width={1200}
+                height={560}
+                showInternalToolbar={false}
+              />
             </div>
-          )}
-        </>
-      )}
+          </div>
+        )}
 
-      {/* SQL & Reasoning */}
-      <QueryDetails meta={meta} />
+        {/* Tabular results (always when items exist) */}
+        {items.length >= 1 && (
+          <div className="mb-12">
+            <ResultsTable rows={items} title="Tabular Results" />
+          </div>
+        )}
 
-      <ExportModal
-        isOpen={isExportOpen}
-        onClose={() => setExportOpen(false)}
-        targetRef={exportTargetRef}
-      />
-      <Toast message={toast.message} isVisible={toast.isVisible} onClose={hideToast} />
+        {/* Single item explanation */}
+        {items.length === 1 && (
+          <div className="bg-white/10 backdrop-blur-sm rounded-2xl p-6 relative mb-12 border border-white/20">
+            <div className="absolute top-4 right-4">
+              <ExportButton onOpen={() => setExportOpen(true)} />
+            </div>
+            <p className="text-white/80 leading-relaxed pr-12">
+              {items[0].reason ?? "No explanation available"}
+            </p>
+          </div>
+        )}
+
+        {/* Detailed results */}
+        {items.length >= 1 && (
+          <>
+            <h2 className="text-2xl font-semibold mb-6 text-white">Detailed Results</h2>
+            {items.length === 1 ? (
+              <div className="flex justify-center">
+                <div className="max-w-4xl w-full">
+                  <CountryCard
+                    key={items[0].id}
+                    item={items[0]}
+                    showMiniMap={true}
+                    onCopy={showToast}
+                    large
+                  />
+                </div>
+              </div>
+            ) : (
+              <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6">
+                {items.map((item) => (
+                  <CountryCard
+                    key={item.id}
+                    item={item}
+                    showMiniMap={true}
+                    onCopy={showToast}
+                  />
+                ))}
+              </div>
+            )}
+          </>
+        )}
+
+        {/* SQL & Reasoning */}
+        <QueryDetails meta={meta} />
+
+        <ExportModal
+          isOpen={isExportOpen}
+          onClose={() => setExportOpen(false)}
+          targetRef={exportTargetRef}
+        />
+        <Toast message={toast.message} isVisible={toast.isVisible} onClose={hideToast} />
+      </div>
     </div>
   );
 };
