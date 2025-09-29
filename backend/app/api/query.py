@@ -1,11 +1,11 @@
 import json
 import re
 
-from flask import Blueprint, jsonify, request, current_app
+from flask import Blueprint, current_app, jsonify, request
 
 from app.models.dto import QueryIn, QueryOut
-from app.services.routing_service import RoutingService
 from app.services import sql_service
+from app.services.routing_service import RoutingService
 
 query_bp = Blueprint("query", __name__)
 
@@ -53,10 +53,12 @@ def geo_reason():
             # Fallback to SELECT * FROM ...
             # Replace block between SELECT and FROM with *
 
-            sql = re.sub(r"select\s+.*?\s+from",
-                         "SELECT * FROM",
-                         sql,
-                         flags=re.IGNORECASE | re.DOTALL)
+            sql = re.sub(
+                r"select\s+.*?\s+from",
+                "SELECT * FROM",
+                sql,
+                flags=re.IGNORECASE | re.DOTALL,
+            )
             run_sql_results = sql_service.run_sql(sql)
 
             # If still fails, return error
@@ -64,14 +66,14 @@ def geo_reason():
                 return _err(
                     "SQL_ERROR",
                     run_sql_results.get("error") or "SQL execution failed",
-                    500)
+                    500,
+                )
         results = run_sql_results.get("results", [])
 
         # Load from config
         llm_config = current_app.config.get("LLM_CONFIG", {})
         model_provider = llm_config.get("default", "unknown")
-        model_used = llm_config.get(model_provider,
-                                    {}).get("default_model", "unknown")
+        model_used = llm_config.get(model_provider, {}).get("default_model", "unknown")
 
         out = QueryOut(
             sql=sql,
@@ -145,11 +147,9 @@ def geo_reason_mock():
         with open(mock_path, "r") as f:
             mock_data = json.load(f)
         cases = mock_data.get("cases", [])
-        case = next((c for c in cases if c.get("test_case") == test_case_id),
-                    None)
+        case = next((c for c in cases if c.get("test_case") == test_case_id), None)
         if not case:
-            return _err("BAD_MOCK",
-                        f"mock.json missing test_case {test_case_id}", 500)
+            return _err("BAD_MOCK", f"mock.json missing test_case {test_case_id}", 500)
 
         case_sql = case.get("sql", "")
         case_results = case.get("results", [])

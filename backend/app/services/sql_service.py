@@ -8,6 +8,7 @@ from sqlalchemy import text
 from app.models.dto import ALLOWED_TABLES
 
 from ..extensions import db
+
 """This module provides a single-table SQL query service.
 
 Interface function:
