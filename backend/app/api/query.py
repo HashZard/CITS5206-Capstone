@@ -68,7 +68,6 @@ def geo_reason():
         results = run_sql_results.get("results", [])
 
         # Load from config
-        print(current_app.config.get("LLM_CONFIG", {}))
         llm_config = current_app.config.get("LLM_CONFIG", {})
         model_provider = llm_config.get("default", "unknown")
         model_used = llm_config.get(model_provider,

@@ -16,23 +16,21 @@ Interface function:
 Return format:
     {
         "ok": bool,
-        "results": {
-            "columns": list[str],
-            "rows": list[list[Any]]
-        },
+        "results": list[dict[str, Any]],
         "meta": dict,
         "error": str | None
     }
 
 Usage example:
-    from backend.app.services import sql_service
+    from app.services import sql_service
 
     sql = "SELECT id, name FROM l1_category WHERE active = true LIMIT 5 OFFSET 0"
     resp = sql_service.run_sql(sql)
 
     if resp["ok"]:
-        print("Columns:", resp["results"]["columns"])
-        for row in resp["results"]["rows"]:
+        if resp["results"]:
+            print("Columns:", list(resp["results"][0].keys()))
+        for row in resp["results"]:
             print(row)
     else:
         print("Query failed:", resp["error"])
@@ -63,10 +61,17 @@ def get_columns(table: str) -> Iterable[str]:
 
 def execute(sql: str) -> tuple[list[dict[str, Any]], dict[str, Any]]:
     """
-    Execute parameterized SQL and return (rows, meta):
-        - rows: list[dict] (already mapped as dictionaries)
-        - meta: {"rows": len(rows)}; limit/offset handled by caller
-    No additional COUNT(*) is performed to avoid a second query; frontend pagination is based on limit/offset.
+    Execute a SQL statement and return the result rows as a list of dictionaries together with simple metadata.
+
+    Parameters
+    sql : str
+        A SQL statement to execute. It should be a SELECT statement.
+
+    Returns
+    tuple[list[dict[str, Any]], dict[str, Any]]
+        A tuple (rows, meta) where:
+        - rows is a list of dictionaries mapping column names to values for each returned row.
+        - meta is a dictionary containing at least the key "rows" with the number of returned rows.
     """
     with db.engine.connect() as conn:
         result = conn.execute(text(sql))
@@ -78,23 +83,17 @@ def execute(sql: str) -> tuple[list[dict[str, Any]], dict[str, Any]]:
 # Interface
 def run_sql(sql: str) -> dict[str, Any]:
     """
-    统一入口：验证 + 执行 SQL, 返回标准响应
-    返回格式：
+    Unified entry point: validate + execute SQL, return a standard response.
+    Return format:
     {
         "ok": bool,
-        "results": list[dict[str, Any]], # 直接返回字典列表
+        "results": list[dict[str, Any]],  # directly return a list of dicts
         "meta": dict,
         "error": str | None
     }
     """
     try:
         rows_dicts, meta = execute(sql)
-
-        # if rows_dicts:
-        #     columns = list(rows_dicts[0].keys())
-        #     rows = [[row.get(c) for c in columns] for row in rows_dicts]
-        # else:
-        #     columns, rows = [], []
 
         return {
             "ok": True,
