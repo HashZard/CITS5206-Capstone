@@ -47,12 +47,12 @@ export default function Login({
   const canSubmit = email.trim().length > 0 && pwd.length >= 8 && !submitting;
 
   return (
-    <div className="max-w-md mx-auto bg-white/10 border border-white/20 rounded-2xl p-6 text-white shadow-sm">
+    <div className="max-w-md mx-auto backdrop-blur-md bg-black/40 border border-white/10 rounded-2xl p-6 text-white shadow-xl">
       <h1 className="text-2xl font-semibold mb-1">Sign in</h1>
       <p className="text-white/70 text-sm mb-4">Access your GeoQuery account</p>
 
       {err && (
-        <div className="mb-4 rounded-lg border border-red-300/40 bg-red-500/10 px-3 py-2 text-sm">
+        <div className="mb-4 rounded-lg border border-red-300/40 bg-red-500/15 px-3 py-2 text-sm">
           {err}
         </div>
       )}
@@ -63,7 +63,7 @@ export default function Login({
           <input
             id="email"
             type="email"
-            className="w-full rounded-xl px-3 py-2 bg-white/90 text-gray-900 placeholder-gray-500 shadow-sm focus:outline-none focus:ring-2 focus:ring-gray-300"
+            className="w-full rounded-xl px-3 py-2 bg-white/95 text-gray-900 placeholder-gray-500 shadow-sm focus:outline-none focus:ring-2 focus:ring-gray-300"
             placeholder="you@example.com"
             value={email}
             onChange={(e) => setEmail(e.target.value)}
@@ -77,7 +77,7 @@ export default function Login({
             <input
               id="password"
               type={showPwd ? "text" : "password"}
-              className="w-full rounded-xl px-3 py-2 bg-white/90 text-gray-900 placeholder-gray-500 shadow-sm focus:outline-none focus:ring-2 focus:ring-gray-300 pr-24"
+              className="w-full rounded-xl px-3 py-2 bg-white/95 text-gray-900 placeholder-gray-500 shadow-sm focus:outline-none focus:ring-2 focus:ring-gray-300 pr-24"
               placeholder="••••••••"
               value={pwd}
               onChange={(e) => setPwd(e.target.value)}
