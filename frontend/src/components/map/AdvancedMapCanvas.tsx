@@ -1,33 +1,31 @@
 /**
- * AdvancedMapCanvas 高级地图画布组件
- * 
- * 功能：智能地图可视化的核心组件
- * - 自动识别数据类型，选择最佳可视化模式（面积/国家/经济/地形/通用）
- * - 解析WKB几何数据，渲染真实国家边界
- * - 交互功能：缩放、平移、重置、点击选择
- * - 支持4种专业可视化模式：
- *   • 面积分布图：按国家面积大小着色
- *   • 国家分布图：按大洲分类着色  
- *   • 经济热力图：按GDP水平着色
- *   • 地形特征图：按地理特征着色
- * - 动态图例和模式指示器
- * 
- * 使用场景：查询结果的主要地图展示区域
+ * AdvancedMapCanvas — smart map visualization with zoom + pan (drag).
+ *
+ * Features:
+ * - Auto visualization mode (area / countries / economy / terrain / general)
+ * - WKB geometry parsing (if provided) and centroid labeling
+ * - Interactions: zoom (buttons), pan (drag), reset, click-to-select
+ * - Dynamic legend + mode badge
  */
 
-import React, { useEffect, useMemo, useRef, useState, useImperativeHandle } from "react";
-// toolbar icons are encapsulated inside VerticalToolbar
-import VerticalToolbar from '@/components/ui/VerticalToolbar';
-import { RowItem, VisualizationMode } from '@/types/result';
-import { parseWKBGeometry, calculateOptimalLabelAnchor } from '@/utils/geometry';
-import { getVisualizationMode } from '@/utils/visualization';
+import React, {
+  useEffect,
+  useMemo,
+  useRef,
+  useState,
+  useImperativeHandle,
+} from "react";
+import VerticalToolbar from "@/components/ui/VerticalToolbar";
+import { RowItem, VisualizationMode } from "@/types/result";
+import { parseWKBGeometry, calculateOptimalLabelAnchor } from "@/utils/geometry";
+import { getVisualizationMode } from "@/utils/visualization";
 import {
   renderAreaVisualization,
   renderCountriesVisualization,
   renderEconomyVisualization,
   renderTerrainVisualization,
-  renderGeneralVisualization
-} from './MapRenderers';
+  renderGeneralVisualization,
+} from "./MapRenderers";
 
 export interface AdvancedMapCanvasControlsHandle {
   zoomIn: () => void;
@@ -40,70 +38,70 @@ interface AdvancedMapCanvasProps {
   width?: number;
   height?: number;
   className?: string;
-  showInternalToolbar?: boolean; // 是否显示内部右侧垂直工具栏（默认显示）
+  /** Show the internal right-docked toolbar (defaults to true) */
+  showInternalToolbar?: boolean;
 }
 
-export const AdvancedMapCanvas = React.forwardRef<AdvancedMapCanvasControlsHandle, AdvancedMapCanvasProps>(({ 
-  items,
-  width = 980,
-  height = 500,
-  className,
-  showInternalToolbar = true
-}, ref) => {
+export const AdvancedMapCanvas = React.forwardRef<
+  AdvancedMapCanvasControlsHandle,
+  AdvancedMapCanvasProps
+>(({ items, width = 980, height = 500, className, showInternalToolbar = true }, ref) => {
   const canvasRef = useRef<HTMLCanvasElement | null>(null);
+
+  // Viewport state
   const [zoom, setZoom] = useState(1);
   const [panX, setPanX] = useState(0);
   const [panY, setPanY] = useState(0);
   const [selectedItem, setSelectedItem] = useState<RowItem | null>(null);
+
+  // Drag (pan) state
+  const [isPanning, setIsPanning] = useState(false);
+  const lastPointer = useRef<{ x: number; y: number } | null>(null);
+
   const dpr = typeof window !== "undefined" ? window.devicePixelRatio || 1 : 1;
-  
   const mode = getVisualizationMode(items);
-  
-  // 解析几何数据并提取坐标
+
+  // Preprocess geometries (centroid etc.)
   const processedItems = useMemo(() => {
-    return items.map(item => {
-      console.log('Processing item:', item.name, 'has geometry:', !!item.raw?.geometry);
+    return items.map((item) => {
       if (item.raw?.geometry) {
         const geometry = parseWKBGeometry(item.raw.geometry);
-        console.log('Parsed geometry:', (geometry as any)?.type, geometry);
         const centroid = geometry ? calculateOptimalLabelAnchor(geometry) : null;
-        console.log('Calculated centroid:', centroid);
         return {
           ...item,
           geometry,
-          lat: centroid?.[0] || item.lat,
-          lon: centroid?.[1] || item.lon,
+          lat: centroid?.[0] ?? item.lat,
+          lon: centroid?.[1] ?? item.lon,
         };
       }
-      console.log('Item final coords:', item.lat, item.lon);
       return item;
     });
   }, [items]);
 
-  // 渲染函数
+  // Main render
   const renderMap = () => {
     const canvas = canvasRef.current;
     if (!canvas) return;
-    
+
     canvas.width = width * dpr;
     canvas.height = height * dpr;
     const ctx = canvas.getContext("2d");
     if (!ctx) return;
-    
+
     ctx.scale(dpr, dpr);
     ctx.clearRect(0, 0, width, height);
-    
-    // 应用缩放和平移
+
+    // Apply view transform: translate (center + pan), then scale, then translate back
     ctx.save();
     ctx.translate(width / 2 + panX, height / 2 + panY);
     ctx.scale(zoom, zoom);
     ctx.translate(-width / 2, -height / 2);
-    
-    // 背景
+
+    // Background
     ctx.fillStyle = "#F1F5F9"; // slate-100
     ctx.fillRect(0, 0, width, height);
-    
-    // 网格
+
+    // Grid
     ctx.strokeStyle = "#CBD5E1"; // slate-300
     ctx.lineWidth = 0.5;
     for (let lon = -180; lon <= 180; lon += 30) {
@@ -120,143 +118,226 @@ export const AdvancedMapCanvas = React.forwardRef<AdvancedMapCanvasControlsHandl
       ctx.lineTo(width, y);
       ctx.stroke();
     }
-    
-    // 根据不同模式渲染
-    console.log('Rendering mode:', mode, 'with', processedItems.length, 'processed items');
+
+    // Visualization by mode
     switch (mode) {
-      case 'area':
+      case "area":
         renderAreaVisualization(ctx, processedItems, width, height);
         break;
-      case 'countries':
+      case "countries":
         renderCountriesVisualization(ctx, processedItems, width, height);
         break;
-      case 'economy':
+      case "economy":
         renderEconomyVisualization(ctx, processedItems, width, height);
         break;
-      case 'terrain':
+      case "terrain":
         renderTerrainVisualization(ctx, processedItems, width, height);
         break;
       default:
         renderGeneralVisualization(ctx, processedItems, width, height);
     }
-    
+
     ctx.restore();
-    
-    // 渲染选中项信息
+
+    // Selected info overlay
     if (selectedItem) {
       renderSelectedInfo(ctx, selectedItem, width, height);
     }
   };
 
-  // 渲染选中项信息
-  const renderSelectedInfo = (ctx: CanvasRenderingContext2D, item: RowItem, _w: number, h: number) => {
-    const infoText = `${item.name || 'Unknown'}`;
-    ctx.fillStyle = 'rgba(0,0,0,0.8)';
-    ctx.fillRect(10, h - 60, 200, 50);
-    ctx.fillStyle = '#ffffff';
-    ctx.font = '14px system-ui';
-    ctx.fillText(infoText, 20, h - 35);
+  const renderSelectedInfo = (
+    ctx: CanvasRenderingContext2D,
+    item: RowItem,
+    _w: number,
+    h: number
+  ) => {
+    const infoText = `${item.name || "Unknown"}`;
+    ctx.fillStyle = "rgba(0,0,0,0.8)";
+    ctx.fillRect(10, h - 60, 220, 50);
+    ctx.fillStyle = "#ffffff";
+    ctx.font = "14px system-ui, -apple-system, Segoe UI, Roboto, Ubuntu, Cantarell, 'Helvetica Neue', Arial";
+    ctx.fillText(infoText, 20, h - 30);
   };
 
-  // 鼠标事件处理
+  // Click to select nearest item
   const handleCanvasClick = (event: React.MouseEvent<HTMLCanvasElement>) => {
     const rect = canvasRef.current?.getBoundingClientRect();
     if (!rect) return;
-    
+
     const x = event.clientX - rect.left;
     const y = event.clientY - rect.top;
-    
-    // 找到最近的数据点
+
+    // Convert screen → world coords (reverse transform):
+    // Given we translate then scale then translate, the screen-space
+    // to world-space conversion for measuring distance isn’t strictly necessary
+    // because we compute item positions in screen space below.
     let closestItem: RowItem | null = null;
     let minDistance = Infinity;
-    
-    processedItems.forEach(item => {
-      if (typeof item.lat === 'number' && typeof item.lon === 'number') {
+
+    processedItems.forEach((item) => {
+      if (typeof item.lat === "number" && typeof item.lon === "number") {
         const itemX = ((item.lon + 180) / 360) * width;
         const itemY = ((90 - item.lat) / 180) * height;
-        const distance = Math.sqrt((x - itemX) ** 2 + (y - itemY) ** 2);
-        
-        if (distance < 20 && distance < minDistance) {
-          minDistance = distance;
+
+        // Apply the same transforms we used in drawing to get screen coords
+        const tx = (itemX - width / 2) * zoom + (width / 2 + panX);
+        const ty = (itemY - height / 2) * zoom + (height / 2 + panY);
+
+        const dist = Math.hypot(x - tx, y - ty);
+        if (dist < 18 && dist < minDistance) {
+          minDistance = dist;
           closestItem = item;
         }
       }
     });
-    
+
     setSelectedItem(closestItem);
   };
 
+  // ----- PAN (drag) handlers -----
+  const beginPan = (clientX: number, clientY: number) => {
+    lastPointer.current = { x: clientX, y: clientY };
+    setIsPanning(true);
+  };
+
+  const movePan = (clientX: number, clientY: number) => {
+    if (!isPanning || !lastPointer.current) return;
+    const dx = clientX - lastPointer.current.x;
+    const dy = clientY - lastPointer.current.y;
+
+    // Make pan feel consistent regardless of zoom level
+    setPanX((p) => p + dx / zoom);
+    setPanY((p) => p + dy / zoom);
+
+    lastPointer.current = { x: clientX, y: clientY };
+  };
+
+  const endPan = () => {
+    setIsPanning(false);
+    lastPointer.current = null;
+  };
+
+  // Mouse events
+  const onMouseDown = (e: React.MouseEvent<HTMLCanvasElement>) => {
+    e.preventDefault();
+    beginPan(e.clientX, e.clientY);
+  };
+  const onMouseMove = (e: React.MouseEvent<HTMLCanvasElement>) => movePan(e.clientX, e.clientY);
+  const onMouseUp = () => endPan();
+  const onMouseLeave = () => endPan();
+
+  // Touch events (single-finger pan)
+  const onTouchStart = (e: React.TouchEvent<HTMLCanvasElement>) => {
+    if (e.touches.length !== 1) return;
+    const t = e.touches[0];
+    beginPan(t.clientX, t.clientY);
+  };
+  const onTouchMove = (e: React.TouchEvent<HTMLCanvasElement>) => {
+    if (e.touches.length !== 1) return;
+    const t = e.touches[0];
+    movePan(t.clientX, t.clientY);
+  };
+  const onTouchEnd = () => endPan();
+  const onTouchCancel = () => endPan();
+
+  // Render on changes
   useEffect(() => {
     renderMap();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [processedItems, zoom, panX, panY, selectedItem, width, height]);
 
-  // 暴露外部控制句柄
-  useImperativeHandle(ref, () => ({
-    zoomIn: () => setZoom(z => Math.min(z * 1.2, 5)),
-    zoomOut: () => setZoom(z => Math.max(z / 1.2, 0.5)),
-    reset: () => { setZoom(1); setPanX(0); setPanY(0); setSelectedItem(null); }
-  }), []);
+  // External controls
+  useImperativeHandle(
+    ref,
+    () => ({
+      zoomIn: () => setZoom((z) => Math.min(z * 1.2, 5)),
+      zoomOut: () => setZoom((z) => Math.max(z / 1.2, 0.5)),
+      reset: () => {
+        setZoom(1);
+        setPanX(0);
+        setPanY(0);
+        setSelectedItem(null);
+      },
+    }),
+    []
+  );
 
   return (
     <div className="relative w-full flex justify-center">
-      {/* 垂直工具栏（右侧停靠） */}
+      {/* Right-docked vertical toolbar */}
       {showInternalToolbar && (
         <VerticalToolbar
-          onZoomIn={() => setZoom(z => Math.min(z * 1.2, 5))}
-          onZoomOut={() => setZoom(z => Math.max(z / 1.2, 0.5))}
-          onRefresh={() => { setZoom(1); setPanX(0); setPanY(0); setSelectedItem(null); }}
+          onZoomIn={() => setZoom((z) => Math.min(z * 1.2, 5))}
+          onZoomOut={() => setZoom((z) => Math.max(z / 1.2, 0.5))}
+          onRefresh={() => {
+            setZoom(1);
+            setPanX(0);
+            setPanY(0);
+            setSelectedItem(null);
+          }}
         />
       )}
-      
-      {/* 地图模式指示器 */}
-      <div className="absolute top-4 left-4 bg-white/90 px-3 py-1 rounded-md text-sm font-medium">
-        {mode === 'countries' && '🌍 国家分布图'}
-        {mode === 'economy' && '💰 经济热力图'}
-        {mode === 'terrain' && '🏔️ 地形特征图'}
-        {mode === 'general' && '📍 通用地图'}
-        {mode === 'empty' && '⚪ 无数据'}
+
+      {/* Mode badge */}
+      <div className="absolute top-4 left-4 bg-white/90 px-3 py-1 rounded-md text-sm font-medium shadow">
+        {mode === "countries" && "🌍 Countries Map"}
+        {mode === "economy" && "💰 Economy Heatmap"}
+        {mode === "terrain" && "🏔️ Terrain Features"}
+        {mode === "general" && "📍 General Map"}
+        {mode === "area" && "📐 Area Distribution"}
+        {mode === "empty" && "⚪ No Data"}
       </div>
-      
+
       <canvas
         ref={canvasRef}
-        style={{ width, height, maxWidth: '100%' }}
-        className={`border border-slate-200 rounded-xl cursor-crosshair ${className}`}
+        style={{ width, height, maxWidth: "100%" }}
+        className={`border border-slate-200 rounded-xl ${
+          isPanning ? "cursor-grabbing" : "cursor-grab"
+        } ${className || ""}`}
         onClick={handleCanvasClick}
+        // Mouse drag
+        onMouseDown={onMouseDown}
+        onMouseMove={onMouseMove}
+        onMouseUp={onMouseUp}
+        onMouseLeave={onMouseLeave}
+        // Touch drag
+        onTouchStart={onTouchStart}
+        onTouchMove={onTouchMove}
+        onTouchEnd={onTouchEnd}
+        onTouchCancel={onTouchCancel}
       />
-      
-      {/* 图例 */}
+
       <MapLegend mode={mode} />
     </div>
   );
 });
 
-AdvancedMapCanvas.displayName = 'AdvancedMapCanvas';
+AdvancedMapCanvas.displayName = "AdvancedMapCanvas";
 
-// 地图图例组件
 const MapLegend: React.FC<{ mode: VisualizationMode }> = ({ mode }) => (
   <div className="mt-4 text-sm text-slate-600">
-    {mode === 'countries' && (
+    {mode === "countries" && (
       <div className="flex items-center gap-4 flex-wrap">
-        <span>🔴 亚洲</span>
-        <span>🔵 欧洲</span>
-        <span>🟢 非洲</span>
-        <span>🟡 北美洲</span>
-        <span>🟣 南美洲</span>
-        <span>🩶 南极洲</span>
+        <span>🔴 Asia</span>
+        <span>🔵 Europe</span>
+        <span>🟢 Africa</span>
+        <span>🟡 North America</span>
+        <span>🟣 South America</span>
+        <span>🩶 Antarctica</span>
       </div>
     )}
-    {mode === 'economy' && (
+    {mode === "economy" && (
       <div className="flex items-center gap-4">
-        <span>🟢 低GDP</span>
-        <span>🟡 中等GDP</span>
-        <span>🔴 高GDP</span>
+        <span>🟢 Low GDP</span>
+        <span>🟡 Medium GDP</span>
+        <span>🔴 High GDP</span>
       </div>
     )}
-    {mode === 'terrain' && (
+    {mode === "terrain" && (
       <div className="flex items-center gap-4">
-        <span>🔺 山峰</span>
-        <span>🟤 山脉</span>
-        <span>🟫 高原</span>
+        <span>🔺 Peak</span>
+        <span>🟤 Mountain Range</span>
+        <span>🟫 Plateau</span>
       </div>
     )}
   </div>
