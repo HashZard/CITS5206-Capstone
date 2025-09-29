@@ -17,23 +17,21 @@ Interface function:
 Return format:
     {
         "ok": bool,
-        "results": {
-            "columns": list[str],
-            "rows": list[list[Any]]
-        },
+        "results": list[dict[str, Any]],
         "meta": dict,
         "error": str | None
     }
 
 Usage example:
-    from backend.app.services import sql_service
+    from app.services import sql_service
 
     sql = "SELECT id, name FROM l1_category WHERE active = true LIMIT 5 OFFSET 0"
     resp = sql_service.run_sql(sql)
 
     if resp["ok"]:
-        print("Columns:", resp["results"]["columns"])
-        for row in resp["results"]["rows"]:
+        if resp["results"]:
+            print("Columns:", list(resp["results"][0].keys()))
+        for row in resp["results"]:
             print(row)
     else:
         print("Query failed:", resp["error"])
@@ -62,83 +60,52 @@ def get_columns(table: str) -> Iterable[str]:
     return tuple(r["column_name"] for r in rows)
 
 
-# SQL execution and lightweight verification
-def validate_sql(sql: str) -> None:
-    """Lightweight SQL whitelist validation:
-    must start with SELECT and must not contain semicolons or dangerous keywords.
-    Used only as a final safeguard (core security still relies on build_select_sql).
+def execute(sql: str) -> tuple[list[dict[str, Any]], dict[str, Any]]:
     """
-    check = sql.strip().lower()
-    if not check.startswith("select"):
-        raise ValueError("only SELECT statements are allowed")
-    # Prohibit multiple statements and dangerous keywords
-    if ";" in check:
-        raise ValueError("multiple statements are not allowed")
-    banned = [
-        "insert",
-        "update",
-        "delete",
-        "drop",
-        "alter",
-        "grant",
-        "revoke",
-        "truncate",
-    ]
-    if any(k in check for k in banned):
-        raise ValueError("dangerous keyword detected in SQL")
+    Execute a SQL statement and return the result rows as a list of dictionaries together with simple metadata.
 
+    Parameters
+    sql : str
+        A SQL statement to execute. It should be a SELECT statement.
 
-def execute(
-    sql: str, params: Mapping[str, Any]
-) -> tuple[list[dict[str, Any]], dict[str, Any]]:
+    Returns
+    tuple[list[dict[str, Any]], dict[str, Any]]
+        A tuple (rows, meta) where:
+        - rows is a list of dictionaries mapping column names to values for each returned row.
+        - meta is a dictionary containing at least the key "rows" with the number of returned rows.
     """
-    Execute parameterized SQL and return (rows, meta):
-        - rows: list[dict] (already mapped as dictionaries)
-        - meta: {"rows": len(rows)}; limit/offset handled by caller
-    No additional COUNT(*) is performed to avoid a second query; frontend pagination is based on limit/offset.
-    """
-    validate_sql(sql)
     with db.engine.connect() as conn:
-        result = conn.execute(text(sql), dict(params))
+        result = conn.execute(text(sql))
         rows = result.mappings().all()
     meta = {"rows": len(rows)}
     return [dict(r) for r in rows], meta
 
 
 # Interface
-def run_sql(sql: str, params: dict | None = None) -> dict[str, Any]:
+def run_sql(sql: str) -> dict[str, Any]:
     """
-    统一入口：验证 + 执行 SQL, 返回标准响应
-    返回格式：
+    Unified entry point: validate + execute SQL, return a standard response.
+    Return format:
     {
         "ok": bool,
-        "results": {
-            "columns": list[str],
-            "rows": list[list[Any]]
-        },
+        "results": list[dict[str, Any]],  # directly return a list of dicts
         "meta": dict,
         "error": str | None
     }
     """
     try:
-        rows_dicts, meta = execute(sql, params or {})
-
-        if rows_dicts:
-            columns = list(rows_dicts[0].keys())
-            rows = [[row.get(c) for c in columns] for row in rows_dicts]
-        else:
-            columns, rows = [], []
+        rows_dicts, meta = execute(sql)
 
         return {
             "ok": True,
-            "results": {"columns": columns, "rows": rows},
+            "results": rows_dicts,
             "meta": meta,
             "error": None,
         }
     except Exception as e:
         return {
             "ok": False,
-            "results": {"columns": [], "rows": []},
+            "results": [],
             "meta": {},
             "error": str(e),
         }

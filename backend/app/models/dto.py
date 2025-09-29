@@ -17,7 +17,7 @@ class QueryIn:
 
     def validate(self):
         if not self.question:
-            raise ValueError("question is required")
+            raise ValueError("Query must have a non-empty question!")
 
 
 @dataclass
@@ -27,13 +27,3 @@ class QueryOut:
     reasoning: list[str]
     model_used: str
     is_fallback: bool = False
-
-
-@dataclass
-class PreviewOut:
-    ok: bool
-    sql: str = None
-    reasons: list[str] = field(default_factory=list)
-    warnings: list[str] = field(default_factory=list)
-    meta: dict[str, Any] = field(default_factory=dict)
-    error: dict[str, Any] | None = None
