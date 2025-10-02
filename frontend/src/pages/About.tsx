@@ -71,7 +71,7 @@ function Member({
   linkedin?: string;
 }) {
   return (
-    <div className="rounded-xl border border-white/20 bg-white/10 p-5 shadow-sm">
+    <div className="bg-white text-black px-6 py-3 rounded-lg font-semibold hover:bg-white/90 transition-colors inline-flex items-center gap-2 shadow">
       <p className="font-medium text-lg mb-3">{name}</p>
       <div className="flex gap-3">
         {github && (

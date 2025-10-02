@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from "react";
-import { MapPin, BarChart3, Globe, Send, Sparkles } from "lucide-react";
+import { MapPin, BarChart3, Globe } from "lucide-react";
 import TopNav, { TopNavLink } from "@/components/layout/TopNav";
 import Footer from "@/components/layout/Footer";
 
@@ -9,8 +9,49 @@ import UserPage from "@/pages/User";
 import GeoQueryResults from "@/pages/Result";
 import HistoryPage from "@/pages/History";
 import AboutPage from "@/pages/About";
+import TutorialsPage from "@/pages/Tutorials"; // <-- NEW
 
 import { getStoredUser, setStoredUser, User } from "@/lib/auth";
+
+// type-ahead input
+import SuggestInput from "@/components/suggest/SuggestInput";
+
+/** -------------------------
+ * Auto-select mock testCase FROM QUERY (frontend-only)
+ * -------------------------- */
+function selectMockCaseFromQuery(raw: string): number {
+  const q = (raw || "").toLowerCase();
+  const hasAny = (kws: string[]) => kws.some(k => q.includes(k));
+
+  // Case 4 — landforms / geography feature types / marine
+  if (
+    hasAny([
+      "mountain", "range", "ranges", "plateau", "desert", "wetland", "tundra", "delta",
+      "depression", "isthmus", "peninsula", "cape", "valley", "gorge", "foothill",
+      "basin", "coast", "coastal", "lowland", "highland", "geoarea", "landform",
+      "island", "archipelago", "lake", "reservoir", "fjord", "inlet", "gulf", "bay",
+      "strait", "channel", "lagoon", "reef", "sound", "ocean", "sea", "marine", "rivers"
+    ])
+  ) return 4;
+
+  // Case 3 — GDP / economy / income group
+  if (hasAny(["gdp", "per capita", "income group", "economic", "economy", "median gdp", "gdp-to-area"])) {
+    return 3;
+  }
+
+  // Case 2 — hemisphere / equator / centroid latitude
+  if (
+    hasAny([
+      "southern hemisphere", "below the equator", "south of the equator",
+      "lat < 0", "latitude < 0", "equator", "centroid", "±20", "+-20", "±20°", "latitude"
+    ])
+  ) {
+    return 2;
+  }
+
+  // Default Case 1 — generic geography_regions / broad queries
+  return 1;
+}
 
 /** Top navigation links (Dashboard removed) */
 const links: TopNavLink[] = [
@@ -24,23 +65,12 @@ const links: TopNavLink[] = [
 /** Homepage content extracted for conditional rendering */
 function HomeView({ onQuery }: { onQuery: (query: string) => void }) {
   const [query, setQuery] = useState("");
-  const [isLoading, setIsLoading] = useState(false);
-
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!query.trim()) return;
-
-    setIsLoading(true);
-    await new Promise((resolve) => setTimeout(resolve, 500));
-    onQuery(query.trim());
-    setIsLoading(false);
-  };
 
   const suggestions = [
-    "Find the largest cities near rivers in Europe",
-    "Show population density of coastal areas in Asia",
-    "What are the highest mountains in South America?",
-    "Analyze forest coverage in tropical regions",
+    "Show the biggest continents or land regions by area (over 500,000 km²).",
+    "List countries in the Southern Hemisphere.",
+    "Highlight countries whose GDP is above their continent’s average.",
+    "Show major mountain ranges worldwide."
   ];
 
   const handleSuggestionClick = (suggestion: string) => {
@@ -48,7 +78,8 @@ function HomeView({ onQuery }: { onQuery: (query: string) => void }) {
   };
 
   return (
-    <div className="max-w-6xl mx-auto">
+    // Make the home section a flex column with a min height so we can push the cards to the bottom
+    <div className="max-w-6xl mx-auto flex flex-col min-h-[80vh]">
       {/* Hero */}
       <div className="text-center mb-12">
         <div className="flex items-center justify-center mb-6">
@@ -61,85 +92,58 @@ function HomeView({ onQuery }: { onQuery: (query: string) => void }) {
           analyze, and visualize spatial data like never before.
         </p>
 
-        {/* Query Input Section */}
+        {/* Black-tinted glass container for input + chips */}
         <div className="max-w-4xl mx-auto mb-8">
-          <form onSubmit={handleSubmit} className="relative">
-            <div className="relative backdrop-blur-sm bg-white/10 border border-white/20 rounded-2xl p-2">
-              <div className="flex items-center">
-                <div className="flex-1 relative">
-                  <textarea
-                    value={query}
-                    onChange={(e) => setQuery(e.target.value)}
-                    placeholder="Ask about geographic data, locations, demographics, climate patterns..."
-                    className="w-full bg-transparent text-white placeholder-white/60 border-none outline-none resize-none px-4 py-3 text-lg leading-6 min-h-[3rem] max-h-32"
-                    rows={1}
-                    style={{
-                      resize: "none",
-                      overflow: "hidden",
-                      height: "auto",
-                      minHeight: "3rem",
-                    }}
-                    onInput={(e) => {
-                      const target = e.target as HTMLTextAreaElement;
-                      target.style.height = "auto";
-                      target.style.height = Math.min(target.scrollHeight, 128) + "px";
-                    }}
-                    onKeyDown={(e) => {
-                      if (e.key === "Enter" && !e.shiftKey) {
-                        e.preventDefault();
-                        handleSubmit(e);
-                      }
-                    }}
-                  />
-                </div>
-                <button
-                  type="submit"
-                  disabled={!query.trim() || isLoading}
-                  className="ml-2 mr-2 p-3 bg-white/20 hover:bg-white/30 disabled:bg-white/10 disabled:cursor-not-allowed rounded-xl transition-all duration-200 group"
-                >
-                  {isLoading ? (
-                    <Sparkles className="w-5 h-5 text-white/70 animate-spin" />
-                  ) : (
-                    <Send className="w-5 h-5 text-white group-hover:text-white/90 disabled:text-white/50" />
-                  )}
-                </button>
-              </div>
-            </div>
-          </form>
+          <div className="backdrop-blur-md bg-black/40 border border-white/10 rounded-2xl p-4 sm:p-5 shadow-xl">
+            <SuggestInput
+              value={query}
+              onChange={setQuery}
+              onSubmit={(val) => {
+                if (!val) return;
+                onQuery(val);
+              }}
+              // placeholder="Ask about geographic data, locations, demographics, climate patterns..."
+              // minChars={2}
+              // maxItems={8}
+            />
 
-          {/* Query Suggestions */}
-          <div className="mt-6 flex flex-wrap gap-2 justify-center">
-            {suggestions.map((suggestion, index) => (
-              <button
-                key={index}
-                onClick={() => handleSuggestionClick(suggestion)}
-                className="px-4 py-2 bg-white/10 hover:bg-white/20 text-white/80 hover:text-white text-sm rounded-full border border-white/20 hover:border-white/30 transition-all duration-200"
-              >
-                {suggestion}
-              </button>
-            ))}
+            {/* Quick chips inside the glass card */}
+            <div className="mt-4 flex flex-wrap gap-2 justify-center">
+              {suggestions.map((s, i) => (
+                <button
+                  key={i}
+                  onClick={() => handleSuggestionClick(s)}
+                  className="px-4 py-2 bg-white/5 hover:bg-white/10 text-white/80 hover:text-white text-sm rounded-full border border-white/10 transition-all duration-200"
+                >
+                  {s}
+                </button>
+              ))}
+            </div>
           </div>
         </div>
       </div>
 
-      {/* Feature cards */}
-      <div className="grid md:grid-cols-3 gap-8 max-w-6xl mx-auto">
-        <div className="backdrop-blur-sm bg-white/10 border-white/20 hover:bg-white/15 transition-all duration-300 hover:scale-105 rounded-lg p-6">
-          <div className="w-16 h-16 bg-white/20 rounded-full flex items-center justify-center mx-auto mb-4">
+      {/* Spacer pushes the next block (feature cards) to the bottom of this section */}
+      <div className="flex-1" />
+
+      {/* Feature cards at the bottom */}
+      <div className="grid md:grid-cols-3 gap-8 max-w-6xl mx-auto pb-2">
+        <div className="backdrop-blur-md bg-black/40 border border-white/20 hover:bg-black/50 transition-all duration-300 hover:scale-105 rounded-lg p-6 shadow-lg">
+          <div className="w-16 h-16 bg-white/10 rounded-full flex items-center justify-center mx-auto mb-4">
             <MapPin className="w-8 h-8 text-white" />
           </div>
           <h3 className="text-white text-xl text-center mb-1">Natural Language</h3>
           <p className="text-white/70 text-center">Ask questions in plain English.</p>
         </div>
-        <div className="backdrop-blur-sm bg-white/10 border-white/20 hover:bg-white/15 transition-all duration-300 hover:scale-105 rounded-lg p-6">
-          <div className="w-16 h-16 bg-white/20 rounded-full flex items-center justify-center mx-auto mb-4">
+        <div className="backdrop-blur-md bg-black/40 border border-white/20 hover:bg-black/50 transition-all duration-300 hover:scale-105 rounded-lg p-6 shadow-lg">
+          <div className="w-16 h-16 bg-white/10 rounded-full flex items-center justify-center mx-auto mb-4">
             <BarChart3 className="w-8 h-8 text-white" />
           </div>
           <h3 className="text-white text-xl text-center mb-1">Smart Analytics</h3>
           <p className="text-white/70 text-center">Get instant insights and visualizations.</p>
         </div>
-        <div className="backdrop-blur-sm bg-white/10 border-white/20 hover:bg-white/15 transition-all duration-300 hover:scale-105 rounded-lg p-6">
-          <div className="w-16 h-16 bg-white/20 rounded-full flex items-center justify-center mx-auto mb-4">
+        <div className="backdrop-blur-md bg-black/40 border border-white/20 hover:bg-black/50 transition-all duration-300 hover:scale-105 rounded-lg p-6 shadow-lg">
+          <div className="w-16 h-16 bg-white/10 rounded-full flex items-center justify-center mx-auto mb-4">
             <Globe className="w-8 h-8 text-white" />
           </div>
           <h3 className="text-white text-xl text-center mb-1">Interactive Maps</h3>
@@ -155,6 +159,7 @@ export default function App() {
   const [path, setPath] = useState(() => window.location.pathname);
   const [user, setUser] = useState<User | null>(() => getStoredUser());
   const [userQuery, setUserQuery] = useState<string>("");
+  const [mockCase, setMockCase] = useState<number>(1); // auto-selected per query
 
   useEffect(() => {
     const onPop = () => setPath(window.location.pathname);
@@ -173,6 +178,7 @@ export default function App() {
 
   const handleQuery = (query: string) => {
     setUserQuery(query);
+    setMockCase(selectMockCaseFromQuery(query)); // auto-pick testCase here
     go("/result");
   };
 
@@ -202,7 +208,20 @@ export default function App() {
   };
 
   return (
-    <div className="min-h-screen flex flex-col bg-gradient-to-br from-purple-600/80 to-blue-600/85">
+    <div className="min-h-screen flex flex-col relative">
+      {/* Background image (earth.jpg must be in /public) */}
+      <div className="fixed inset-0 -z-10">
+        <div
+          className="absolute inset-0"
+          style={{
+            backgroundImage: "url('/earth.jpg')",
+            backgroundSize: "cover",
+            backgroundPosition: "center",
+            backgroundAttachment: "fixed",
+          }}
+        />
+      </div>
+
       <TopNav
         brand="GeoQuery"
         links={links}
@@ -222,14 +241,26 @@ export default function App() {
 
         {path === "/user" && isAuthed && <UserPage email={user!.email} />}
 
-        {path === "/result" && <GeoQueryResults query={userQuery} />}
+        {/* Pass the auto-selected test case to Results */}
+        {path === "/result" && <GeoQueryResults query={userQuery} testCase={mockCase} />}
 
         {path === "/history" && <HistoryPage />}
 
         {path === "/about" && <AboutPage />}
 
+        {/* NEW: Tutorials route */}
+        {path === "/tutorials" && <TutorialsPage />}
+
         {/* Default homepage (mutually exclusive) */}
-        {["/login", "/register", "/user", "/result", "/history", "/about"].includes(path)
+        {[
+          "/login",
+          "/register",
+          "/user",
+          "/result",
+          "/history",
+          "/about",
+          "/tutorials", // <-- include here so Home doesn't render underneath
+        ].includes(path)
           ? null
           : <HomeView onQuery={handleQuery} />}
       </main>

@@ -15,6 +15,23 @@ A modern geographic query platform that transforms natural language into powerfu
 
 🚀 Quick Start
 
+## How to run the website:
+A) Tunnel (optional, keep open)
+ssh -i "C:\Users\user\.ssh\Capstone.pem" -L 5433:localhost:5432 ubuntu@3.107.231.45 -N
+
+
+B) Backend (keep open)
+cd backend
+python run.py
+
+
+C) Frontend
+cd frontend
+npm install
+npm run dev
+
+Then navigate to the URL printed by Vite (e.g. http://localhost:3000/)
+
 ## Prerequisites
 - Node.js 18+ 
 - npm or yarn

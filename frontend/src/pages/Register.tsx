@@ -53,12 +53,12 @@ export default function Register({
     !submitting;
 
   return (
-    <div className="max-w-md mx-auto bg-white/10 border border-white/20 rounded-2xl p-6 text-white shadow-sm">
+    <div className="max-w-md mx-auto backdrop-blur-md bg-black/40 border border-white/10 rounded-2xl p-6 text-white shadow-xl">
       <h1 className="text-2xl font-semibold mb-1">Create your account</h1>
       <p className="text-white/70 text-sm mb-4">Join GeoQuery and start exploring</p>
 
       {err && (
-        <div className="mb-4 rounded-lg border border-red-300/40 bg-red-500/10 px-3 py-2 text-sm">
+        <div className="mb-4 rounded-lg border border-red-300/40 bg-red-500/15 px-3 py-2 text-sm">
           {err}
         </div>
       )}
@@ -69,7 +69,7 @@ export default function Register({
           <input
             id="email"
             type="email"
-            className="w-full rounded-xl px-3 py-2 bg-white/90 text-gray-900 placeholder-gray-500 shadow-sm focus:outline-none focus:ring-2 focus:ring-gray-300"
+            className="w-full rounded-xl px-3 py-2 bg-white/95 text-gray-900 placeholder-gray-500 shadow-sm focus:outline-none focus:ring-2 focus:ring-gray-300"
             placeholder="you@example.com"
             value={email}
             onChange={(e) => setEmail(e.target.value)}
@@ -83,7 +83,7 @@ export default function Register({
             <input
               id="password"
               type={showPwd ? "text" : "password"}
-              className="w-full rounded-xl px-3 py-2 bg-white/90 text-gray-900 placeholder-gray-500 shadow-sm focus:outline-none focus:ring-2 focus:ring-gray-300 pr-24"
+              className="w-full rounded-xl px-3 py-2 bg-white/95 text-gray-900 placeholder-gray-500 shadow-sm focus:outline-none focus:ring-2 focus:ring-gray-300 pr-24"
               placeholder="At least 8 characters"
               value={pwd}
               onChange={(e) => setPwd(e.target.value)}
@@ -107,7 +107,11 @@ export default function Register({
                 style={{
                   width: `${(strength / 5) * 100}%`,
                   background:
-                    strength < 3 ? "rgba(239,68,68,0.9)" : strength < 4 ? "rgba(234,179,8,0.95)" : "rgba(34,197,94,0.95)",
+                    strength < 3
+                      ? "rgba(239,68,68,0.9)"
+                      : strength < 4
+                      ? "rgba(234,179,8,0.95)"
+                      : "rgba(34,197,94,0.95)",
                 }}
               />
             </div>
@@ -122,7 +126,7 @@ export default function Register({
           <input
             id="password2"
             type="password"
-            className="w-full rounded-xl px-3 py-2 bg-white/90 text-gray-900 placeholder-gray-500 shadow-sm focus:outline-none focus:ring-2 focus:ring-gray-300"
+            className="w-full rounded-xl px-3 py-2 bg-white/95 text-gray-900 placeholder-gray-500 shadow-sm focus:outline-none focus:ring-2 focus:ring-gray-300"
             placeholder="Re-enter your password"
             value={pwd2}
             onChange={(e) => setPwd2(e.target.value)}
