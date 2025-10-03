@@ -51,13 +51,13 @@ class RoutingService:
             Instructions:
             1. Only output JSON, nothing else.
             2. JSON must have exactly two keys: 
-               - "l1_selected": an array of objects with keys "id" (string) and "name" (string)
-               - "reasons": an array of strings explaining briefly why each category was chosen
+                - "l1_selected": an array of objects with keys "id" (string) and "name" (string)
+                - "reasons": an array of strings explaining briefly why each category was chosen
             3. Do not include any text outside the JSON.
             4. Example of correct JSON format:
             {
-              "l1_selected": [{"id": "123", "name": "Software"}],
-              "reasons": ["The question is about software development."]
+                "l1_selected": [{"id": "123", "name": "Software"}],
+                "reasons": ["The question is about software development."]
             }
         """
         user = f"""
@@ -81,14 +81,14 @@ class RoutingService:
             Instructions:
             1. Only output JSON, nothing else.
             2. JSON must have exactly two keys:
-               - "l2_selected": an array of objects with keys "id" (string) and "name" (string)
-               - "reasons": an array of strings explaining briefly why each category was chosen
+                - "l2_selected": an array of objects with keys "id" (string) and "name" (string)
+                - "reasons": an array of strings explaining briefly why each category was chosen
             3. The order of "reasons" should correspond to the order of "l2_selected"
             4. Do not include any extra text outside the JSON.
             5. Example of correct JSON:
             {
-              "l2_selected": [{"id": "456", "name": "Backend Development"}],
-              "reasons": ["The question is about backend programming."]
+                "l2_selected": [{"id": "456", "name": "Backend Development"}],
+                "reasons": ["The question is about backend programming."]
             }
         """
         user = f"""
@@ -111,14 +111,14 @@ class RoutingService:
             Instructions:
             1. Only output JSON, nothing else.
             2. JSON must have exactly two keys:
-               - "l3_selected": an object with keys "id" (string), "table_name" (string), "display_name" (string)
-               - "reasons": an array of strings explaining briefly why this table was chosen
+                - "l3_selected": an object with keys "id" (string), "table_name" (string), "display_name" (string)
+                - "reasons": an array of strings explaining briefly why this table was chosen
             3. Choose exactly one L3 table.
             4. Do not include any extra text or formatting outside the JSON.
             5. Example of correct JSON:
             {
-              "l3_selected": {"id": "789", "table_name": "orders", "display_name": "Order Table"},
-              "reasons": ["The question asks about order data."]
+                "l3_selected": {"id": "789", "table_name": "orders", "display_name": "Order Table"},
+                "reasons": ["The question asks about order data."]
             }
         """
         user = f"""
@@ -133,12 +133,12 @@ class RoutingService:
     @staticmethod
     def _fetch_table_schema_dict(table_name: str) -> dict[str, Any]:
         structure_query = """
-              SELECT column_name, data_type, is_nullable
-              FROM information_schema.columns
-              WHERE table_schema = 'ne_data'
-                AND table_name = :t
-              ORDER BY ordinal_position;
-              """
+            SELECT column_name, data_type, is_nullable
+            FROM information_schema.columns
+            WHERE table_schema = 'ne_data'
+            AND table_name = :t
+            ORDER BY ordinal_position;
+        """
 
         with db.engine.connect() as conn:
             rows = (
@@ -156,11 +156,11 @@ class RoutingService:
             ]
         try:
             geo_structure_query = """
-                   SELECT f_geometry_column AS column_name, type, srid
-                   FROM geometry_columns
-                   WHERE f_table_schema = 'public'
-                     AND f_table_name = :t;
-                   """
+                SELECT f_geometry_column AS column_name, type, srid
+                FROM geometry_columns
+                WHERE f_table_schema = 'public'
+                AND f_table_name = :t;
+            """
             with db.engine.connect() as conn:
                 geo_structure_rows = (
                     conn.execute(db.text(geo_structure_query), {"t": table_name})
@@ -189,7 +189,7 @@ class RoutingService:
             Output requirements:
             1. Only return valid JSON, nothing else.
             2. JSON must have exactly one key:
-               - "final_sql": string containing a single executable SQL query
+                - "final_sql": string containing a single executable SQL query
             
             SQL generation rules:
             - Understand the intent: lookup / filter / aggregate / spatial.
@@ -202,15 +202,15 @@ class RoutingService:
             PostGIS Best Practices:
             - All geometry columns are in SRID 4326 (latitude/longitude).
             - **For accurate area or distance calculations** (e.g., using ST_Area, ST_Distance, ST_DWithin), cast the geometry column to the `geography` type. This correctly handles calculations on the earth's curved surface and returns results in meters.
-              - Correct: `ST_Area(geom::geography)`
-              - Correct: `ST_DWithin(geom_a::geography, geom_b::geography, 1000)` (for a 1km distance)
+                - Correct: `ST_Area(geom::geography)`
+                - Correct: `ST_DWithin(geom_a::geography, geom_b::geography, 1000)` (for a 1km distance)
             - **Do not use `ST_Transform`** to a projected CRS (like 3857) for the purpose of calculation. Use the `geography` type instead.
             - **Ensure precision in calculations.** When performing division or rounding on the output of a spatial function like `ST_Area`, cast the result to `numeric` to avoid floating-point inaccuracies.
-              - Example: `ROUND(ST_Area(geom::geography)::numeric / 1000000.0, 2) AS area_in_km2`
+                - Example: `ROUND(ST_Area(geom::geography)::numeric / 1000000.0, 2) AS area_in_km2`
             
             Example of correct JSON:
             {
-              "final_sql": "SELECT name, ROUND(ST_Area(geom::geography)::numeric / 1000000.0, 2) AS area_km2 FROM admin_boundaries WHERE lower(name) = 'california' LIMIT 1;"
+                "final_sql": "SELECT name, ROUND(ST_Area(geom::geography)::numeric / 1000000.0, 2) AS area_km2 FROM admin_boundaries WHERE lower(name) = 'california' LIMIT 1;"
             }
         """
         user = f"""

@@ -10,15 +10,10 @@ from app.models.three_level_models import (
     L1Category,
     L2Card,
     L3Table,
-    MapL1L2,
-    MapL2L3,
     PromptTemplate,
     rows_to_l1_categories,
     rows_to_l2_cards,
     rows_to_l3_tables,
-    rows_to_map_l1_l2,
-    rows_to_map_l2_l3,
-    rows_to_prompt_templates,
 )
 
 
@@ -59,8 +54,7 @@ class ThreeLevelService:
     def get_all_l2_cards() -> List[L2Card]:
         """获取所有 L2 概述卡"""
         sql = """
-        SELECT id, name, description_short, keywords, allowed_dimensions, 
-               weight, active, version, updated_at
+        SELECT id, name, description_short, keywords, allowed_dimensions, weight, active, version, updated_at
         FROM l2_card
         WHERE active = true
         ORDER BY weight DESC, name
@@ -73,8 +67,7 @@ class ThreeLevelService:
     def get_l2_cards_by_l1(l1_id: int) -> List[L2Card]:
         """根据 L1 ID 获取关联的 L2 概述卡"""
         sql = """
-        SELECT l2.id, l2.name, l2.description_short, l2.keywords, 
-               l2.allowed_dimensions, l2.weight, l2.active, l2.version, l2.updated_at
+        SELECT l2.id, l2.name, l2.description_short, l2.keywords, l2.allowed_dimensions, l2.weight, l2.active, l2.version, l2.updated_at
         FROM l2_card l2
         JOIN map_l1_l2 m ON l2.id = m.l2_id
         WHERE m.l1_id = :l1_id AND l2.active = true
@@ -88,8 +81,7 @@ class ThreeLevelService:
     def get_all_l3_tables() -> List[L3Table]:
         """获取所有 L3 表内核"""
         sql = """
-        SELECT id, table_name, display_name, summary, core_fields, keywords, 
-               use_cases, tablecard_detail_md, schema_ref, active, version, updated_at
+        SELECT id, table_name, display_name, summary, core_fields, keywords, use_cases, tablecard_detail_md, schema_ref, active, version, updated_at
         FROM l3_table
         WHERE active = true
         ORDER BY display_name
@@ -102,9 +94,7 @@ class ThreeLevelService:
     def get_l3_tables_by_l2(l2_id: int) -> List[L3Table]:
         """根据 L2 ID 获取关联的 L3 表内核"""
         sql = """
-        SELECT l3.id, l3.table_name, l3.display_name, l3.summary, l3.core_fields,
-               l3.keywords, l3.use_cases, l3.tablecard_detail_md, l3.schema_ref,
-               l3.active, l3.version, l3.updated_at
+        SELECT l3.id, l3.table_name, l3.display_name, l3.summary, l3.core_fields, l3.keywords, l3.use_cases, l3.tablecard_detail_md, l3.schema_ref, l3.active, l3.version, l3.updated_at
         FROM l3_table l3
         JOIN map_l2_l3 m ON l3.id = m.l3_id
         WHERE m.l2_id = :l2_id AND l3.active = true
@@ -118,8 +108,7 @@ class ThreeLevelService:
     def get_l3_table_by_name(table_name: str) -> Optional[L3Table]:
         """根据表名获取 L3 表内核"""
         sql = """
-        SELECT id, table_name, display_name, summary, core_fields, keywords,
-               use_cases, tablecard_detail_md, schema_ref, active, version, updated_at
+        SELECT id, table_name, display_name, summary, core_fields, keywords, use_cases, tablecard_detail_md, schema_ref, active, version, updated_at
         FROM l3_table
         WHERE table_name = :table_name AND active = true
         """
@@ -140,8 +129,7 @@ class ThreeLevelService:
     def get_prompt_template(stage: str, lang: str = "en") -> Optional[PromptTemplate]:
         """获取指定阶段的提示模板"""
         sql = """
-        SELECT id, stage, lang, system_text, context_tmpl, user_tmpl, 
-               json_schema, updated_at
+        SELECT id, stage, lang, system_text, context_tmpl, user_tmpl, json_schema, updated_at
         FROM prompt_templates
         WHERE stage = :stage AND lang = :lang
         ORDER BY updated_at DESC
@@ -164,8 +152,7 @@ class ThreeLevelService:
     def search_tables_by_keyword(keyword: str) -> List[L3Table]:
         """根据关键词搜索表"""
         sql = """
-        SELECT id, table_name, display_name, summary, core_fields, keywords,
-               use_cases, tablecard_detail_md, schema_ref, active, version, updated_at
+        SELECT id, table_name, display_name, summary, core_fields, keywords, use_cases, tablecard_detail_md, schema_ref, active, version, updated_at
         FROM l3_table
         WHERE active = true 
         AND (
