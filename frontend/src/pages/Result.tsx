@@ -37,6 +37,7 @@ import { CountryCard } from "@/components/result/CountryCard";
 import { QueryDetails } from "@/components/result/QueryDetails";
 import { QueryService } from "@/services/queryService";
 import ResultDataTable from "@/components/result/ResultDataTable";
+import { convertToGeoJSONFallback, hasAnyGeographicInfo } from "@/utils/geoMapping";
 // Similar suggestions panel (frontend-only)
 import SuggestPanel from "@/components/result/SuggestPanel";
 // NEW: Auto chart for any numeric metric
@@ -44,17 +45,51 @@ import AutoComparisonChart from "@/components/result/AutoComparisonChart";
 
 interface GeoQueryResultsProps {
   query: string;
-  testCase?: number;
 }
 
-const GeoQueryResults: React.FC<GeoQueryResultsProps> = ({ query, testCase }) => {
+const GeoQueryResults: React.FC<GeoQueryResultsProps> = ({ query }) => {
   const [items, setItems] = useState<RowItem[]>([]);
+  const [rawResults, setRawResults] = useState<any[]>([]);  // Raw backend data
   const [loading, setLoading] = useState(false);
   const [toast, setToast] = useState<ToastState>({ message: "", isVisible: false });
   const [meta, setMeta] = useState<MetaData>({});
+  const [hasGeometry, setHasGeometry] = useState(false);  // 🗺️ Geometry detection result
 
-  const showToast = (message: string) => setToast({ message, isVisible: true });
+  const showToast = (message: string, type: 'success' | 'error' = 'success') => 
+    setToast({ message, isVisible: true, type });
   const hideToast = () => setToast({ message: "", isVisible: false });
+
+  // 🔍 Geometry field detection function (priority order)
+  const detectGeometry = (items: RowItem[]): boolean => {
+    if (!items || items.length === 0) return false;
+    
+    // Check if first row has any geometry data
+    const firstItem = items[0];
+    const raw = firstItem?.raw;
+    
+    if (!raw) return false;
+    
+    // Detection order: geometry (EWKB/WKB) → geom → center → lon+lat
+    const hasGeometryField = !!(
+      raw.geometry || 
+      raw.geom || 
+      raw.wkb_geometry || 
+      raw.center || 
+      (raw.lon && raw.lat) || 
+      (raw.lng && raw.lat) || 
+      (raw.longitude && raw.latitude)
+    );
+    
+    console.log('🔍 Geometry detection:', {
+      hasGeometry: hasGeometryField,
+      fields: Object.keys(raw).filter(k => 
+        k.includes('geom') || k.includes('center') || 
+        ['lon', 'lat', 'lng', 'latitude', 'longitude'].includes(k)
+      )
+    });
+    
+    return hasGeometryField;
+  };
 
   useEffect(() => {
     if (!query) return;
@@ -65,27 +100,101 @@ const GeoQueryResults: React.FC<GeoQueryResultsProps> = ({ query, testCase }) =>
 
         // Ensure a minimum loading duration so the animation is visible
         const [queryResult] = await Promise.all([
-          QueryService.executeQuery(query, testCase),
+          QueryService.executeQuery(query),
           new Promise((resolve) => setTimeout(resolve, 800)), // show at least 800ms
         ]);
 
-        const { items: resultItems, meta: resultMeta } = queryResult;
-        setItems(resultItems);
+        const { items: resultItems, rawResults: resultRawData, meta: resultMeta } = queryResult;
+        
+        // 🔍 Detect geometry fields
+        const hasGeo = detectGeometry(resultItems);
+        
+        // 🗺️ Geographic mapping fallback system
+        let enhancedItems = resultItems;
+        if (!hasGeo) {
+          console.warn('⚠️ No real geometry detected, attempting geographic name mapping...');
+          
+          // Check if there is geographic information (place names or coordinates)
+          if (hasAnyGeographicInfo(resultRawData)) {
+            const fallbackGeoJSON = convertToGeoJSONFallback(resultRawData);
+            
+            if (fallbackGeoJSON && fallbackGeoJSON.features) {
+              // Add mapped geometry data to items
+              enhancedItems = resultItems.map((item, index) => {
+                const feature = fallbackGeoJSON.features[index];
+                if (feature && feature.geometry) {
+                  return {
+                    ...item,
+                    raw: {
+                      ...item.raw,
+                      _mapped_geometry: feature.geometry  // Use special field name to avoid conflicts
+                    }
+                  };
+                }
+                return item;
+              });
+              
+              console.log(`✅ Enhanced ${enhancedItems.length} items with mapped geometries`);
+              setHasGeometry(true);  // Mark as having geometry data (mapped)
+            } else {
+              console.warn('⚠️ Geographic mapping failed, map will be hidden');
+              setHasGeometry(false);
+            }
+          } else {
+            console.warn('⚠️ No geographic information found (no names, no coordinates)');
+            setHasGeometry(false);
+          }
+        } else {
+          console.log('✅ Using real geometry from backend');
+          setHasGeometry(true);
+        }
+        
+        setItems(enhancedItems);
+        setRawResults(resultRawData);  // Save raw data
         setMeta(resultMeta);
       } catch (error: any) {
-        const msg =
-          (error?.response?.data as ApiError)?.detail ||
-          error?.message ||
-          "Query failed. Please try again.";
-        showToast(msg);
+        console.error('❌ Query execution failed:', error);
+        
+        // Build detailed error message
+        let msg = "Query failed. Please try again.";
+        
+        if (error?.response) {
+          // HTTP error response
+          const status = error.response.status;
+          const detail = (error.response.data as ApiError)?.detail;
+          const code = (error.response.data as any)?.code;
+          
+          if (detail) {
+            msg = `Error ${status}: ${detail}`;
+          } else if (code) {
+            msg = `Error ${status} (${code})`;
+          } else {
+            msg = `Server error ${status}: ${error.response.statusText || 'Unknown error'}`;
+          }
+          
+          // Special handling for 500 errors
+          if (status === 500) {
+            msg += "\n\nPlease check:\n• Backend server is running\n• Database connection is available\n• LLM service is configured";
+          }
+        } else if (error?.request) {
+          // Request was sent but no response received
+          msg = "No response from server. Please check:\n• Backend is running on port 8000\n• Network connection is available";
+        } else {
+          // Other errors
+          msg = error?.message || msg;
+        }
+        
+        showToast(msg, 'error');
         setItems([]);
+        setRawResults([]);  // Clear raw data
+        setMeta({});
       } finally {
         setLoading(false);
       }
     };
 
     executeQuery();
-  }, [query, testCase]);
+  }, [query]);
 
   const exportTargetRef = React.useRef<HTMLDivElement>(null);
   const [isExportOpen, setExportOpen] = React.useState(false);
@@ -157,8 +266,21 @@ const GeoQueryResults: React.FC<GeoQueryResultsProps> = ({ query, testCase }) =>
         </div>
       )}
 
-      {/* Smart map visualization */}
-      {items.length >= 1 && (
+      {/* 🗺️ No geometry data notice - graceful degradation */}
+      {items.length >= 1 && !hasGeometry && (
+        <div className="rounded-2xl border border-slate-200 bg-slate-50 p-6 mb-12">
+          <div className="text-center text-slate-600">
+            <p className="text-sm">
+              ℹ️ This query returned data without geographic coordinates or geometry.
+              <br />
+              The map visualization is not available, but you can view the data in the table below.
+            </p>
+          </div>
+        </div>
+      )}
+
+      {/* Smart map visualization - 🔍 Conditional rendering: only show when geometry data exists */}
+      {items.length >= 1 && hasGeometry && (
         <div className="rounded-2xl border border-slate-200 bg-slate-50 dark:bg-slate-50 p-3 sm:p-4 relative mb-12">
           {/* Title */}
           <h2 className="text-2xl sm:text-3xl font-semibold text-slate-800 text-center mb-2">
@@ -251,9 +373,12 @@ const GeoQueryResults: React.FC<GeoQueryResultsProps> = ({ query, testCase }) =>
               <ExportButton onOpen={() => setExportOpen(true)} />
             </div>
           </div>
-          <p className="text-slate-700 dark:text-slate-700 leading-relaxed pr-12">
-            {items[0].reason ?? "No explanation available."}
-          </p>
+          <div className="text-slate-700 dark:text-slate-700 leading-relaxed pr-12">
+            <h3 className="text-lg font-semibold mb-3">Query Analysis</h3>
+            <p className="whitespace-pre-wrap">
+              {meta.reasoning || items[0].reason || "No explanation available."}
+            </p>
+          </div>
         </div>
       )}
 
@@ -296,19 +421,19 @@ const GeoQueryResults: React.FC<GeoQueryResultsProps> = ({ query, testCase }) =>
             items={items as any[]}
             title="Auto-detected metric comparison"
             maxBars={25}
-            // Optional nudges for common fields:
-            preferredKeys={["gdp", "gdp_per_capita", "population", "area"]}
+            // Optional nudges for common geographic/economic fields:
+            preferredKeys={["area_km2", "population", "gdp", "gdp_per_capita", "pop_est", "gdp_md_est", "density"]}
           />
         </div>
       )}
       {/* ================================================================== */}
 
       {/* Data table */}
-      {items.length >= 1 && (
+      {rawResults.length >= 1 && (
         <div className="mt-10 mb-12">
           <h2 className="text-2xl font-semibold mb-4">Tabular Data</h2>
           <div className="bg-white dark:bg-white border border-slate-200 rounded-2xl p-3">
-            <ResultDataTable items={items as any[]} />
+            <ResultDataTable items={rawResults} />
           </div>
         </div>
       )}
@@ -327,6 +452,7 @@ const GeoQueryResults: React.FC<GeoQueryResultsProps> = ({ query, testCase }) =>
         message={toast.message}
         isVisible={toast.isVisible}
         onClose={hideToast}
+        type={toast.type}
       />
     </div>
   );

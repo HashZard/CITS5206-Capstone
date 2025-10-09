@@ -1,36 +1,63 @@
 /**
- * QueryService 查询服务类
+ * QueryService - Query service class
  * 
- * 功能：处理所有与后端API的交互和数据转换
- * - executeQuery: 执行地理查询，返回处理后的结果
- * - fetchResults: 发送HTTP请求到后端API
- * - extractCoordinates: 从地名提取近似坐标（回退方案）
- * - mapResultsToRowItems: 将API响应转换为前端数据格式
+ * Features: Handle all backend API interactions and data transformations
+ * - executeQuery: Execute geographic queries and return processed results
+ * - fetchResults: Send HTTP requests to backend API
+ * - extractCoordinates: Extract approximate coordinates from place names (fallback solution)
+ * - mapResultsToRowItems: Convert API responses to frontend data format
  * 
- * 数据处理功能：
- * - 统一数据格式转换
- * - 坐标提取和映射
- * - 错误处理和异常捕获
- * - 支持测试用例参数
+ * Data processing features:
+ * - Unified data format conversion
+ * - Coordinate extraction and mapping
+ * - Error handling and exception capture
  * 
- * 使用场景：Result组件的数据层，封装所有API调用逻辑
+ * Use cases: Data layer for Result component, encapsulating all API call logic
  */
 
 import axios from "axios";
 import { ApiSuccess, RowItem } from '@/types/result';
 
 export class QueryService {
-  private static async fetchResults(query: string, testCase?: number): Promise<ApiSuccess> {
-    const payload: any = { question: query };
-    if (typeof testCase === "number") payload.test_case = testCase;
+  private static async fetchResults(query: string): Promise<ApiSuccess> {
+    const payload = { question: query };
 
-    const response = await axios.post<ApiSuccess>(
-      "http://localhost:8000/api/query/mock", 
-      payload, 
-      { headers: { "Content-Type": "application/json" } }
-    );
+    console.log('🚀 Sending request to /api/query with payload:', payload);
 
-    return response.data;
+    try {
+      const response = await axios.post<ApiSuccess>(
+        "/api/query",  // Use relative path, proxied to localhost:8000 via Vite in development
+        payload, 
+        { 
+          headers: { "Content-Type": "application/json" },
+          timeout: 60000, // 60 second timeout, LLM calls may take time
+        }
+      );
+
+      console.log('✅ Received response:', {
+        status: response.status,
+        hasResults: !!response.data?.results,
+        resultCount: response.data?.results?.length,
+        model: response.data?.model_used,
+        isFallback: response.data?.is_fallback,
+      });
+
+      return response.data;
+    } catch (error: any) {
+      console.error('❌ API request failed:', {
+        message: error.message,
+        status: error.response?.status,
+        statusText: error.response?.statusText,
+        data: error.response?.data,
+        config: {
+          url: error.config?.url,
+          method: error.config?.method,
+          headers: error.config?.headers,
+          data: error.config?.data,
+        }
+      });
+      throw error;
+    }
   }
 
   private static extractCoordinates(item: any) {
@@ -60,24 +87,34 @@ export class QueryService {
 
   private static mapResultsToRowItems(results: any[]): RowItem[] {
     return results.map((item: any, idx: number) => {
+      // ✅ Preserve all backend raw data completely, no deletion or renaming of any fields
+      const raw = { ...item };
+      
+      // 🔍 Fallback extraction for UI display only (does not affect raw)
       const coords = this.extractCoordinates(item);
+      
+      // 📝 Display name fallback (priority order, does not modify raw)
+      const displayName = item.name || item.name_en || item.formal_en || 
+                          item.brk_name || item.country || item.country_name || 
+                          item.featurecla || item.title || `Item ${idx + 1}`;
+      
       return {
-        id: String(item.ne_id || item.id || idx + 1),
-        name: item.name_en || item.name || item.country || item.country_name || item.featurecla,
-        population: item.population || item.pop,
+        id: String(item.gid || item.ne_id || item.id || idx + 1),
+        name: displayName,
+        population: item.population || item.pop || item.pop_est,
         incomeGroup: item.income_group || item.incomegroup || item.income,
-        region: item.region || item.featurecla,
+        region: item.region || item.continent || item.featurecla,
         lat: coords.lat || item.lat || item.latitude || item.y,
         lon: coords.lon || item.lon || item.lng || item.longitude || item.x,
-        reason: item.reason || item.explanation || item.rationale || 
-          `Area: ${item.area_km2 ? Math.round(item.area_km2).toLocaleString() + ' km²' : 'N/A'}`,
-        raw: item
+        reason: item.reason || item.explanation || item.rationale || '',
+        raw  // ✅ Preserve all backend fields completely
       };
     });
   }
 
-  public static async executeQuery(query: string, testCase?: number): Promise<{
+  public static async executeQuery(query: string): Promise<{
     items: RowItem[];
+    rawResults: any[];  // New: Raw backend data
     meta: {
       sql?: string;
       reasoning?: string;
@@ -85,10 +122,21 @@ export class QueryService {
       isFallback?: boolean;
     };
   }> {
-    const data = await this.fetchResults(query, testCase);
+    const data = await this.fetchResults(query);
     
     if (!data.results || !Array.isArray(data.results)) {
       throw new Error("Unexpected API response");
+    }
+
+    // 🔍 Observability: Log backend raw response (development environment)
+    if (process.env.NODE_ENV === 'development') {
+      console.group('📊 Backend → Frontend Data Mapping');
+      console.log('📥 Backend raw response:', {
+        resultCount: data.results.length,
+        sampleRow: data.results[0],
+        allKeys: data.results[0] ? Object.keys(data.results[0]) : [],
+        sql: data.sql,
+      });
     }
 
     const items = this.mapResultsToRowItems(data.results);
@@ -99,6 +147,27 @@ export class QueryService {
       isFallback: data.is_fallback,
     };
 
-    return { items, meta };
+    // 🔍 Observability: Compare converted data (development environment)
+    if (process.env.NODE_ENV === 'development') {
+      console.log('📤 Frontend mapped items:', {
+        itemCount: items.length,
+        sampleItem: items[0],
+        rawKeysPreserved: items[0]?.raw ? Object.keys(items[0].raw).length : 0,
+        originalKeysCount: data.results[0] ? Object.keys(data.results[0]).length : 0,
+      });
+      console.log('✅ Field preservation check:', 
+        items[0]?.raw && data.results[0] && 
+        Object.keys(items[0].raw).length === Object.keys(data.results[0]).length
+          ? 'PASS - All fields preserved'
+          : '❌ FAIL - Fields missing!'
+      );
+      console.groupEnd();
+    }
+
+    return { 
+      items, 
+      rawResults: data.results,  // Save raw data for table display
+      meta 
+    };
   }
 }

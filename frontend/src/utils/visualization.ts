@@ -1,21 +1,21 @@
 /**
- * Visualization 可视化工具库
+ * Visualization - Visualization utility library
  * 
- * 功能：提供地图可视化的辅助工具和配置
- * - getVisualizationMode: 智能识别数据类型，选择最佳可视化模式
- * - formatArea: 格式化面积数值显示（km²）
- * - formatGDP: 格式化GDP数值显示（美元）
- * - continentColors: 大洲颜色配置映射
- * - terrainColors: 地形特征颜色配置映射
+ * Features: Provide auxiliary tools and configurations for map visualization
+ * - getVisualizationMode: Intelligently identify data types, select optimal visualization mode
+ * - formatArea: Format area value display (km²)
+ * - formatGDP: Format GDP value display (USD)
+ * - continentColors: Continent color configuration mapping
+ * - terrainColors: Terrain feature color configuration mapping
  * 
- * 可视化模式：
- * - area: 面积分布图（基于area_km2字段）
- * - countries: 国家分布图（基于continent字段）
- * - economy: 经济热力图（基于gdp_md字段）
- * - terrain: 地形特征图（基于featurecla字段）
- * - general: 通用模式（默认）
+ * Visualization modes:
+ * - area: Area distribution map (based on area_km2 field)
+ * - countries: Country distribution map (based on continent field)
+ * - economy: Economic heatmap (based on gdp_md field)
+ * - terrain: Terrain feature map (based on featurecla field)
+ * - general: General mode (default)
  * 
- * 使用场景：地图渲染器的配置和工具支持
+ * Use cases: Configuration and tool support for map renderers
  */
 
 import { RowItem, VisualizationMode } from '@/types/result';

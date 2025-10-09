@@ -16,43 +16,6 @@ import { getStoredUser, setStoredUser, User } from "@/lib/auth";
 // type-ahead input
 import SuggestInput from "@/components/suggest/SuggestInput";
 
-/** -------------------------
- * Auto-select mock testCase FROM QUERY (frontend-only)
- * -------------------------- */
-function selectMockCaseFromQuery(raw: string): number {
-  const q = (raw || "").toLowerCase();
-  const hasAny = (kws: string[]) => kws.some(k => q.includes(k));
-
-  // Case 4 — landforms / geography feature types / marine
-  if (
-    hasAny([
-      "mountain", "range", "ranges", "plateau", "desert", "wetland", "tundra", "delta",
-      "depression", "isthmus", "peninsula", "cape", "valley", "gorge", "foothill",
-      "basin", "coast", "coastal", "lowland", "highland", "geoarea", "landform",
-      "island", "archipelago", "lake", "reservoir", "fjord", "inlet", "gulf", "bay",
-      "strait", "channel", "lagoon", "reef", "sound", "ocean", "sea", "marine", "rivers"
-    ])
-  ) return 4;
-
-  // Case 3 — GDP / economy / income group
-  if (hasAny(["gdp", "per capita", "income group", "economic", "economy", "median gdp", "gdp-to-area"])) {
-    return 3;
-  }
-
-  // Case 2 — hemisphere / equator / centroid latitude
-  if (
-    hasAny([
-      "southern hemisphere", "below the equator", "south of the equator",
-      "lat < 0", "latitude < 0", "equator", "centroid", "±20", "+-20", "±20°", "latitude"
-    ])
-  ) {
-    return 2;
-  }
-
-  // Default Case 1 — generic geography_regions / broad queries
-  return 1;
-}
-
 /** Top navigation links (Dashboard removed) */
 const links: TopNavLink[] = [
   { label: "Home" },
@@ -159,7 +122,6 @@ export default function App() {
   const [path, setPath] = useState(() => window.location.pathname);
   const [user, setUser] = useState<User | null>(() => getStoredUser());
   const [userQuery, setUserQuery] = useState<string>("");
-  const [mockCase, setMockCase] = useState<number>(1); // auto-selected per query
 
   useEffect(() => {
     const onPop = () => setPath(window.location.pathname);
@@ -178,7 +140,6 @@ export default function App() {
 
   const handleQuery = (query: string) => {
     setUserQuery(query);
-    setMockCase(selectMockCaseFromQuery(query)); // auto-pick testCase here
     go("/result");
   };
 
@@ -241,8 +202,7 @@ export default function App() {
 
         {path === "/user" && isAuthed && <UserPage email={user!.email} />}
 
-        {/* Pass the auto-selected test case to Results */}
-        {path === "/result" && <GeoQueryResults query={userQuery} testCase={mockCase} />}
+        {path === "/result" && <GeoQueryResults query={userQuery} />}
 
         {path === "/history" && <HistoryPage />}
 
