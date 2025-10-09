@@ -7,7 +7,7 @@ from tenacity import sleep
 from tqdm import tqdm
 
 from app import create_app
-from app.services.routing_service import RoutingService
+from app.services import routing_service
 
 # Configure loguru
 logger.remove()
@@ -25,19 +25,15 @@ logger.add(
 )
 
 
-def run_sql(
-    row: pd.Series, routing_service: RoutingService, limit: int = 50
-) -> dict[str, Any]:
+def run_sql(row: pd.Series, limit: int = 50) -> dict[str, Any]:
     """Process a single SQL query"""
     try:
         question: str = row["Query"]
-        # result = routing_service.route(question, limit=limit)
+        result = routing_service.route(question, limit=limit)
         sleep(0.2)
         return {
-            # "generated_sql": result["outputs"]["step4"]["final_sql"],
-            # "token_consumed": result["token_consumed"],
-            "generated_sql": "sql:" + question,
-            "token_consumed": 119,
+            "generated_sql": result["outputs"]["step4"]["final_sql"],
+            "token_consumed": result["token_consumed"],
             "executed": True,
             "error": None,
         }
@@ -84,7 +80,6 @@ def process_sheet(
     sheet_data: pd.DataFrame,
     sheet_name: str,
     output_path: str,
-    routing_service: RoutingService,
 ) -> None:
     """Process a single Excel sheet"""
     logger.info(f"Processing sheet: {sheet_name}")
@@ -132,7 +127,7 @@ def process_sheet(
     for _, (_, row) in enumerate(progress_bar):
         try:
             # Process query
-            result = run_sql(row, routing_service)
+            result = run_sql(row)
 
             # Merge result with original row
             row_result = row.to_dict()
@@ -202,11 +197,6 @@ def bench_coverage_test(excel_filename: str) -> None:
             return
 
         try:
-            # Initialize routing service
-            logger.info("Initializing routing service...")
-            routing_service = RoutingService()
-            logger.success("Routing service initialized successfully")
-
             # Process Excel file
             with pd.ExcelFile(file_path) as excel_file:
                 sheet_names = excel_file.sheet_names
@@ -247,7 +237,6 @@ def bench_coverage_test(excel_filename: str) -> None:
                             sheet_data,
                             sheet_name,
                             output_path,
-                            routing_service,
                         )
                         processed_sheets += 1
 
