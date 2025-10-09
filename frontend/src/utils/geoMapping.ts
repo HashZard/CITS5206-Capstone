@@ -1,20 +1,20 @@
 /**
- * 地理映射回退系统
+ * Geographic mapping fallback system
  * 
- * 功能：将地名转换为GeoJSON几何图形（用于无几何数据时的地图渲染）
+ * Features: Convert place names to GeoJSON geometries (for map rendering when no geometry data)
  * 
- * 使用场景：
- * - 后端SQL未返回geometry字段
- * - 数据包含地理名称（continent/country/region）
- * - 需要在地图上可视化聚合数据
+ * Use cases:
+ * - Backend SQL does not return geometry fields
+ * - Data contains geographic names (continent/country/region)
+ * - Need to visualize aggregated data on map
  */
 
 /**
- * 简化的大陆/国家GeoJSON查找表
- * 注：这些是简化的边界框，用于在没有精确几何数据时提供可视化
+ * Simplified continent/country GeoJSON lookup table
+ * Note: These are simplified bounding boxes for visualization when no precise geometry data is available
  */
 const GEOGRAPHIC_LOOKUP: Record<string, any> = {
-  // 大陆（简化多边形）
+  // Continents (simplified polygons)
   'africa': {
     type: 'Polygon',
     coordinates: [[
@@ -58,7 +58,7 @@ const GEOGRAPHIC_LOOKUP: Record<string, any> = {
     ]]
   },
   
-  // 主要国家中心点（用于聚合数据）
+  // Major country centroids (for aggregated data)
   'china': { type: 'Point', coordinates: [104.1954, 35.8617] },
   'united states': { type: 'Point', coordinates: [-95.7129, 37.0902] },
   'india': { type: 'Point', coordinates: [78.9629, 20.5937] },
@@ -98,7 +98,7 @@ const GEOGRAPHIC_LOOKUP: Record<string, any> = {
   'nigeria': { type: 'Point', coordinates: [8.6753, 9.0820] },
   'kenya': { type: 'Point', coordinates: [37.9062, -0.0236] },
   
-  // 额外添加：示例数据中的国家
+  // Additional: Countries from sample data
   'ghana': { type: 'Point', coordinates: [-1.0232, 7.9465] },
   'guinea': { type: 'Point', coordinates: [-9.6966, 9.9456] },
   'uganda': { type: 'Point', coordinates: [32.2903, 1.3733] },
@@ -110,7 +110,7 @@ const GEOGRAPHIC_LOOKUP: Record<string, any> = {
 };
 
 /**
- * 检测数据中的地理字段
+ * Detect geographic fields in data
  */
 export function detectGeographicFields(data: Record<string, any>): {
   nameFields: string[];
@@ -118,7 +118,7 @@ export function detectGeographicFields(data: Record<string, any>): {
   lonField?: string;
   hasCoordinates: boolean;
 } {
-  // 检测地理名称字段（更宽松的匹配）
+  // Detect geographic name fields (more flexible matching)
   const nameFields = Object.keys(data).filter(k => {
     const lower = k.toLowerCase();
     return lower.includes('continent') || 
@@ -135,7 +135,7 @@ export function detectGeographicFields(data: Record<string, any>): {
            lower === 'formal_en';
   });
   
-  // 检测经纬度字段
+  // Detect latitude/longitude fields
   const latField = Object.keys(data).find(k => {
     const lower = k.toLowerCase();
     return lower === 'lat' || lower === 'latitude' || lower === 'y';
@@ -157,19 +157,19 @@ export function detectGeographicFields(data: Record<string, any>): {
 }
 
 /**
- * 根据地名查找预定义的GeoJSON几何图形
+ * Find predefined GeoJSON geometries by place name
  */
 function lookupGeometryByName(name: string): any | null {
   if (!name) return null;
   
   const normalized = name.toLowerCase().trim();
   
-  // 直接匹配
+  // Direct match
   if (GEOGRAPHIC_LOOKUP[normalized]) {
     return GEOGRAPHIC_LOOKUP[normalized];
   }
   
-  // 模糊匹配
+  // Fuzzy matching
   for (const [key, geometry] of Object.entries(GEOGRAPHIC_LOOKUP)) {
     if (normalized.includes(key) || key.includes(normalized)) {
       return geometry;
@@ -180,10 +180,10 @@ function lookupGeometryByName(name: string): any | null {
 }
 
 /**
- * 将普通JSON数据转换为GeoJSON FeatureCollection（回退方案）
+ * Convert regular JSON data to GeoJSON FeatureCollection (fallback solution)
  * 
- * @param data - 查询结果数组
- * @returns GeoJSON FeatureCollection 或 null
+ * @param data - Query result array
+ * @returns GeoJSON FeatureCollection or null
  */
 export function convertToGeoJSONFallback(data: any[]): any | null {
   if (!data || data.length === 0) return null;
@@ -205,7 +205,7 @@ export function convertToGeoJSONFallback(data: any[]): any | null {
     
     let geometry: any = null;
     
-    // 优先使用坐标
+    // Prioritize coordinates
     if (geoFields.hasCoordinates && geoFields.latField && geoFields.lonField) {
       geometry = {
         type: 'Point',
@@ -214,7 +214,7 @@ export function convertToGeoJSONFallback(data: any[]): any | null {
       console.log(`🗺️ Created Point geometry from lat/lon for:`, item[geoFields.nameFields[0]] || item.name || 'unknown');
     }
     
-    // 尝试从地名查找几何图形
+    // Try to find geometry from place names
     if (!geometry && geoFields.nameFields.length > 0) {
       for (const field of geoFields.nameFields) {
         const name = item[field];
@@ -228,7 +228,7 @@ export function convertToGeoJSONFallback(data: any[]): any | null {
       }
     }
     
-    // 如果找到了几何图形，创建Feature
+    // If geometry found, create Feature
     if (geometry) {
       features.push({
         type: 'Feature',
@@ -252,7 +252,7 @@ export function convertToGeoJSONFallback(data: any[]): any | null {
 }
 
 /**
- * 检查数据是否有地理信息
+ * Check if data has geographic information
  */
 export function hasAnyGeographicInfo(data: any[]): boolean {
   if (!data || data.length === 0) return false;

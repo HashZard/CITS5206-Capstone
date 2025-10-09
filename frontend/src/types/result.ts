@@ -1,20 +1,20 @@
 /**
- * Result Types 结果页面类型定义
+ * Result Types - Result page type definitions
  * 
- * 功能：定义查询结果相关的所有TypeScript类型
- * - RowItem: 单条查询结果项的数据结构
- * - ApiSuccess: 成功API响应的数据结构
- * - ApiError: 错误API响应的数据结构
- * - VisualizationMode: 地图可视化模式枚举
- * - ToastState: 提示组件状态
- * - MetaData: 查询元数据信息
+ * Features: Define all TypeScript types related to query results
+ * - RowItem: Data structure for single query result item
+ * - ApiSuccess: Data structure for successful API response
+ * - ApiError: Data structure for error API response
+ * - VisualizationMode: Map visualization mode enumeration
+ * - ToastState: Toast component state
+ * - MetaData: Query metadata information
  * 
- * 类型安全：
- * - 确保前后端数据一致性
- * - 提供完整的IDE智能提示
- * - 编译时类型检查
+ * Type safety:
+ * - Ensure frontend-backend data consistency
+ * - Provide complete IDE intelligent suggestions
+ * - Compile-time type checking
  * 
- * 使用场景：整个Result功能模块的类型基础
+ * Use cases: Type foundation for entire Result feature module
  */
 
 export interface RowItem {

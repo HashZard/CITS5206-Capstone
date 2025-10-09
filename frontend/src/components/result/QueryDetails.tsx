@@ -23,22 +23,44 @@ export const QueryDetails: React.FC<QueryDetailsProps> = ({ meta }) => {
   return (
     <div className="mt-10 bg-white border border-slate-200 rounded-2xl p-6">
       <h3 className="text-lg font-semibold text-slate-900 mb-3">Query Details</h3>
-      {meta.sql && (
-        <div className="mb-4">
-          <div className="text-xs font-medium text-slate-500 mb-1">SQL</div>
-          <pre className="text-xs bg-slate-50 rounded-xl p-4 overflow-auto border border-slate-100">
-            {meta.sql}
-          </pre>
-        </div>
-      )}
-      {meta.reasoning && (
+      
+      <div className="space-y-4">
         <div>
-          <div className="text-xs font-medium text-slate-500 mb-1">Reason</div>
-          <pre className="text-xs bg-slate-50 rounded-xl p-4 overflow-auto border border-slate-100 whitespace-pre-wrap">
-            {meta.reasoning}
-          </pre>
+          <div className="text-sm font-medium text-slate-700 mb-2">Process a user query and return results</div>
+          
+          <div className="mb-3">
+            <div className="text-xs font-medium text-slate-500 mb-1">Request JSON:</div>
+            <pre className="text-xs bg-slate-50 rounded-lg p-3 border border-slate-200">
+{`"question": "Highlight countries with extreme population rank (1 or >200)."`}
+            </pre>
+          </div>
+
+          <div className="mb-3">
+            <div className="text-xs font-medium text-slate-500 mb-1">Success Response (200):</div>
+            <pre className="text-xs bg-green-50 rounded-lg p-3 border border-green-200">
+{`{
+  "results": [...],
+  "columns": [...],
+  "sql": "${meta.sql || 'SELECT ...'}",
+  "is_fallback": ${meta.isFallback || false},
+  "model_used": "${meta.model || 'gpt-4o-mini'}",
+  "reasoning": [
+    ${meta.reasoning ? `"${meta.reasoning.split('\n\n').join('",\n    "')}"` : '"..."'}
+  ]
+}`}
+            </pre>
+          </div>
+
+          <div>
+            <div className="text-xs font-medium text-slate-500 mb-1">Error Response (400/500):</div>
+            <pre className="text-xs bg-red-50 rounded-lg p-3 border border-red-200">
+{`{
+  "detail": "Error message"
+}`}
+            </pre>
+          </div>
         </div>
-      )}
+      </div>
     </div>
   );
 };

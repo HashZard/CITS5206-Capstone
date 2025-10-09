@@ -75,8 +75,8 @@ function detectColumns(items: AnyRow[]): string[] {
   const presentPreferred = PREFERRED_ORDER.filter(k => keep.includes(k));
   const rest = keep.filter(k => !presentPreferred.includes(k)).sort((a, b) => a.localeCompare(b));
   
-  // ✅ 显示所有非几何字段（不限制列数）
-  // 只排除超大的几何字段，其他字段全部显示
+  // ✅ Show all non-geometry fields (no column limit)
+  // Only exclude oversized geometry fields, show all other fields
   const allVisibleColumns = [...presentPreferred, ...rest];
   return allVisibleColumns.length > 0 ? allVisibleColumns : keep;
 }
@@ -106,17 +106,17 @@ const ResultDataTable: React.FC<Props> = ({ items, title = "Data Table" }) => {
   const [showAllCols, setShowAllCols] = React.useState(false);
 
   const allColumns = React.useMemo(() => {
-    // ✅ "show all columns" 模式：显示所有后端字段，包括几何字段
+    // ✅ "show all columns" mode: display all backend fields, including geometry fields
     if (showAllCols) {
       const set = new Set<string>();
       for (const it of items) {
         for (const k of Object.keys(it)) {
-          set.add(k);  // 不排除任何字段！
+          set.add(k);  // Don't exclude any fields!
         }
       }
-      return Array.from(set).sort();  // 按字母排序
+      return Array.from(set).sort();  // Sort alphabetically
     }
-    // 默认模式：排除超大字段（几何等）
+    // Default mode: exclude oversized fields (geometry etc.)
     return detectColumns(items);
   }, [items, showAllCols]);
 

@@ -1,18 +1,18 @@
 /**
- * QueryService 查询服务类
+ * QueryService - Query service class
  * 
- * 功能：处理所有与后端API的交互和数据转换
- * - executeQuery: 执行地理查询，返回处理后的结果
- * - fetchResults: 发送HTTP请求到后端API
- * - extractCoordinates: 从地名提取近似坐标（回退方案）
- * - mapResultsToRowItems: 将API响应转换为前端数据格式
+ * Features: Handle all backend API interactions and data transformations
+ * - executeQuery: Execute geographic queries and return processed results
+ * - fetchResults: Send HTTP requests to backend API
+ * - extractCoordinates: Extract approximate coordinates from place names (fallback solution)
+ * - mapResultsToRowItems: Convert API responses to frontend data format
  * 
- * 数据处理功能：
- * - 统一数据格式转换
- * - 坐标提取和映射
- * - 错误处理和异常捕获
+ * Data processing features:
+ * - Unified data format conversion
+ * - Coordinate extraction and mapping
+ * - Error handling and exception capture
  * 
- * 使用场景：Result组件的数据层，封装所有API调用逻辑
+ * Use cases: Data layer for Result component, encapsulating all API call logic
  */
 
 import axios from "axios";
@@ -26,11 +26,11 @@ export class QueryService {
 
     try {
       const response = await axios.post<ApiSuccess>(
-        "/api/query",  // 使用相对路径，开发时通过 Vite 代理到 localhost:8000
+        "/api/query",  // Use relative path, proxied to localhost:8000 via Vite in development
         payload, 
         { 
           headers: { "Content-Type": "application/json" },
-          timeout: 60000, // 60秒超时，LLM 调用可能需要时间
+          timeout: 60000, // 60 second timeout, LLM calls may take time
         }
       );
 
@@ -87,13 +87,13 @@ export class QueryService {
 
   private static mapResultsToRowItems(results: any[]): RowItem[] {
     return results.map((item: any, idx: number) => {
-      // ✅ 完整保留后端原始数据，不删除、不重命名任何字段
+      // ✅ Preserve all backend raw data completely, no deletion or renaming of any fields
       const raw = { ...item };
       
-      // 🔍 仅用于 UI 显示的兜底提取（不影响 raw）
+      // 🔍 Fallback extraction for UI display only (does not affect raw)
       const coords = this.extractCoordinates(item);
       
-      // 📝 显示名称兜底（优先级顺序，不修改 raw）
+      // 📝 Display name fallback (priority order, does not modify raw)
       const displayName = item.name || item.name_en || item.formal_en || 
                           item.brk_name || item.country || item.country_name || 
                           item.featurecla || item.title || `Item ${idx + 1}`;
@@ -107,14 +107,14 @@ export class QueryService {
         lat: coords.lat || item.lat || item.latitude || item.y,
         lon: coords.lon || item.lon || item.lng || item.longitude || item.x,
         reason: item.reason || item.explanation || item.rationale || '',
-        raw  // ✅ 完整保留后端所有字段
+        raw  // ✅ Preserve all backend fields completely
       };
     });
   }
 
   public static async executeQuery(query: string): Promise<{
     items: RowItem[];
-    rawResults: any[];  // 新增：原始后端数据
+    rawResults: any[];  // New: Raw backend data
     meta: {
       sql?: string;
       reasoning?: string;
@@ -128,7 +128,7 @@ export class QueryService {
       throw new Error("Unexpected API response");
     }
 
-    // 🔍 可观测性：记录后端原始响应（开发环境）
+    // 🔍 Observability: Log backend raw response (development environment)
     if (process.env.NODE_ENV === 'development') {
       console.group('📊 Backend → Frontend Data Mapping');
       console.log('📥 Backend raw response:', {
@@ -147,7 +147,7 @@ export class QueryService {
       isFallback: data.is_fallback,
     };
 
-    // 🔍 可观测性：对比转换后数据（开发环境）
+    // 🔍 Observability: Compare converted data (development environment)
     if (process.env.NODE_ENV === 'development') {
       console.log('📤 Frontend mapped items:', {
         itemCount: items.length,
@@ -166,7 +166,7 @@ export class QueryService {
 
     return { 
       items, 
-      rawResults: data.results,  // 保存原始数据用于表格显示
+      rawResults: data.results,  // Save raw data for table display
       meta 
     };
   }

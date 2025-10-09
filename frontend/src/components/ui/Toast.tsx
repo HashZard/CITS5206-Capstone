@@ -1,13 +1,13 @@
 /**
- * Toast 提示组件
+ * Toast notification component
  * 
- * 功能：显示临时通知消息，自动消失
- * - 支持成功、错误等不同类型的提示
- * - 错误消息显示更长时间（6秒）
- * - 带有滑入滑出动画效果
- * - 固定在屏幕右下角显示
+ * Features: Display temporary notification messages that auto-dismiss
+ * - Support different types of notifications (success, error, etc.)
+ * - Error messages display for longer duration (6 seconds)
+ * - Slide in/out animation effects
+ * - Fixed display in bottom-right corner of screen
  * 
- * 使用场景：复制成功、操作完成、错误提示等
+ * Use cases: Copy success, operation completion, error notifications, etc.
  */
 
 import React from "react";
@@ -28,7 +28,7 @@ export const Toast: React.FC<ToastProps> = ({
 }) => {
   React.useEffect(() => {
     if (isVisible) {
-      // 错误消息显示更长时间
+      // Error messages display for longer duration
       const duration = type === 'error' ? 6000 : 3000;
       const t = setTimeout(onClose, duration);
       return () => clearTimeout(t);

@@ -49,27 +49,27 @@ interface GeoQueryResultsProps {
 
 const GeoQueryResults: React.FC<GeoQueryResultsProps> = ({ query }) => {
   const [items, setItems] = useState<RowItem[]>([]);
-  const [rawResults, setRawResults] = useState<any[]>([]);  // 原始后端数据
+  const [rawResults, setRawResults] = useState<any[]>([]);  // Raw backend data
   const [loading, setLoading] = useState(false);
   const [toast, setToast] = useState<ToastState>({ message: "", isVisible: false });
   const [meta, setMeta] = useState<MetaData>({});
-  const [hasGeometry, setHasGeometry] = useState(false);  // 🗺️ 几何探测结果
+  const [hasGeometry, setHasGeometry] = useState(false);  // 🗺️ Geometry detection result
 
   const showToast = (message: string, type: 'success' | 'error' = 'success') => 
     setToast({ message, isVisible: true, type });
   const hideToast = () => setToast({ message: "", isVisible: false });
 
-  // 🔍 几何字段探测函数（优先级顺序）
+  // 🔍 Geometry field detection function (priority order)
   const detectGeometry = (items: RowItem[]): boolean => {
     if (!items || items.length === 0) return false;
     
-    // 检查第一行是否有任何几何数据
+    // Check if first row has any geometry data
     const firstItem = items[0];
     const raw = firstItem?.raw;
     
     if (!raw) return false;
     
-    // 探测顺序：geometry (EWKB/WKB) → geom → center → lon+lat
+    // Detection order: geometry (EWKB/WKB) → geom → center → lon+lat
     const hasGeometryField = !!(
       raw.geometry || 
       raw.geom || 
@@ -106,20 +106,20 @@ const GeoQueryResults: React.FC<GeoQueryResultsProps> = ({ query }) => {
 
         const { items: resultItems, rawResults: resultRawData, meta: resultMeta } = queryResult;
         
-        // 🔍 探测几何字段
+        // 🔍 Detect geometry fields
         const hasGeo = detectGeometry(resultItems);
         
-        // 🗺️ 地理映射回退系统
+        // 🗺️ Geographic mapping fallback system
         let enhancedItems = resultItems;
         if (!hasGeo) {
           console.warn('⚠️ No real geometry detected, attempting geographic name mapping...');
           
-          // 检查是否有地理信息（地名或坐标）
+          // Check if there is geographic information (place names or coordinates)
           if (hasAnyGeographicInfo(resultRawData)) {
             const fallbackGeoJSON = convertToGeoJSONFallback(resultRawData);
             
             if (fallbackGeoJSON && fallbackGeoJSON.features) {
-              // 将映射的几何数据添加到 items
+              // Add mapped geometry data to items
               enhancedItems = resultItems.map((item, index) => {
                 const feature = fallbackGeoJSON.features[index];
                 if (feature && feature.geometry) {
@@ -127,7 +127,7 @@ const GeoQueryResults: React.FC<GeoQueryResultsProps> = ({ query }) => {
                     ...item,
                     raw: {
                       ...item.raw,
-                      _mapped_geometry: feature.geometry  // 使用特殊字段名避免冲突
+                      _mapped_geometry: feature.geometry  // Use special field name to avoid conflicts
                     }
                   };
                 }
@@ -135,7 +135,7 @@ const GeoQueryResults: React.FC<GeoQueryResultsProps> = ({ query }) => {
               });
               
               console.log(`✅ Enhanced ${enhancedItems.length} items with mapped geometries`);
-              setHasGeometry(true);  // 标记为有几何数据（映射的）
+              setHasGeometry(true);  // Mark as having geometry data (mapped)
             } else {
               console.warn('⚠️ Geographic mapping failed, map will be hidden');
               setHasGeometry(false);
@@ -150,16 +150,16 @@ const GeoQueryResults: React.FC<GeoQueryResultsProps> = ({ query }) => {
         }
         
         setItems(enhancedItems);
-        setRawResults(resultRawData);  // 保存原始数据
+        setRawResults(resultRawData);  // Save raw data
         setMeta(resultMeta);
       } catch (error: any) {
         console.error('❌ Query execution failed:', error);
         
-        // 构建详细的错误消息
+        // Build detailed error message
         let msg = "Query failed. Please try again.";
         
         if (error?.response) {
-          // HTTP 错误响应
+          // HTTP error response
           const status = error.response.status;
           const detail = (error.response.data as ApiError)?.detail;
           const code = (error.response.data as any)?.code;
@@ -172,21 +172,21 @@ const GeoQueryResults: React.FC<GeoQueryResultsProps> = ({ query }) => {
             msg = `Server error ${status}: ${error.response.statusText || 'Unknown error'}`;
           }
           
-          // 特殊处理 500 错误
+          // Special handling for 500 errors
           if (status === 500) {
             msg += "\n\nPlease check:\n• Backend server is running\n• Database connection is available\n• LLM service is configured";
           }
         } else if (error?.request) {
-          // 请求发送了但没有收到响应
+          // Request was sent but no response received
           msg = "No response from server. Please check:\n• Backend is running on port 8000\n• Network connection is available";
         } else {
-          // 其他错误
+          // Other errors
           msg = error?.message || msg;
         }
         
         showToast(msg, 'error');
         setItems([]);
-        setRawResults([]);  // 清空原始数据
+        setRawResults([]);  // Clear raw data
         setMeta({});
       } finally {
         setLoading(false);
@@ -266,7 +266,7 @@ const GeoQueryResults: React.FC<GeoQueryResultsProps> = ({ query }) => {
         </div>
       )}
 
-      {/* 🗺️ 无几何数据提示 - 优雅降级 */}
+      {/* 🗺️ No geometry data notice - graceful degradation */}
       {items.length >= 1 && !hasGeometry && (
         <div className="rounded-2xl border border-slate-200 bg-slate-50 p-6 mb-12">
           <div className="text-center text-slate-600">
@@ -279,7 +279,7 @@ const GeoQueryResults: React.FC<GeoQueryResultsProps> = ({ query }) => {
         </div>
       )}
 
-      {/* Smart map visualization - 🔍 条件渲染：仅当有几何数据时显示 */}
+      {/* Smart map visualization - 🔍 Conditional rendering: only show when geometry data exists */}
       {items.length >= 1 && hasGeometry && (
         <div className="rounded-2xl border border-slate-200 bg-slate-50 dark:bg-slate-50 p-3 sm:p-4 relative mb-12">
           {/* Title */}

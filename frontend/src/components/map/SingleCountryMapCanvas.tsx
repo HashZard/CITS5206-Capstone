@@ -1,15 +1,15 @@
 /**
- * SingleCountryMapCanvas 单国家地图画布组件
+ * SingleCountryMapCanvas - Single country map canvas component
  * 
- * 功能：为单个国家/地区创建专属地图视图
- * - 自动计算几何边界，优化视图缩放和居中
- * - 渲染国家的真实边界形状（非圆圈）
- * - 智能投影系统，确保最佳显示效果
- * - 数据驱动的颜色编码（面积/GDP/大洲）
- * - 显示详细标签：国家名、面积、GDP、大洲
- * - 自适应网格坐标系
+ * Features: Create dedicated map view for a single country/region
+ * - Automatically calculate geometric boundaries, optimize view scaling and centering
+ * - Render real boundary shapes of countries (not circles)
+ * - Smart projection system, ensure optimal display effects
+ * - Data-driven color coding (area/GDP/continent)
+ * - Display detailed labels: country name, area, GDP, continent
+ * - Adaptive grid coordinate system
  * 
- * 使用场景：国家卡片内的小地图，展示该国家的详细地理形状
+ * Use cases: Mini map within country cards, showing detailed geographic shape of the country
  */
 
 import React, { useEffect, useMemo, useRef } from "react";
@@ -35,7 +35,7 @@ export const SingleCountryMapCanvas: React.FC<SingleCountryMapCanvasProps> = ({
   const canvasRef = useRef<HTMLCanvasElement | null>(null);
   const dpr = typeof window !== "undefined" ? window.devicePixelRatio || 1 : 1;
   
-  // 处理几何数据
+  // Process geometry data
   const processedItem = useMemo(() => {
     if (item.raw?.geometry) {
       const geometry = parseWKBGeometry(item.raw.geometry);
@@ -50,12 +50,12 @@ export const SingleCountryMapCanvas: React.FC<SingleCountryMapCanvasProps> = ({
     return item;
   }, [item]);
 
-  // 渲染单国家地图
+  // Render single country map
   const renderSingleCountryMap = () => {
     const canvas = canvasRef.current;
     if (!canvas) return;
     
-    // 以实际CSS尺寸为准，防止形变；父容器控制style宽高
+    // Use actual CSS dimensions to prevent distortion; parent container controls style width/height
     const rect = canvas.getBoundingClientRect();
     const viewW = Math.max(1, Math.floor(rect.width) || width);
     const viewH = Math.max(1, Math.floor(rect.height) || height);
@@ -68,42 +68,42 @@ export const SingleCountryMapCanvas: React.FC<SingleCountryMapCanvasProps> = ({
     ctx.scale(dpr, dpr);
     ctx.clearRect(0, 0, viewW, viewH);
     
-    // 背景
+    // Background
     ctx.fillStyle = "#F8FAFC"; // slate-50
     ctx.fillRect(0, 0, viewW, viewH);
     
     if (processedItem.geometry) {
-      // 计算统一fit变换，保证完整显示+留白
+      // Calculate unified fit transformation, ensure complete display + padding
       const { scale, tx, ty, normalizedGeometry } = getFitTransform(processedItem.geometry, { width: viewW, height: viewH, padding: 14 });
 
-      // 绘制国家几何边界
+      // Draw country geometric boundaries
         const area = processedItem.raw?.area_km2 || 0;
         const gdp = processedItem.raw?.gdp_md || 0;
         const continent = processedItem.raw?.continent || '';
         
-        // 根据数据类型选择颜色
-        let fillStyle = 'rgba(124, 58, 237, 0.6)'; // 默认紫色
+        // Select color based on data type
+        let fillStyle = 'rgba(124, 58, 237, 0.6)'; // Default purple
         
         if (area > 0) {
-          // 面积模式：蓝色到红色
-          const maxArea = 17000000; // 大约俄罗斯的面积
+          // Area mode: blue to red
+          const maxArea = 17000000; // Approximately Russia's area
           const intensity = Math.min(area / maxArea, 1);
           const red = Math.floor(255 * intensity);
           const blue = Math.floor(255 * (1 - intensity));
           fillStyle = `rgba(${red}, 100, ${blue}, 0.7)`;
         } else if (gdp > 0) {
-          // GDP模式：绿色到红色
-          const maxGDP = 25000000; // 大约美国的GDP
+          // GDP mode: green to red
+          const maxGDP = 25000000; // Approximately US GDP
           const intensity = Math.min(gdp / maxGDP, 1);
           const red = Math.floor(255 * intensity);
           const green = Math.floor(255 * (1 - intensity));
           fillStyle = `rgba(${red}, ${green}, 0, 0.7)`;
         } else if (continent) {
-          // 大洲模式
+          // Continent mode
           fillStyle = continentColors[continent] || 'rgba(124, 58, 237, 0.6)';
         }
         
-        // 在未变换坐标下投影到 width/height 空间，然后整体应用 fit 变换
+        // Project to width/height space under untransformed coordinates, then apply overall fit transformation
         const projectCoord = (coord: [number, number]): [number, number] => {
           const [lon, lat] = coord;
           const x = ((lon + 180) / 360) * viewW;
@@ -114,23 +114,23 @@ export const SingleCountryMapCanvas: React.FC<SingleCountryMapCanvasProps> = ({
         ctx.save();
         ctx.translate(tx, ty);
         ctx.scale(scale, scale);
-        // 细线宽，随DPR调整；并使用偶数-奇数填充保证洞
+        // Thin line width, adjust with DPR; use even-odd fill to ensure holes
         const strokeW = Math.max(1 / dpr, 0.75);
         ctx.lineWidth = strokeW;
-        // 自定义填充采用 evenodd：在工具函数内部执行 ctx.fill()，此处不重复
+        // Custom fill uses evenodd: ctx.fill() executed inside utility function, no duplication here
         drawGeometryWithProjection(ctx, normalizedGeometry, fillStyle, '#374151', projectCoord);
-        // 调试框
+        // Debug frame
         if (debugFrames) {
-          // 内容框
+          // Content frame
           ctx.strokeStyle = '#22c55e';
           ctx.strokeRect((14), (14), (viewW - 28), (viewH - 28));
         }
         ctx.restore();
         
-        // 添加标签信息
+        // Add label information
         renderLabels(ctx, processedItem, area, gdp, continent, viewW);
     } else {
-      // 没有几何数据时显示占位符
+      // Show placeholder when no geometry data
       ctx.fillStyle = "#94A3B8"; // slate-400
       ctx.font = "16px system-ui";
       ctx.textAlign = "center";
@@ -139,7 +139,7 @@ export const SingleCountryMapCanvas: React.FC<SingleCountryMapCanvasProps> = ({
     }
   };
 
-  // 渲染标签信息
+  // Render label information
   const renderLabels = (
     ctx: CanvasRenderingContext2D,
     item: RowItem,
@@ -160,7 +160,7 @@ export const SingleCountryMapCanvas: React.FC<SingleCountryMapCanvasProps> = ({
     ctx.strokeText(item.name || 'Unknown', labelX, labelY);
     ctx.fillText(item.name || 'Unknown', labelX, labelY);
     
-    // 数据信息
+    // Data information
     ctx.font = '11px system-ui';
     labelY += 20;
     
