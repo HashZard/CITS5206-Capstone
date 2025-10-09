@@ -64,8 +64,13 @@ export const AdvancedMapCanvas = React.forwardRef<
   // Preprocess geometries (centroid etc.)
   const processedItems = useMemo(() => {
     return items.map((item) => {
-      if (item.raw?.geometry) {
-        const geometry = parseWKBGeometry(item.raw.geometry);
+      // 🗺️ 优先使用真实几何，回退到映射几何
+      const rawGeometry = item.raw?.geometry || item.raw?.geom;
+      const mappedGeometry = item.raw?._mapped_geometry;
+      
+      if (rawGeometry) {
+        // 真实几何数据（WKB格式）
+        const geometry = parseWKBGeometry(rawGeometry);
         const centroid = geometry ? calculateOptimalLabelAnchor(geometry) : null;
         return {
           ...item,
@@ -73,7 +78,22 @@ export const AdvancedMapCanvas = React.forwardRef<
           lat: centroid?.[0] ?? item.lat,
           lon: centroid?.[1] ?? item.lon,
         };
+      } else if (mappedGeometry) {
+        // 映射的几何数据（已经是GeoJSON格式）
+        const centroid = mappedGeometry.type === 'Point' 
+          ? [mappedGeometry.coordinates[1], mappedGeometry.coordinates[0]]
+          : calculateOptimalLabelAnchor(mappedGeometry);
+        
+        console.log(`🗺️ Using mapped geometry for ${item.name}:`, mappedGeometry.type);
+        
+        return {
+          ...item,
+          geometry: mappedGeometry,  // 直接使用GeoJSON格式
+          lat: centroid?.[0] ?? item.lat,
+          lon: centroid?.[1] ?? item.lon,
+        };
       }
+      
       return item;
     });
   }, [items]);

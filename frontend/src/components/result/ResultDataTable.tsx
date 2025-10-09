@@ -74,9 +74,11 @@ function detectColumns(items: AnyRow[]): string[] {
   // Preferred columns first (if present), then alphabetical of the rest
   const presentPreferred = PREFERRED_ORDER.filter(k => keep.includes(k));
   const rest = keep.filter(k => !presentPreferred.includes(k)).sort((a, b) => a.localeCompare(b));
-  // Compact default: limit to ~12 columns to keep it readable
-  const compact = [...presentPreferred, ...rest].slice(0, 12);
-  return compact.length ? compact : rest.slice(0, 12);
+  
+  // ✅ 显示所有非几何字段（不限制列数）
+  // 只排除超大的几何字段，其他字段全部显示
+  const allVisibleColumns = [...presentPreferred, ...rest];
+  return allVisibleColumns.length > 0 ? allVisibleColumns : keep;
 }
 
 function makeCSV(columns: string[], rows: AnyRow[]): string {
@@ -104,16 +106,17 @@ const ResultDataTable: React.FC<Props> = ({ items, title = "Data Table" }) => {
   const [showAllCols, setShowAllCols] = React.useState(false);
 
   const allColumns = React.useMemo(() => {
-    // if user wants full schema, compute all primitive-ish keys union (many columns)
+    // ✅ "show all columns" 模式：显示所有后端字段，包括几何字段
     if (showAllCols) {
       const set = new Set<string>();
       for (const it of items) {
         for (const k of Object.keys(it)) {
-          if (!EXCLUDE_KEYS.has(k)) set.add(k);
+          set.add(k);  // 不排除任何字段！
         }
       }
-      return Array.from(set);
+      return Array.from(set).sort();  // 按字母排序
     }
+    // 默认模式：排除超大字段（几何等）
     return detectColumns(items);
   }, [items, showAllCols]);
 

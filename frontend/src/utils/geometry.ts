@@ -36,24 +36,39 @@ export interface GeoBounds {
   maxLon: number;
 }
 
-// WKB几何数据解析器
-export const parseWKBGeometry = (wkbHex: string) => {
+// WKB几何数据解析器 - 支持 PostGIS bytea 格式
+export const parseWKBGeometry = (wkbData: string | Buffer) => {
   try {
-    console.log('Parsing WKB hex string, length:', wkbHex.length);
-    const buffer = Buffer.from(wkbHex, 'hex');
-    console.log('Created buffer, length:', buffer.length);
+    let wkbHex = wkbData;
+    
+    // 处理 PostGIS 的 bytea 格式（\x 前缀）
+    if (typeof wkbHex === 'string' && wkbHex.startsWith('\\x')) {
+      wkbHex = wkbHex.substring(2); // 移除 \x
+    }
+    
+    // 处理 0x 前缀
+    if (typeof wkbHex === 'string' && wkbHex.startsWith('0x')) {
+      wkbHex = wkbHex.substring(2);
+    }
+    
+    console.log('📍 Parsing WKB geometry, hex length:', typeof wkbHex === 'string' ? wkbHex.length : wkbHex.byteLength);
+    
+    const buffer = typeof wkbHex === 'string' ? Buffer.from(wkbHex, 'hex') : wkbHex;
+    console.log('✅ Buffer created, length:', buffer.length);
     
     // 使用wkx解析WKB
     const geometry = wkx.Geometry.parse(buffer);
-    console.log('Parsed WKB geometry type:', geometry.constructor.name);
+    console.log('✅ Parsed geometry type:', geometry.constructor.name);
     
     // 转换为GeoJSON格式
     const geoJSON = (geometry as any).toGeoJSON();
-    console.log('Converted to GeoJSON:', (geoJSON as any).type);
+    console.log('✅ GeoJSON type:', (geoJSON as any).type);
     
     return geoJSON;
   } catch (error) {
-    console.warn('Failed to parse WKB geometry:', error);
+    console.warn('❌ Failed to parse WKB geometry:', error);
+    console.warn('   Input type:', typeof wkbData);
+    console.warn('   Input sample:', typeof wkbData === 'string' ? wkbData.substring(0, 100) : 'Buffer');
     return null;
   }
 };

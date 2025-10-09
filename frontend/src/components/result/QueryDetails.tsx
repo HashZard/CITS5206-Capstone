@@ -33,7 +33,7 @@ export const QueryDetails: React.FC<QueryDetailsProps> = ({ meta }) => {
       )}
       {meta.reasoning && (
         <div>
-          <div className="text-xs font-medium text-slate-500 mb-1">Reasoning</div>
+          <div className="text-xs font-medium text-slate-500 mb-1">Reason</div>
           <pre className="text-xs bg-slate-50 rounded-xl p-4 overflow-auto border border-slate-100 whitespace-pre-wrap">
             {meta.reasoning}
           </pre>

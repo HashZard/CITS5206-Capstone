@@ -47,6 +47,7 @@ export type VisualizationMode = 'area' | 'countries' | 'economy' | 'terrain' | '
 export interface ToastState {
   message: string;
   isVisible: boolean;
+  type?: 'success' | 'error';
 }
 
 export interface MetaData {

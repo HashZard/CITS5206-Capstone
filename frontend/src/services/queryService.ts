@@ -11,7 +11,6 @@
  * - 统一数据格式转换
  * - 坐标提取和映射
  * - 错误处理和异常捕获
- * - 支持测试用例参数
  * 
  * 使用场景：Result组件的数据层，封装所有API调用逻辑
  */
@@ -20,17 +19,45 @@ import axios from "axios";
 import { ApiSuccess, RowItem } from '@/types/result';
 
 export class QueryService {
-  private static async fetchResults(query: string, testCase?: number): Promise<ApiSuccess> {
-    const payload: any = { question: query };
-    if (typeof testCase === "number") payload.test_case = testCase;
+  private static async fetchResults(query: string): Promise<ApiSuccess> {
+    const payload = { question: query };
 
-    const response = await axios.post<ApiSuccess>(
-      "http://localhost:8000/api/query/mock", 
-      payload, 
-      { headers: { "Content-Type": "application/json" } }
-    );
+    console.log('🚀 Sending request to /api/query with payload:', payload);
 
-    return response.data;
+    try {
+      const response = await axios.post<ApiSuccess>(
+        "/api/query",  // 使用相对路径，开发时通过 Vite 代理到 localhost:8000
+        payload, 
+        { 
+          headers: { "Content-Type": "application/json" },
+          timeout: 60000, // 60秒超时，LLM 调用可能需要时间
+        }
+      );
+
+      console.log('✅ Received response:', {
+        status: response.status,
+        hasResults: !!response.data?.results,
+        resultCount: response.data?.results?.length,
+        model: response.data?.model_used,
+        isFallback: response.data?.is_fallback,
+      });
+
+      return response.data;
+    } catch (error: any) {
+      console.error('❌ API request failed:', {
+        message: error.message,
+        status: error.response?.status,
+        statusText: error.response?.statusText,
+        data: error.response?.data,
+        config: {
+          url: error.config?.url,
+          method: error.config?.method,
+          headers: error.config?.headers,
+          data: error.config?.data,
+        }
+      });
+      throw error;
+    }
   }
 
   private static extractCoordinates(item: any) {
@@ -60,24 +87,34 @@ export class QueryService {
 
   private static mapResultsToRowItems(results: any[]): RowItem[] {
     return results.map((item: any, idx: number) => {
+      // ✅ 完整保留后端原始数据，不删除、不重命名任何字段
+      const raw = { ...item };
+      
+      // 🔍 仅用于 UI 显示的兜底提取（不影响 raw）
       const coords = this.extractCoordinates(item);
+      
+      // 📝 显示名称兜底（优先级顺序，不修改 raw）
+      const displayName = item.name || item.name_en || item.formal_en || 
+                          item.brk_name || item.country || item.country_name || 
+                          item.featurecla || item.title || `Item ${idx + 1}`;
+      
       return {
-        id: String(item.ne_id || item.id || idx + 1),
-        name: item.name_en || item.name || item.country || item.country_name || item.featurecla,
-        population: item.population || item.pop,
+        id: String(item.gid || item.ne_id || item.id || idx + 1),
+        name: displayName,
+        population: item.population || item.pop || item.pop_est,
         incomeGroup: item.income_group || item.incomegroup || item.income,
-        region: item.region || item.featurecla,
+        region: item.region || item.continent || item.featurecla,
         lat: coords.lat || item.lat || item.latitude || item.y,
         lon: coords.lon || item.lon || item.lng || item.longitude || item.x,
-        reason: item.reason || item.explanation || item.rationale || 
-          `Area: ${item.area_km2 ? Math.round(item.area_km2).toLocaleString() + ' km²' : 'N/A'}`,
-        raw: item
+        reason: item.reason || item.explanation || item.rationale || '',
+        raw  // ✅ 完整保留后端所有字段
       };
     });
   }
 
-  public static async executeQuery(query: string, testCase?: number): Promise<{
+  public static async executeQuery(query: string): Promise<{
     items: RowItem[];
+    rawResults: any[];  // 新增：原始后端数据
     meta: {
       sql?: string;
       reasoning?: string;
@@ -85,10 +122,21 @@ export class QueryService {
       isFallback?: boolean;
     };
   }> {
-    const data = await this.fetchResults(query, testCase);
+    const data = await this.fetchResults(query);
     
     if (!data.results || !Array.isArray(data.results)) {
       throw new Error("Unexpected API response");
+    }
+
+    // 🔍 可观测性：记录后端原始响应（开发环境）
+    if (process.env.NODE_ENV === 'development') {
+      console.group('📊 Backend → Frontend Data Mapping');
+      console.log('📥 Backend raw response:', {
+        resultCount: data.results.length,
+        sampleRow: data.results[0],
+        allKeys: data.results[0] ? Object.keys(data.results[0]) : [],
+        sql: data.sql,
+      });
     }
 
     const items = this.mapResultsToRowItems(data.results);
@@ -99,6 +147,27 @@ export class QueryService {
       isFallback: data.is_fallback,
     };
 
-    return { items, meta };
+    // 🔍 可观测性：对比转换后数据（开发环境）
+    if (process.env.NODE_ENV === 'development') {
+      console.log('📤 Frontend mapped items:', {
+        itemCount: items.length,
+        sampleItem: items[0],
+        rawKeysPreserved: items[0]?.raw ? Object.keys(items[0].raw).length : 0,
+        originalKeysCount: data.results[0] ? Object.keys(data.results[0]).length : 0,
+      });
+      console.log('✅ Field preservation check:', 
+        items[0]?.raw && data.results[0] && 
+        Object.keys(items[0].raw).length === Object.keys(data.results[0]).length
+          ? 'PASS - All fields preserved'
+          : '❌ FAIL - Fields missing!'
+      );
+      console.groupEnd();
+    }
+
+    return { 
+      items, 
+      rawResults: data.results,  // 保存原始数据用于表格显示
+      meta 
+    };
   }
 }
