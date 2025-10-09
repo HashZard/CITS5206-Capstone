@@ -63,7 +63,7 @@ import pytest
 
 from app import create_app
 from app.extensions import llm_service
-from app.services.routing_service import RoutingService
+from app.services import routing_service
 
 
 def _print_result(payload: dict[str, Any]) -> None:
@@ -126,8 +126,7 @@ def test_routing_with_real_llm():
                 start_time = time.time()
 
                 # start routing
-                svc = RoutingService()
-                result = svc.route(user_question, limit=50)
+                result = routing_service.route(user_question, limit=50)
 
                 # log the end time
                 end_time = time.time()
@@ -245,8 +244,6 @@ def test_routing_step_by_step():
     app = create_app("development")
 
     with app.app_context():
-        svc = RoutingService()
-
         try:
             # 测试 Step 1: L1 选择
             print("\n=== Step 1: L1 选择 ===")
@@ -264,7 +261,7 @@ def test_routing_step_by_step():
                 for x in l1_objs
             ]
 
-            s1_sys, s1_user = svc._build_step1_prompt(user_question, l1_list)
+            s1_sys, s1_user = routing_service.build_step1_prompt(user_question, l1_list)
             r1 = llm_service.generate(message=s1_user, system_prompt=s1_sys)
             d1 = json.loads(r1.content)
 
@@ -298,7 +295,7 @@ def test_routing_step_by_step():
                     ]
                 )
 
-            s2_sys, s2_user = svc._build_step2_prompt(user_question, l2_all)
+            s2_sys, s2_user = routing_service.build_step2_prompt(user_question, l2_all)
             r2 = llm_service.generate(message=s2_user, system_prompt=s2_sys)
             d2 = json.loads(r2.content)
 
@@ -334,7 +331,7 @@ def test_routing_step_by_step():
                     ]
                 )
 
-            s3_sys, s3_user = svc._build_step3_prompt(user_question, l3_all)
+            s3_sys, s3_user = routing_service.build_step3_prompt(user_question, l3_all)
             r3 = llm_service.generate(message=s3_user, system_prompt=s3_sys)
             d3 = json.loads(r3.content)
 
@@ -355,9 +352,9 @@ def test_routing_step_by_step():
             table_name = l3_selected.get("table_name")
 
             if table_name:
-                l3_schema = svc._fetch_table_schema_dict(table_name)
+                l3_schema = routing_service.fetch_table_schema_dict(table_name)
                 constraints = {"limit": 100}
-                s4_sys, s4_user = svc._build_step4_prompt(
+                s4_sys, s4_user = routing_service.build_step4_prompt(
                     user_question, l3_selected, l3_schema, constraints
                 )
                 r4 = llm_service.generate(message=s4_user, system_prompt=s4_sys)

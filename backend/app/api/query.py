@@ -4,8 +4,7 @@ import re
 from flask import Blueprint, current_app, jsonify, request
 
 from app.models.dto import QueryIn, QueryOut
-from app.services import sql_service
-from app.services.routing_service import RoutingService
+from app.services import sql_service, routing_service
 
 query_bp = Blueprint("query", __name__)
 
@@ -39,8 +38,7 @@ def geo_reason():
         qin.validate()
 
         question = qin.question.strip()
-        rs = RoutingService()
-        geo_reason_result = rs.route(user_question=question)
+        geo_reason_result = routing_service.route(user_question=question)
         step3_out = geo_reason_result["outputs"]["step3"]
         reasons = step3_out.get("reasons", [])
         step4_out = geo_reason_result["outputs"]["step4"]
