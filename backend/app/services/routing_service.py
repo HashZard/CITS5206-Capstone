@@ -195,8 +195,7 @@ def build_step4_prompt(
             - Correct: `ST_Area(geom::geography)`
             - Correct: `ST_DWithin(geom_a::geography, geom_b::geography, 1000)` (for a 1km distance)
         - **Do not use `ST_Transform`** to a projected CRS (like 3857) for the purpose of calculation. Use the `geography` type instead.
-        - **Ensure precision in calculations.** When performing division or rounding on the output of a spatial function like `ST_Area`, cast the result to `numeric` to avoid floating-point inaccuracies.
-            - Example: `ROUND(ST_Area(geom::geography)::numeric / 1000000.0, 2) AS area_in_km2`
+        - **Ensure to use type casts when necessary.** For example, to avoid integer out of range, add ::bigint in `ST_Area(geometry::geography) < 5000::bigint * 1000000::bigint`; or when performing division or rounding on the output of a spatial function like `ST_Area`, cast the result to `numeric` to avoid floating-point inaccuracies.
         
         Example of correct JSON:
         {
