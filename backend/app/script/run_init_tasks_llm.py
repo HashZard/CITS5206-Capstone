@@ -37,7 +37,7 @@ init_tasks 三/四步 LLM 流水线执行脚本（中文说明）
 
 示例：
 - 单表（development 配置）
-  .venv/bin/python -m app.script.run_init_tasks_llm --table ne_10m_time_zones --config development
+  .venv/bin/python -m app.script.run_init_tasks_llm --table ne_10m_lakes_historic --config development
 
 - 批量（处理所有待完成表）
   .venv/bin/python -m app.script.run_init_tasks_llm --pending
