@@ -74,9 +74,11 @@ function detectColumns(items: AnyRow[]): string[] {
   // Preferred columns first (if present), then alphabetical of the rest
   const presentPreferred = PREFERRED_ORDER.filter(k => keep.includes(k));
   const rest = keep.filter(k => !presentPreferred.includes(k)).sort((a, b) => a.localeCompare(b));
-  // Compact default: limit to ~12 columns to keep it readable
-  const compact = [...presentPreferred, ...rest].slice(0, 12);
-  return compact.length ? compact : rest.slice(0, 12);
+  
+  // ✅ Show all non-geometry fields (no column limit)
+  // Only exclude oversized geometry fields, show all other fields
+  const allVisibleColumns = [...presentPreferred, ...rest];
+  return allVisibleColumns.length > 0 ? allVisibleColumns : keep;
 }
 
 function makeCSV(columns: string[], rows: AnyRow[]): string {
@@ -104,16 +106,17 @@ const ResultDataTable: React.FC<Props> = ({ items, title = "Data Table" }) => {
   const [showAllCols, setShowAllCols] = React.useState(false);
 
   const allColumns = React.useMemo(() => {
-    // if user wants full schema, compute all primitive-ish keys union (many columns)
+    // ✅ "show all columns" mode: display all backend fields, including geometry fields
     if (showAllCols) {
       const set = new Set<string>();
       for (const it of items) {
         for (const k of Object.keys(it)) {
-          if (!EXCLUDE_KEYS.has(k)) set.add(k);
+          set.add(k);  // Don't exclude any fields!
         }
       }
-      return Array.from(set);
+      return Array.from(set).sort();  // Sort alphabetically
     }
+    // Default mode: exclude oversized fields (geometry etc.)
     return detectColumns(items);
   }, [items, showAllCols]);
 

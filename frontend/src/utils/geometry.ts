@@ -1,30 +1,30 @@
 /**
- * Geometry 几何数据处理工具库
+ * Geometry - Geometric data processing utility library
  * 
- * 功能：处理地理几何数据的核心工具集
- * - parseWKBGeometry: 解析WKB（Well-Known Binary）几何数据为GeoJSON
- * - calculateCentroid: 计算几何体的质心坐标
- * - getBounds: 计算几何体的边界框
- * - drawGeometry: 在Canvas上绘制GeoJSON几何体
- * - drawGeometryWithProjection: 使用自定义投影绘制几何体
+ * Features: Core toolset for processing geographic geometric data
+ * - parseWKBGeometry: Parse WKB (Well-Known Binary) geometric data to GeoJSON
+ * - calculateCentroid: Calculate centroid coordinates of geometric shapes
+ * - getBounds: Calculate bounding box of geometric shapes
+ * - drawGeometry: Draw GeoJSON geometries on Canvas
+ * - drawGeometryWithProjection: Draw geometries with custom projection
  * 
- * 支持的几何类型：
- * - Point: 点
- * - Polygon: 多边形
- * - MultiPolygon: 多个多边形
+ * Supported geometry types:
+ * - Point: Point
+ * - Polygon: Polygon
+ * - MultiPolygon: Multiple polygons
  * 
- * 技术实现：
- * - 使用wkx库解析WKB格式
- * - Buffer polyfill确保浏览器兼容性
- * - 支持复杂的多边形（含内环挖空）
+ * Technical implementation:
+ * - Use wkx library to parse WKB format
+ * - Buffer polyfill ensures browser compatibility
+ * - Support complex polygons (with inner ring holes)
  * 
- * 使用场景：地图渲染、坐标计算、几何数据转换
+ * Use cases: Map rendering, coordinate calculation, geometric data conversion
  */
 
 import { Buffer } from "buffer";
 import * as wkx from "wkx";
 
-// 确保Buffer在全局可用
+// Ensure Buffer is globally available
 if (typeof window !== 'undefined') {
   (window as any).Buffer = Buffer;
 }
@@ -36,29 +36,44 @@ export interface GeoBounds {
   maxLon: number;
 }
 
-// WKB几何数据解析器
-export const parseWKBGeometry = (wkbHex: string) => {
+// WKB geometry data parser - supports PostGIS bytea format
+export const parseWKBGeometry = (wkbData: string | Buffer) => {
   try {
-    console.log('Parsing WKB hex string, length:', wkbHex.length);
-    const buffer = Buffer.from(wkbHex, 'hex');
-    console.log('Created buffer, length:', buffer.length);
+    let wkbHex = wkbData;
     
-    // 使用wkx解析WKB
+    // Handle PostGIS bytea format (\x prefix)
+    if (typeof wkbHex === 'string' && wkbHex.startsWith('\\x')) {
+      wkbHex = wkbHex.substring(2); // Remove \x
+    }
+    
+    // Handle 0x prefix
+    if (typeof wkbHex === 'string' && wkbHex.startsWith('0x')) {
+      wkbHex = wkbHex.substring(2);
+    }
+    
+    console.log('📍 Parsing WKB geometry, hex length:', typeof wkbHex === 'string' ? wkbHex.length : wkbHex.byteLength);
+    
+    const buffer = typeof wkbHex === 'string' ? Buffer.from(wkbHex, 'hex') : wkbHex;
+    console.log('✅ Buffer created, length:', buffer.length);
+    
+    // Use wkx to parse WKB
     const geometry = wkx.Geometry.parse(buffer);
-    console.log('Parsed WKB geometry type:', geometry.constructor.name);
+    console.log('✅ Parsed geometry type:', geometry.constructor.name);
     
-    // 转换为GeoJSON格式
+    // Convert to GeoJSON format
     const geoJSON = (geometry as any).toGeoJSON();
-    console.log('Converted to GeoJSON:', (geoJSON as any).type);
+    console.log('✅ GeoJSON type:', (geoJSON as any).type);
     
     return geoJSON;
   } catch (error) {
-    console.warn('Failed to parse WKB geometry:', error);
+    console.warn('❌ Failed to parse WKB geometry:', error);
+    console.warn('   Input type:', typeof wkbData);
+    console.warn('   Input sample:', typeof wkbData === 'string' ? wkbData.substring(0, 100) : 'Buffer');
     return null;
   }
 };
 
-// 计算几何体的质心
+// Calculate centroid of geometric shape
 export const calculateCentroid = (geometry: any): [number, number] | null => {
   if (!geometry || !geometry.coordinates) return null;
   
@@ -87,7 +102,7 @@ export const calculateCentroid = (geometry: any): [number, number] | null => {
   return count > 0 ? [totalLat / count, totalLon / count] : null;
 };
 
-// 计算多边形的面积（用于选择最大多边形）
+// Calculate polygon area (for selecting largest polygon)
 const calculatePolygonArea = (coordinates: number[][]): number => {
   if (!coordinates || coordinates.length < 3) return 0;
   
@@ -103,7 +118,7 @@ const calculatePolygonArea = (coordinates: number[][]): number => {
   return Math.abs(area) / 2;
 };
 
-// 检查点是否在多边形内部（射线投射算法）
+// Check if point is inside polygon (ray casting algorithm)
 const isPointInPolygon = (point: [number, number], polygon: number[][]): boolean => {
   const [x, y] = point;
   let inside = false;
@@ -120,11 +135,11 @@ const isPointInPolygon = (point: [number, number], polygon: number[][]): boolean
   return inside;
 };
 
-// 计算多边形的视觉质心（如果质心在外部，寻找内部点）
+// Calculate visual centroid of polygon (if centroid is outside, find interior point)
 const calculatePolygonVisualCenter = (coordinates: number[][]): [number, number] | null => {
   if (!coordinates || coordinates.length < 3) return null;
   
-  // 首先计算几何质心
+  // First calculate geometric centroid
   let sumX = 0, sumY = 0;
   for (const [x, y] of coordinates) {
     sumX += x;
@@ -132,13 +147,13 @@ const calculatePolygonVisualCenter = (coordinates: number[][]): [number, number]
   }
   const centroid: [number, number] = [sumX / coordinates.length, sumY / coordinates.length];
   
-  // 检查质心是否在多边形内部
+  // Check if centroid is inside polygon
   if (isPointInPolygon(centroid, coordinates)) {
     return centroid;
   }
   
-  // 如果质心在外部，使用简化的极点搜索
-  // 找到多边形边界框的中心点，然后向内搜索
+  // If centroid is outside, use simplified pole search
+  // Find center point of polygon bounding box, then search inward
   const bounds = {
     minX: Math.min(...coordinates.map(c => c[0])),
     maxX: Math.max(...coordinates.map(c => c[0])),
@@ -154,7 +169,7 @@ const calculatePolygonVisualCenter = (coordinates: number[][]): [number, number]
     return center;
   }
   
-  // 如果边界框中心也在外部，进行网格搜索
+  // If bounding box center is also outside, perform grid search
   const gridSize = 10;
   const stepX = (bounds.maxX - bounds.minX) / gridSize;
   const stepY = (bounds.maxY - bounds.minY) / gridSize;
@@ -171,11 +186,11 @@ const calculatePolygonVisualCenter = (coordinates: number[][]): [number, number]
     }
   }
   
-  // 最后回退到质心
+  // Finally fallback to centroid
   return centroid;
 };
 
-// 为复杂几何体计算最佳标签锚点
+// Calculate optimal label anchor for complex geometries
 export const calculateOptimalLabelAnchor = (geometry: any): [number, number] | null => {
   if (!geometry || !geometry.coordinates) return null;
   
@@ -192,7 +207,7 @@ export const calculateOptimalLabelAnchor = (geometry: any): [number, number] | n
   }
   
   if (geometry.type === 'MultiPolygon') {
-    // 找到面积最大的多边形作为主要多边形
+    // Find the polygon with largest area as the main polygon
     let largestPolygon = null;
     let largestArea = 0;
     
@@ -213,11 +228,11 @@ export const calculateOptimalLabelAnchor = (geometry: any): [number, number] | n
     }
   }
   
-  // 回退到原始质心计算
+  // Fallback to original centroid calculation
   return calculateCentroid(geometry);
 };
 
-// 计算几何边界框
+// Calculate geometric bounding box
 export const getBounds = (geometry: any): GeoBounds | null => {
   if (!geometry || !geometry.coordinates) return null;
   
@@ -247,7 +262,7 @@ export const getBounds = (geometry: any): GeoBounds | null => {
     });
   }
   
-  // 添加一些边距
+  // Add some padding
   const latPadding = (maxLat - minLat) * 0.1;
   const lonPadding = (maxLon - minLon) * 0.1;
   
@@ -299,7 +314,7 @@ export function normalizeLongitudes(geometry: any): any {
 
   if (geometry.type === 'MultiPolygon') {
     const polys = geometry.coordinates as number[][][][];
-    // 找最大多边形及其平均经度作为参考
+    // Find largest polygon and its average longitude as reference
     let largestIdx = 0; let largestArea = -Infinity;
     polys.map((poly, idx) => {
       const outer = poly[0] || [];
@@ -391,7 +406,7 @@ export function getFitTransform(geometry: any, opts: { width: number; height: nu
   return { scale, tx, ty, normalizedGeometry };
 }
 
-// 绘制GeoJSON几何体到Canvas
+// Draw GeoJSON geometry to Canvas
 export const drawGeometry = (
   ctx: CanvasRenderingContext2D, 
   geometry: any, 
@@ -424,18 +439,18 @@ export const drawGeometry = (
       ctx.closePath();
       
       if (ringIndex === 0) {
-        // 外环：填充
+        // Outer ring: fill
         ctx.fillStyle = fillStyle;
         ctx.fill();
       } else {
-        // 内环：挖空（复合路径）
+        // Inner ring: hollow out (compound path)
         ctx.globalCompositeOperation = 'destination-out';
         ctx.fill();
         ctx.globalCompositeOperation = 'source-over';
       }
     });
     
-    // 绘制边框
+    // Draw border
     coordinates.forEach(ring => {
       if (ring.length < 3) return;
       ctx.beginPath();
@@ -480,7 +495,7 @@ export const drawGeometry = (
   }
 };
 
-// 使用自定义投影的几何绘制函数
+// Geometry drawing function with custom projection
 export const drawGeometryWithProjection = (
   ctx: CanvasRenderingContext2D, 
   geometry: any, 
@@ -506,7 +521,7 @@ export const drawGeometryWithProjection = (
       
       if (ringIndex === 0) {
         ctx.fillStyle = fillStyle;
-        // 使用 evenodd 以正确处理洞
+        // Use evenodd to correctly handle holes
         ctx.fill('evenodd');
       } else {
         ctx.globalCompositeOperation = 'destination-out';
@@ -515,7 +530,7 @@ export const drawGeometryWithProjection = (
       }
     });
     
-    // 绘制边框
+    // Draw border
     coordinates.forEach(ring => {
       if (ring.length < 3) return;
       ctx.beginPath();

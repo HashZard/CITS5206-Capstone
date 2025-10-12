@@ -1,40 +1,52 @@
 /**
- * Toast 提示组件
+ * Toast notification component
  * 
- * 功能：显示临时通知消息，自动消失
- * - 支持成功、错误等不同类型的提示
- * - 自动在3秒后消失
- * - 带有滑入滑出动画效果
- * - 固定在屏幕右下角显示
+ * Features: Display temporary notification messages that auto-dismiss
+ * - Support different types of notifications (success, error, etc.)
+ * - Error messages display for longer duration (6 seconds)
+ * - Slide in/out animation effects
+ * - Fixed display in bottom-right corner of screen
  * 
- * 使用场景：复制成功、操作完成、错误提示等
+ * Use cases: Copy success, operation completion, error notifications, etc.
  */
 
 import React from "react";
-import { Check } from "lucide-react";
+import { Check, AlertCircle } from "lucide-react";
 
 interface ToastProps {
   message: string;
   isVisible: boolean;
   onClose: () => void;
+  type?: 'success' | 'error';
 }
 
-export const Toast: React.FC<ToastProps> = ({ message, isVisible, onClose }) => {
+export const Toast: React.FC<ToastProps> = ({ 
+  message, 
+  isVisible, 
+  onClose,
+  type = 'success'
+}) => {
   React.useEffect(() => {
     if (isVisible) {
-      const t = setTimeout(onClose, 3000);
+      // Error messages display for longer duration
+      const duration = type === 'error' ? 6000 : 3000;
+      const t = setTimeout(onClose, duration);
       return () => clearTimeout(t);
     }
-  }, [isVisible, onClose]);
+  }, [isVisible, onClose, type]);
+
+  const isError = type === 'error';
+  const bgColor = isError ? 'bg-red-600' : 'bg-green-600';
+  const Icon = isError ? AlertCircle : Check;
 
   return (
     <div
-      className={`fixed bottom-6 right-6 bg-green-600 text-white px-4 py-3 rounded-lg shadow-lg transition-transform duration-300 z-50 flex items-center gap-2 ${
+      className={`fixed bottom-6 right-6 ${bgColor} text-white px-4 py-3 rounded-lg shadow-lg transition-transform duration-300 z-50 flex items-start gap-2 max-w-md ${
         isVisible ? "translate-x-0" : "translate-x-full"
       }`}
     >
-      <Check className="w-4 h-4" />
-      {message}
+      <Icon className="w-5 h-5 flex-shrink-0 mt-0.5" />
+      <div className="whitespace-pre-wrap text-sm leading-relaxed">{message}</div>
     </div>
   );
 };

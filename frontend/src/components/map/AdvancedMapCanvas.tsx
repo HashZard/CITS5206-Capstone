@@ -64,8 +64,14 @@ export const AdvancedMapCanvas = React.forwardRef<
   // Preprocess geometries (centroid etc.)
   const processedItems = useMemo(() => {
     return items.map((item) => {
-      if (item.raw?.geometry) {
-        const geometry = parseWKBGeometry(item.raw.geometry);
+
+      // 🗺️ Prioritize real geometry, fallback to mapped geometry
+      const rawGeometry = item.raw?.geometry || item.raw?.geom;
+      const mappedGeometry = item.raw?._mapped_geometry;
+      
+      if (rawGeometry) {
+        // Real geometry data (WKB format)
+        const geometry = parseWKBGeometry(rawGeometry);
         const centroid = geometry ? calculateOptimalLabelAnchor(geometry) : null;
         return {
           ...item,
@@ -73,7 +79,22 @@ export const AdvancedMapCanvas = React.forwardRef<
           lat: centroid?.[0] ?? item.lat,
           lon: centroid?.[1] ?? item.lon,
         };
+      } else if (mappedGeometry) {
+        // Mapped geometry data (already in GeoJSON format)
+        const centroid = mappedGeometry.type === 'Point' 
+          ? [mappedGeometry.coordinates[1], mappedGeometry.coordinates[0]]
+          : calculateOptimalLabelAnchor(mappedGeometry);
+        
+        console.log(`🗺️ Using mapped geometry for ${item.name}:`, mappedGeometry.type);
+        
+        return {
+          ...item,
+          geometry: mappedGeometry,  // Use GeoJSON format directly
+          lat: centroid?.[0] ?? item.lat,
+          lon: centroid?.[1] ?? item.lon,
+        };
       }
+      
       return item;
     });
   }, [items]);

@@ -1,20 +1,20 @@
 /**
- * MapRenderers 地图渲染器集合
+ * MapRenderers - Map renderer collection
  * 
- * 功能：提供各种专业地图可视化渲染算法
- * - renderAreaVisualization: 面积分布渲染器，按国家面积大小着色
- * - renderCountriesVisualization: 国家分布渲染器，按大洲分类着色
- * - renderEconomyVisualization: 经济热力图渲染器，按GDP水平着色
- * - renderTerrainVisualization: 地形特征渲染器，按地理特征着色
- * - renderGeneralVisualization: 通用渲染器，适用于未分类数据
+ * Features: Provide various professional map visualization rendering algorithms
+ * - renderAreaVisualization: Area distribution renderer, colored by country area size
+ * - renderCountriesVisualization: Country distribution renderer, colored by continent classification
+ * - renderEconomyVisualization: Economic heatmap renderer, colored by GDP level
+ * - renderTerrainVisualization: Terrain feature renderer, colored by geographic features
+ * - renderGeneralVisualization: General renderer, suitable for unclassified data
  * 
- * 每个渲染器都支持：
- * - 真实几何边界绘制
- * - 智能颜色编码
- * - 文本标签和数据展示
- * - 回退到符号显示（无几何数据时）
+ * Each renderer supports:
+ * - Real geometric boundary drawing
+ * - Smart color coding
+ * - Text labels and data display
+ * - Fallback to symbol display (when no geometry data)
  * 
- * 使用场景：AdvancedMapCanvas根据数据类型调用相应渲染器
+ * Use cases: AdvancedMapCanvas calls appropriate renderer based on data type
  */
 
 import { RowItem } from '@/types/result';
@@ -22,7 +22,7 @@ import { drawGeometry } from '@/utils/geometry';
 import { formatArea, formatGDP, continentColors, terrainColors } from '@/utils/visualization';
 import { LabelRenderer } from '@/utils/labelRenderer';
 
-// 面积分布可视化渲染器
+// Area distribution visualization renderer
 export const renderAreaVisualization = (
   ctx: CanvasRenderingContext2D, 
   items: RowItem[], 
@@ -33,7 +33,7 @@ export const renderAreaVisualization = (
   const maxArea = Math.max(...items.map(item => item.raw?.area_km2 || 0));
   console.log('Max area:', maxArea);
   
-  // 创建标签渲染器
+  // Create label renderer
   const labelRenderer = new LabelRenderer(ctx, {
     fontSize: 12,
     fontWeight: '600',
@@ -42,23 +42,23 @@ export const renderAreaVisualization = (
     haloWidth: 3
   });
 
-  // 首先绘制所有几何体
+  // First draw all geometries
   items.forEach((item, index) => {
     console.log(`Item ${index}:`, item.name, 'area:', item.raw?.area_km2, 'has geometry:', !!item.geometry);
     const area = item.raw?.area_km2 || 0;
     const intensity = maxArea > 0 ? area / maxArea : 0;
     
-    // 颜色基于面积大小：小面积蓝色 -> 大面积红色
+    // Color based on area size: small area blue -> large area red
     const red = Math.floor(255 * intensity);
     const blue = Math.floor(255 * (1 - intensity));
     const fillStyle = `rgba(${red}, 100, ${blue}, 0.6)`;
     
     if (item.geometry) {
-      // 绘制真实几何边界
+      // Draw real geometric boundaries
       console.log(`Drawing geometry for ${item.name} with area ${area}`);
       drawGeometry(ctx, item.geometry, w, h, fillStyle, '#374151');
     } else if (typeof item.lat === 'number' && typeof item.lon === 'number') {
-      // 回退到圆圈显示
+      // Fallback to circle display
       const x = ((item.lon + 180) / 360) * w;
       const y = ((90 - item.lat) / 180) * h;
       const radius = Math.max(3, (area / maxArea) * 30);
@@ -74,16 +74,16 @@ export const renderAreaVisualization = (
     }
   });
 
-  // 然后渲染所有标签，按面积排序（大的优先）
+  // Then render all labels, sorted by area (largest first)
   const sortedItems = [...items].sort((a, b) => (b.raw?.area_km2 || 0) - (a.raw?.area_km2 || 0));
   
   sortedItems.forEach((item, index) => {
     const area = item.raw?.area_km2 || 0;
     const areaText = area > 0 ? formatArea(area) : undefined;
-    const priority = items.length - index; // 面积越大优先级越高
+    const priority = items.length - index; // Larger area has higher priority
 
     if (item.geometry) {
-      // 使用几何体渲染标签
+      // Use geometry to render labels
       labelRenderer.renderGeometryLabel(
         item.geometry,
         item.name || 'Unknown',
@@ -93,7 +93,7 @@ export const renderAreaVisualization = (
         priority
       );
     } else if (typeof item.lat === 'number' && typeof item.lon === 'number') {
-      // 使用点坐标渲染标签
+      // Use point coordinates to render labels
       labelRenderer.renderPointLabel(
         item.lat,
         item.lon,
@@ -107,14 +107,14 @@ export const renderAreaVisualization = (
   });
 };
 
-// 国家分布可视化渲染器
+// Country distribution visualization renderer
 export const renderCountriesVisualization = (
   ctx: CanvasRenderingContext2D, 
   items: RowItem[], 
   w: number, 
   h: number
 ) => {
-  // 创建标签渲染器
+  // Create label renderer
   const labelRenderer = new LabelRenderer(ctx, {
     fontSize: 11,
     fontWeight: '600',
@@ -123,18 +123,18 @@ export const renderCountriesVisualization = (
     haloWidth: 2
   });
 
-  // 首先绘制所有几何体
+  // First draw all geometries
   items.forEach((item, index) => {
     console.log(`Country ${index}:`, item.name, 'continent:', item.raw?.continent, 'has geometry:', !!item.geometry);
     const continent = item.raw?.continent || 'Unknown';
     const fillStyle = continentColors[continent] || 'rgba(107, 114, 128, 0.7)';
     
     if (item.geometry) {
-      // 绘制真实国家边界
+      // Draw real country boundaries
       console.log(`Drawing country geometry for ${item.name} (${continent})`);
       drawGeometry(ctx, item.geometry, w, h, fillStyle, '#374151');
     } else if (typeof item.lat === 'number' && typeof item.lon === 'number') {
-      // 回退到圆点显示
+      // Fallback to dot display
       const x = ((item.lon + 180) / 360) * w;
       const y = ((90 - item.lat) / 180) * h;
       
@@ -149,13 +149,13 @@ export const renderCountriesVisualization = (
     }
   });
 
-  // 然后渲染所有标签
+  // Then render all labels
   items.forEach((item, index) => {
     const gdpText = item.raw?.gdp_md ? formatGDP(item.raw.gdp_md) : undefined;
     const priority = items.length - index;
 
     if (item.geometry) {
-      // 使用几何体渲染标签
+      // Use geometry to render labels
       labelRenderer.renderGeometryLabel(
         item.geometry,
         item.name || item.raw?.iso3 || 'Unknown',
@@ -165,7 +165,7 @@ export const renderCountriesVisualization = (
         priority
       );
     } else if (typeof item.lat === 'number' && typeof item.lon === 'number') {
-      // 使用点坐标渲染标签
+      // Use point coordinates to render labels
       labelRenderer.renderPointLabel(
         item.lat,
         item.lon,
@@ -179,7 +179,7 @@ export const renderCountriesVisualization = (
   });
 };
 
-// 经济热力图可视化渲染器
+// Economic heatmap visualization renderer
 export const renderEconomyVisualization = (
   ctx: CanvasRenderingContext2D, 
   items: RowItem[], 
@@ -189,7 +189,7 @@ export const renderEconomyVisualization = (
   const maxGDP = Math.max(...items.map(item => item.raw?.gdp_md || 0));
   console.log('Max GDP:', maxGDP);
   
-  // 创建标签渲染器
+  // Create label renderer
   const labelRenderer = new LabelRenderer(ctx, {
     fontSize: 11,
     fontWeight: '600',
@@ -198,23 +198,23 @@ export const renderEconomyVisualization = (
     haloWidth: 2
   });
 
-  // 首先绘制所有几何体
+  // First draw all geometries
   items.forEach((item, index) => {
     console.log(`Economy ${index}:`, item.name, 'GDP:', item.raw?.gdp_md, 'has geometry:', !!item.geometry);
     const gdp = item.raw?.gdp_md || 0;
     const intensity = maxGDP > 0 ? gdp / maxGDP : 0;
     
-    // 热力图颜色：低GDP绿色 -> 高GDP红色
+    // Heatmap color: low GDP green -> high GDP red
     const red = Math.floor(255 * intensity);
     const green = Math.floor(255 * (1 - intensity));
     const fillStyle = `rgba(${red}, ${green}, 0, 0.7)`;
     
     if (item.geometry) {
-      // 绘制真实国家边界，颜色基于GDP
+      // Draw real country boundaries, colored by GDP
       console.log(`Drawing economy geometry for ${item.name} with GDP ${gdp}`);
       drawGeometry(ctx, item.geometry, w, h, fillStyle, '#374151');
     } else if (typeof item.lat === 'number' && typeof item.lon === 'number') {
-      // 回退到圆圈显示
+      // Fallback to circle display
       const x = ((item.lon + 180) / 360) * w;
       const y = ((90 - item.lat) / 180) * h;
       const radius = Math.max(4, intensity * 25);
@@ -226,7 +226,7 @@ export const renderEconomyVisualization = (
     }
   });
 
-  // 然后渲染所有标签，按GDP排序（高的优先）
+  // Then render all labels, sorted by GDP (highest first)
   const sortedItems = [...items].sort((a, b) => (b.raw?.gdp_md || 0) - (a.raw?.gdp_md || 0));
   
   sortedItems.forEach((item, index) => {
@@ -235,7 +235,7 @@ export const renderEconomyVisualization = (
     const priority = items.length - index; // GDP越高优先级越高
 
     if (item.geometry) {
-      // 使用几何体渲染标签
+      // Use geometry to render labels
       labelRenderer.renderGeometryLabel(
         item.geometry,
         item.name || 'Unknown',
@@ -245,7 +245,7 @@ export const renderEconomyVisualization = (
         priority
       );
     } else if (typeof item.lat === 'number' && typeof item.lon === 'number') {
-      // 使用点坐标渲染标签
+      // Use point coordinates to render labels
       labelRenderer.renderPointLabel(
         item.lat,
         item.lon,
@@ -266,7 +266,7 @@ export const renderTerrainVisualization = (
   w: number, 
   h: number
 ) => {
-  // 创建标签渲染器
+  // Create label renderer
   const labelRenderer = new LabelRenderer(ctx, {
     fontSize: 10,
     fontWeight: '600',
@@ -275,7 +275,7 @@ export const renderTerrainVisualization = (
     haloWidth: 2
   });
 
-  // 首先绘制所有几何体
+  // First draw all geometries
   items.forEach((item, index) => {
     console.log(`Terrain ${index}:`, item.name, 'featurecla:', item.raw?.featurecla, 'has geometry:', !!item.geometry);
     const featurecla = item.raw?.featurecla || 'Unknown';
@@ -314,14 +314,14 @@ export const renderTerrainVisualization = (
     }
   });
 
-  // 然后渲染所有标签
+  // Then render all labels
   items.forEach((item, index) => {
     const featurecla = item.raw?.featurecla || 'Unknown';
     const subText = featurecla !== 'Unknown' ? featurecla : undefined;
     const priority = items.length - index;
 
     if (item.geometry) {
-      // 使用几何体渲染标签
+      // Use geometry to render labels
       labelRenderer.renderGeometryLabel(
         item.geometry,
         item.name || 'Unknown',
@@ -331,7 +331,7 @@ export const renderTerrainVisualization = (
         priority
       );
     } else if (typeof item.lat === 'number' && typeof item.lon === 'number') {
-      // 使用点坐标渲染标签
+      // Use point coordinates to render labels
       labelRenderer.renderPointLabel(
         item.lat,
         item.lon,
@@ -391,7 +391,7 @@ export const renderGeneralVisualization = (
     return;
   }
   
-  // 创建标签渲染器
+  // Create label renderer
   const labelRenderer = new LabelRenderer(ctx, {
     fontSize: 11,
     fontWeight: '600',
@@ -400,16 +400,16 @@ export const renderGeneralVisualization = (
     haloWidth: 2
   });
 
-  // 首先绘制所有几何体
+  // First draw all geometries
   items.forEach((item) => {
     console.log('Drawing item:', item.name, 'has geometry:', !!item.geometry, 'at', item.lat, item.lon);
     
     if (item.geometry) {
-      // 绘制真实几何边界
+      // Draw real geometric boundaries
       console.log(`Drawing general geometry for ${item.name}`);
       drawGeometry(ctx, item.geometry, w, h, 'rgba(124, 58, 237, 0.6)', '#7C3AED');
     } else if (typeof item.lat === 'number' && typeof item.lon === 'number') {
-      // 回退到圆点显示
+      // Fallback to dot display
       const x = ((item.lon + 180) / 360) * w;
       const y = ((90 - item.lat) / 180) * h;
       
@@ -424,12 +424,12 @@ export const renderGeneralVisualization = (
     }
   });
 
-  // 然后渲染所有标签
+  // Then render all labels
   items.forEach((item, index) => {
     const priority = items.length - index;
 
     if (item.geometry) {
-      // 使用几何体渲染标签
+      // Use geometry to render labels
       labelRenderer.renderGeometryLabel(
         item.geometry,
         item.name || 'Unknown',
@@ -439,7 +439,7 @@ export const renderGeneralVisualization = (
         priority
       );
     } else if (typeof item.lat === 'number' && typeof item.lon === 'number') {
-      // 使用点坐标渲染标签
+      // Use point coordinates to render labels
       labelRenderer.renderPointLabel(
         item.lat,
         item.lon,
