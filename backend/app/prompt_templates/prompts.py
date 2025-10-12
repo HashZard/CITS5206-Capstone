@@ -86,7 +86,7 @@ SQL_PROMPT_TEMPLATE = (
     "- Do not SELECT *; only include necessary fields.\n"
     "- If spatial, assume SRID=4326.\n"
     "- Respect constraints.limit if provided; otherwise use default limit.\n"
-    "- If the table contains geographic data (e.g., a geometry column), always include the geometry column in the SELECT fields.\n"
+    "- If the table contains a geometry column (such as geometry, geom, the_geom, etc.), you MUST include this column in the SELECT fields, regardless of the user's question. This is mandatory.\n"
     "- Output JSON with keys:\n"
     "  - final_sql: {sql:string, params:object}\n"
     "  - assumptions: array of strings\n"

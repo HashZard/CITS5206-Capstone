@@ -188,7 +188,8 @@ def build_step4_prompt(
         - Decide the LIMIT value based on the user's question; otherwise use the provided optional constraints.
         - Do not generate DDL, EXPLAIN, or comments in SQL.
         - Only one query should be returned inside "final_sql".
-        
+        - If the table contains a geometry column (such as geometry, geom, the_geom, etc.), you MUST include this column in the SELECT fields, regardless of the user's question. This is mandatory.
+
         PostGIS Best Practices:
         - All geometry columns are in SRID 4326 (latitude/longitude).
         - **For accurate area or distance calculations** (e.g., using ST_Area, ST_Distance, ST_DWithin), cast the geometry column to the `geography` type. This correctly handles calculations on the earth's curved surface and returns results in meters.
