@@ -9,23 +9,23 @@ import UserPage from "@/pages/User";
 import GeoQueryResults from "@/pages/Result";
 import HistoryPage from "@/pages/History";
 import AboutPage from "@/pages/About";
-import TutorialsPage from "@/pages/Tutorials"; // <-- NEW
+import TutorialsPage from "@/pages/Tutorials";
+import RawValuePage from "@/pages/RawValue"; // raw backend payloads
 
 import { getStoredUser, setStoredUser, User } from "@/lib/auth";
-
-// type-ahead input
 import SuggestInput from "@/components/suggest/SuggestInput";
 
-/** Top navigation links (Dashboard removed) */
+/** Top navigation links */
 const links: TopNavLink[] = [
   { label: "Home" },
   { label: "History" },
   { label: "Result" },
   { label: "Tutorials" },
   { label: "About" },
+  { label: "Raw" }, // goes to /raw (TopNav), App also supports /rawvalue
 ];
 
-/** Homepage content extracted for conditional rendering */
+/** Homepage content */
 function HomeView({ onQuery }: { onQuery: (query: string) => void }) {
   const [query, setQuery] = useState("");
 
@@ -33,15 +33,12 @@ function HomeView({ onQuery }: { onQuery: (query: string) => void }) {
     "Show the biggest continents or land regions by area (over 500,000 km²).",
     "List countries in the Southern Hemisphere.",
     "Highlight countries whose GDP is above their continent’s average.",
-    "Show major mountain ranges worldwide."
+    "Show major mountain ranges worldwide.",
   ];
 
-  const handleSuggestionClick = (suggestion: string) => {
-    setQuery(suggestion);
-  };
+  const handleSuggestionClick = (suggestion: string) => setQuery(suggestion);
 
   return (
-    // Make the home section a flex column with a min height so we can push the cards to the bottom
     <div className="max-w-6xl mx-auto flex flex-col min-h-[80vh]">
       {/* Hero */}
       <div className="text-center mb-12">
@@ -55,7 +52,7 @@ function HomeView({ onQuery }: { onQuery: (query: string) => void }) {
           analyze, and visualize spatial data like never before.
         </p>
 
-        {/* Black-tinted glass container for input + chips */}
+        {/* Search glass */}
         <div className="max-w-4xl mx-auto mb-8">
           <div className="backdrop-blur-md bg-black/40 border border-white/10 rounded-2xl p-4 sm:p-5 shadow-xl">
             <SuggestInput
@@ -65,12 +62,7 @@ function HomeView({ onQuery }: { onQuery: (query: string) => void }) {
                 if (!val) return;
                 onQuery(val);
               }}
-              // placeholder="Ask about geographic data, locations, demographics, climate patterns..."
-              // minChars={2}
-              // maxItems={8}
             />
-
-            {/* Quick chips inside the glass card */}
             <div className="mt-4 flex flex-wrap gap-2 justify-center">
               {suggestions.map((s, i) => (
                 <button
@@ -86,10 +78,10 @@ function HomeView({ onQuery }: { onQuery: (query: string) => void }) {
         </div>
       </div>
 
-      {/* Spacer pushes the next block (feature cards) to the bottom of this section */}
+      {/* Spacer pushes cards down */}
       <div className="flex-1" />
 
-      {/* Feature cards at the bottom */}
+      {/* Feature cards */}
       <div className="grid md:grid-cols-3 gap-8 max-w-6xl mx-auto pb-2">
         <div className="backdrop-blur-md bg-black/40 border border-white/20 hover:bg-black/50 transition-all duration-300 hover:scale-105 rounded-lg p-6 shadow-lg">
           <div className="w-16 h-16 bg-white/10 rounded-full flex items-center justify-center mx-auto mb-4">
@@ -170,7 +162,7 @@ export default function App() {
 
   return (
     <div className="min-h-screen flex flex-col relative">
-      {/* Background image (earth.jpg must be in /public) */}
+      {/* Background image (keep earth.jpg site-wide) */}
       <div className="fixed inset-0 -z-10">
         <div
           className="absolute inset-0"
@@ -208,10 +200,12 @@ export default function App() {
 
         {path === "/about" && <AboutPage />}
 
-        {/* NEW: Tutorials route */}
         {path === "/tutorials" && <TutorialsPage />}
 
-        {/* Default homepage (mutually exclusive) */}
+        {/* Raw page: support both /raw (nav) and /rawvalue (legacy) */}
+        {(path === "/raw" || path === "/rawvalue") && <RawValuePage />}
+
+        {/* Default homepage */}
         {[
           "/login",
           "/register",
@@ -219,7 +213,9 @@ export default function App() {
           "/result",
           "/history",
           "/about",
-          "/tutorials", // <-- include here so Home doesn't render underneath
+          "/tutorials",
+          "/raw",
+          "/rawvalue",
         ].includes(path)
           ? null
           : <HomeView onQuery={handleQuery} />}

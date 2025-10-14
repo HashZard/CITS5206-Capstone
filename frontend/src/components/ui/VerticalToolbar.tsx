@@ -1,8 +1,8 @@
 /**
- * VerticalToolbar 垂直工具栏
- * - 右侧悬浮，提供 Zoom In / Zoom Out / Refresh 控制
- * - 无障碍：aria-labels，键盘可达，焦点样式
- * - 移动端：右下角，考虑安全区域
+ * VerticalToolbar - Vertical toolbar
+ * - Floats on the right, providing Zoom In / Zoom Out / Refresh controls
+ * - Accessibility: aria-labels, keyboard reachable, focus styles
+ * - Mobile: bottom-right, respects safe area
  */
 import React from 'react';
 import { ZoomIn, ZoomOut, RotateCcw } from 'lucide-react';

@@ -1,154 +1,81 @@
-/**
- * ExportModal 导出弹窗
- * - 下载PDF或通过邮箱分享
- * - 焦点陷阱、Esc关闭、ARIA属性
- */
-import React, { useEffect, useRef, useState } from 'react';
-import { X, Mail, Download } from 'lucide-react';
-import { generatePdfFromNode, blobToBase64 } from '@/utils/exportPdf';
-import { sharePdfByEmail } from '@/services/shareService';
-
-interface ExportModalProps {
+"use client";
+ 
+import React, { useState } from "react";
+import { X } from "lucide-react";
+import { printElementToSystemPdf } from "@/utils/printExport";
+ 
+type Props = {
   isOpen: boolean;
   onClose: () => void;
   targetRef: React.RefObject<HTMLElement>;
-}
-
-export const ExportModal: React.FC<ExportModalProps> = ({ isOpen, onClose, targetRef }) => {
-  const dialogRef = useRef<HTMLDivElement>(null);
-  const [email, setEmail] = useState('');
-  const [error, setError] = useState('');
-  const [loading, setLoading] = useState(false);
-
-  // 焦点陷阱
-  useEffect(() => {
-    if (!isOpen) return;
-    const prev = document.activeElement as HTMLElement | null;
-    dialogRef.current?.focus();
-    return () => prev?.focus();
-  }, [isOpen]);
-
-  const close = () => {
-    if (!loading) onClose();
-  };
-
-  const onKeyDown: React.KeyboardEventHandler<HTMLDivElement> = (e) => {
-    if (e.key === 'Escape') close();
-  };
-
-  const isValidEmail = (val: string) => /.+@.+\..+/.test(val);
-
-  const nextFrame = () => new Promise((r) => requestAnimationFrame(() => r(null)));
-
-  const handleDownload = async () => {
-    if (!targetRef.current) return;
-    setLoading(true);
-    try {
-      // 关闭弹窗，等待UI更新完成再截图
-      onClose();
-      await nextFrame();
-      const blob = await generatePdfFromNode(targetRef.current, 'Results.pdf', {
-        ignoreElements: (el) => el.hasAttribute('data-export-ignore')
-      });
-      const url = URL.createObjectURL(blob);
-      const a = document.createElement('a');
-      a.href = url;
-      a.download = 'Results.pdf';
-      a.click();
-      URL.revokeObjectURL(url);
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  const handleShare = async () => {
-    setError('');
-    if (!isValidEmail(email)) {
-      setError('Please enter a valid email address');
-      return;
-    }
-    if (!targetRef.current) return;
-    setLoading(true);
-    try {
-      // 关闭弹窗，等待UI更新完成再截图
-      onClose();
-      await nextFrame();
-      const blob = await generatePdfFromNode(targetRef.current, 'Results.pdf', {
-        ignoreElements: (el) => el.hasAttribute('data-export-ignore')
-      });
-      const pdfBase64 = await blobToBase64(blob);
-      const { ok } = await sharePdfByEmail(email, pdfBase64);
-      if (ok) {
-        // 成功：已关闭
-      } else {
-        setError('Failed to share. Please try again.');
-      }
-    } catch (e) {
-      setError('Failed to generate or share PDF');
-    } finally {
-      setLoading(false);
-    }
-  };
-
+};
+ 
+export default function ExportModal({ isOpen, onClose, targetRef }: Props) {
+  const [busy, setBusy] = useState(false);
+  const [error, setError] = useState<string | null>(null);
   if (!isOpen) return null;
-
+ 
+  const doSystemPdf = async () => {
+    if (!targetRef.current) return;
+    setBusy(true);
+    setError(null);
+    try {
+      await printElementToSystemPdf(targetRef.current, { title: "Results" });
+      onClose();
+    } catch (e: any) {
+      setError(e?.message || "Export failed");
+    } finally {
+      setBusy(false);
+    }
+  };
+ 
   return (
     <div
-      className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center"
+      className="fixed inset-0 z-[100] bg-black/50 flex items-center justify-center p-4"
       role="dialog"
       aria-modal="true"
-      aria-labelledby="export-title"
-      onKeyDown={onKeyDown}
+      data-export-ignore
     >
-      <div ref={dialogRef} tabIndex={-1} className="bg-white rounded-2xl w-full max-w-md mx-4 outline-none">
-        <div className="flex items-center justify-between p-4 border-b border-slate-200">
-          <h2 id="export-title" className="text-lg font-semibold text-slate-900">Export as PDF</h2>
-          <button onClick={close} aria-label="Close" className="p-2 rounded hover:bg-slate-50">
+      <div className="w-full max-w-md rounded-xl bg-white p-4 shadow-xl border border-slate-200">
+        <div className="flex items-center justify-between mb-2">
+          <h3 className="text-lg font-semibold">Export</h3>
+          <button
+            className="p-2 rounded-md border border-slate-200"
+            onClick={onClose}
+            aria-label="Close"
+          >
             <X className="w-4 h-4" />
           </button>
         </div>
-
-        <div className="p-4 space-y-4">
+ 
+        <p className="text-sm text-slate-700 mb-3">
+          Choose <strong>Save as PDF</strong> in your system print dialog for exact on-screen quality.
+        </p>
+ 
+        {error && (
+          <div className="mb-3 text-sm text-red-600 border border-red-200 rounded-md p-2 bg-red-50">
+            {error}
+          </div>
+        )}
+ 
+        <div className="flex items-center justify-end gap-2">
           <button
-            onClick={handleDownload}
-            disabled={loading}
-            className="w-full inline-flex items-center justify-center gap-2 px-4 py-2 bg-purple-600 text-white rounded-lg hover:bg-purple-700 disabled:opacity-60"
+            className="px-3 py-2 rounded-md border border-slate-200"
+            onClick={onClose}
+            disabled={busy}
           >
-            <Download className="w-4 h-4" /> Download PDF
+            Cancel
           </button>
-
-          <div className="h-px bg-slate-200" />
-
-          <label htmlFor="email" className="text-sm font-medium text-slate-700">Share via email</label>
-          <input
-            id="email"
-            type="email"
-            className="w-full border border-slate-300 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-purple-500"
-            placeholder="you@example.com"
-            value={email}
-            onChange={(e) => setEmail(e.target.value)}
-            aria-invalid={!!error}
-            aria-describedby="email-help"
-            disabled={loading}
-          />
-          {error && (
-            <p id="email-help" className="text-sm text-red-600">{error}</p>
-          )}
           <button
-            onClick={handleShare}
-            disabled={loading}
-            className="w-full inline-flex items-center justify-center gap-2 px-4 py-2 border border-slate-300 rounded-lg hover:bg-slate-50 disabled:opacity-60"
+            className="px-3 py-2 rounded-md bg-indigo-600 text-white disabled:opacity-60"
+            onClick={doSystemPdf}
+            disabled={busy}
+            title="Opens system print dialog; choose Save as PDF"
           >
-            <Mail className="w-4 h-4" /> Share
+            {busy ? "Preparing…" : "Export (System PDF)"}
           </button>
-
-          {loading && (
-            <p className="text-sm text-slate-500">Processing...</p>
-          )}
         </div>
       </div>
     </div>
   );
-};
-
-export default ExportModal;
+}
