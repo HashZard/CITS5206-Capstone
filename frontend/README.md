@@ -78,15 +78,45 @@ Open your browser and navigate to:
 frontend/
 ├── src/
 │   ├── components/
-│   │   ├── layout/           # Layout components (TopNav, Footer)
+│   │   ├── layout/           # Layout components
+│   │   │   ├── Footer.tsx
+│   │   │   └── TopNav.tsx
 │   │   ├── map/             # Map visualization components
+│   │   │   ├── AdvancedMapCanvas.tsx
+│   │   │   ├── MapRenderers.ts
+│   │   │   └── SingleCountryMapCanvas.tsx
 │   │   ├── result/          # Query result display components
+│   │   │   ├── AutoComparisonChart.tsx
+│   │   │   ├── CountryCard.tsx
+│   │   │   ├── QueryDetails.tsx
+│   │   │   ├── ResultDataTable.tsx
+│   │   │   ├── ResultHeader.tsx
+│   │   │   └── SuggestPanel.tsx
 │   │   ├── suggest/         # Query suggestion components
+│   │   │   ├── SuggestDropdown.tsx
+│   │   │   └── SuggestInput.tsx
 │   │   └── ui/              # Reusable UI components (Shadcn/ui)
+│   │       ├── button.tsx
+│   │       ├── card.tsx
+│   │       ├── CopyButton.tsx
+│   │       ├── dialog.tsx
+│   │       ├── dropdown-menu.tsx
+│   │       ├── ExportButton.tsx
+│   │       ├── ExportModal.tsx
+│   │       ├── form.tsx
+│   │       ├── input.tsx
+│   │       ├── label.tsx
+│   │       ├── LoadingBar.tsx
+│   │       ├── navigation-menu.tsx
+│   │       ├── Toast.tsx
+│   │       └── VerticalToolbar.tsx
 │   ├── lib/
 │   │   ├── auth.ts          # Authentication utilities
 │   │   ├── classify.ts      # Query classification logic
-│   │   └── text/            # Text processing utilities
+│   │   ├── text/            # Text processing utilities
+│   │   │   ├── tfidf.ts
+│   │   │   └── tokenize.ts
+│   │   └── utils.ts         # Utility functions
 │   ├── pages/               # Application pages
 │   │   ├── About.tsx
 │   │   ├── History.tsx
@@ -100,16 +130,34 @@ frontend/
 │   │   ├── queryService.ts
 │   │   └── shareService.ts
 │   ├── types/               # TypeScript type definitions
+│   │   └── result.ts
 │   ├── utils/               # Utility functions
+│   │   ├── exportPdf.ts
+│   │   ├── geoMapping.ts
+│   │   ├── geometry.ts
+│   │   ├── labelRenderer.ts
+│   │   └── visualization.ts
 │   ├── data/                # Seed data and configurations
+│   │   ├── seedQuestions.extra.json
+│   │   └── seedQuestions.ts
+│   ├── assets/              # Static assets
+│   │   └── react.svg
 │   ├── App.tsx              # Main application component
+│   ├── App.css              # Application styles
 │   ├── main.tsx             # Application entry point
-│   └── index.css            # Global styles
-├── public/                  # Static assets
+│   ├── index.css            # Global styles
+│   └── vite-env.d.ts        # Vite type definitions
+├── public/                  # Public static assets
+│   ├── earth.jpg
+│   └── vite.svg
 ├── tailwind.config.js       # Tailwind CSS configuration
 ├── postcss.config.js        # PostCSS configuration
 ├── components.json          # Shadcn/ui configuration
 ├── vite.config.ts           # Vite configuration
+├── tsconfig.json            # TypeScript configuration
+├── tsconfig.app.json        # TypeScript app configuration
+├── tsconfig.node.json       # TypeScript node configuration
+├── eslint.config.js         # ESLint configuration
 └── package.json             # Dependencies and scripts
 ```
 
