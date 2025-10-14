@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-# 行记录转 GeoJSON FeatureCollection 的工具函数
+# Helper that converts row records into a GeoJSON FeatureCollection.
 def rows_to_feature_collection(rows, geom_field="geometry"):
     features = []
     for r in rows:

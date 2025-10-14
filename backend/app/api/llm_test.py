@@ -1,4 +1,4 @@
-# api/llm_routes.py
+# Legacy module reference: api/llm_routes.py.
 import logging
 
 from flask import Blueprint, jsonify, request
@@ -7,13 +7,13 @@ from app.extensions import llm_service
 
 logger = logging.getLogger(__name__)
 
-# Create Blueprint
+# Create the blueprint.
 llm_bp = Blueprint("llm", __name__)
 
 
 @llm_bp.route("/generate", methods=["POST"])
 def generate():
-    """Basic text generation interface"""
+    """Basic text generation interface."""
     try:
         data = request.get_json()
 
@@ -47,7 +47,7 @@ def generate():
 
 @llm_bp.route("/providers", methods=["GET"])
 def list_providers():
-    """List available providers"""
+    """List available providers."""
     try:
         providers = llm_service.list_providers()
         return jsonify(

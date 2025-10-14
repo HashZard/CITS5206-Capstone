@@ -12,11 +12,11 @@ from app.services.three_level_service import ThreeLevelService
 
 # -------- Utils --------
 def parse_json_safely(text: str):
-    """容错解析：去除 ```json 代码块、截取花括号范围，避免模型输出包裹导致的解析失败。"""
+    """Fault-tolerant parsing that strips ```json fences and trims braces to avoid failures when the model wraps output."""
     import json as _json
 
     s = (text or "").strip()
-    # 去除围栏 ``` 或 ```json
+    # Remove fenced code block markers such as ``` or ```json.
     if s.startswith("```"):
         s = s.split("```", 2)
         if len(s) == 3:
@@ -24,7 +24,7 @@ def parse_json_safely(text: str):
         else:
             s = s[-1]
     s = s.strip()
-    # 截取第一个 { 到最后一个 }
+    # Extract the substring between the first '{' and the last '}'.
     start = s.find("{")
     end = s.rfind("}")
     candidate = s[start : end + 1] if start != -1 and end != -1 and end > start else s

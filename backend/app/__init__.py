@@ -7,15 +7,15 @@ from .extensions import init_extensions
 
 
 def create_app(config_name):
-    """Application Factory Function"""
+    """Application factory function."""
     app = Flask(__name__)
 
     app.config.from_object(config[config_name])
 
-    # Initialize extensions using unified function
+    # Initialize shared extensions.
     init_extensions(app)
 
-    # Register Blueprints
+    # Register blueprints.
     from .api.schema import schema_bp
 
     app.register_blueprint(schema_bp, url_prefix="/api/schema")

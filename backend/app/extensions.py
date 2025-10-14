@@ -8,9 +8,9 @@ llm_service = LLMService()
 
 
 def init_extensions(app):
-    # SQLAlchemy
+    # Initialize SQLAlchemy.
     db.init_app(app)
-    # Initialize LLM Service
+    # Initialize the shared LLM service.
     llm_service.init_app(app)
-    # CORS
+    # Enable CORS for API routes.
     CORS(app, resources={r"/api/*": {"origins": "*"}})

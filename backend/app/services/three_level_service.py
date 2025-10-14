@@ -1,6 +1,6 @@
 """
-三层架构数据服务层 (L1-L2-L3)
-用于查询和操作三层架构相关的表数据
+Three-level hierarchy data service layer (L1-L2-L3).
+Provides helpers to query and manipulate data for the hierarchy tables.
 """
 
 from typing import List, Optional
@@ -18,11 +18,11 @@ from app.models.three_level_models import (
 
 
 class ThreeLevelService:
-    """三层架构数据服务类"""
+    """Service utilities for the three-level hierarchy."""
 
     @staticmethod
     def get_all_l1_categories() -> List[L1Category]:
-        """获取所有 L1 类别"""
+        """Return all active L1 categories."""
         sql = """
         SELECT id, name, description, dimension, keywords, weight, active, version, updated_at
         FROM l1_category
@@ -35,7 +35,7 @@ class ThreeLevelService:
 
     @staticmethod
     def get_l1_category_by_id(category_id: int) -> Optional[L1Category]:
-        """根据ID获取 L1 类别"""
+        """Fetch an L1 category by identifier."""
         sql = """
         SELECT id, name, description, dimension, keywords, weight, active, version, updated_at
         FROM l1_category
@@ -52,7 +52,7 @@ class ThreeLevelService:
 
     @staticmethod
     def get_all_l2_cards() -> List[L2Card]:
-        """获取所有 L2 概述卡"""
+        """Return all active L2 overview cards."""
         sql = """
         SELECT id, name, description_short, keywords, allowed_dimensions, weight, active, version, updated_at
         FROM l2_card
@@ -65,7 +65,7 @@ class ThreeLevelService:
 
     @staticmethod
     def get_l2_cards_by_l1(l1_id: int) -> List[L2Card]:
-        """根据 L1 ID 获取关联的 L2 概述卡"""
+        """Return active L2 cards mapped to the provided L1 category."""
         sql = """
         SELECT l2.id, l2.name, l2.description_short, l2.keywords, l2.allowed_dimensions, l2.weight, l2.active, l2.version, l2.updated_at
         FROM l2_card l2
@@ -79,7 +79,7 @@ class ThreeLevelService:
 
     @staticmethod
     def get_all_l3_tables() -> List[L3Table]:
-        """获取所有 L3 表内核"""
+        """Return all active L3 table cores."""
         sql = """
         SELECT id, table_name, display_name, summary, core_fields, keywords, use_cases, tablecard_detail_md, schema_ref, active, version, updated_at
         FROM l3_table
@@ -92,7 +92,7 @@ class ThreeLevelService:
 
     @staticmethod
     def get_l3_tables_by_l2(l2_id: int) -> List[L3Table]:
-        """根据 L2 ID 获取关联的 L3 表内核"""
+        """Return active L3 tables mapped to the provided L2 card."""
         sql = """
         SELECT l3.id, l3.table_name, l3.display_name, l3.summary, l3.core_fields, l3.keywords, l3.use_cases, l3.tablecard_detail_md, l3.schema_ref, l3.active, l3.version, l3.updated_at
         FROM l3_table l3
@@ -106,7 +106,7 @@ class ThreeLevelService:
 
     @staticmethod
     def get_l3_table_by_name(table_name: str) -> Optional[L3Table]:
-        """根据表名获取 L3 表内核"""
+        """Fetch an L3 table by table name."""
         sql = """
         SELECT id, table_name, display_name, summary, core_fields, keywords, use_cases, tablecard_detail_md, schema_ref, active, version, updated_at
         FROM l3_table
@@ -127,7 +127,7 @@ class ThreeLevelService:
 
     @staticmethod
     def get_prompt_template(stage: str, lang: str = "en") -> Optional[PromptTemplate]:
-        """获取指定阶段的提示模板"""
+        """Fetch the latest prompt template for the given stage and language."""
         sql = """
         SELECT id, stage, lang, system_text, context_tmpl, user_tmpl, json_schema, updated_at
         FROM prompt_templates
@@ -150,7 +150,7 @@ class ThreeLevelService:
 
     @staticmethod
     def search_tables_by_keyword(keyword: str) -> List[L3Table]:
-        """根据关键词搜索表"""
+        """Search active L3 tables by keyword."""
         sql = """
         SELECT id, table_name, display_name, summary, core_fields, keywords, use_cases, tablecard_detail_md, schema_ref, active, version, updated_at
         FROM l3_table
@@ -176,7 +176,7 @@ class ThreeLevelService:
 
     @staticmethod
     def get_full_hierarchy() -> dict:
-        """获取完整的三层架构层次结构"""
+        """Build the complete three-level hierarchy structure."""
         l1_categories = ThreeLevelService.get_all_l1_categories()
         result = []
 

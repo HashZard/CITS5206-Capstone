@@ -19,18 +19,23 @@ def _err(code: str, msg: str, http=400, details=None):
 @query_bp.route("/query", methods=["POST"])
 def geo_reason():
     """
-    Input (JSON body):
-    {
-        "question": str
-    }
-    Return format（JSON）：
-    {
-        "sql": str,
-        "results": list[dict[str, Any]], # Table results of SQL execution
-        "reasoning": list[str], # The model's reasons for generating this SQL
-        "model_used": str,
-        "is_fallback": bool # If SQL sentence falls back to SELECT * FROM ...
-    }
+    Request body (JSON):
+        {"question": "Show all lakes in Canada"}
+
+    Return format (success):
+        {
+            "sql": str,
+            "results": list[dict[str, Any]],  # Table rows returned by executing the SQL.
+            "reasoning": list[str],          # Model explanations for the chosen SQL.
+            "model_used": str,
+            "is_fallback": bool               # True if the query fell back to SELECT * ...
+        }
+
+    Return format (error):
+        {
+            "code": "VALIDATION_ERROR",
+            "detail": "Query must have a non-empty question!"
+        }
     """
     try:
         payload = request.get_json(silent=True) or {}
@@ -48,8 +53,8 @@ def geo_reason():
         is_fallback = False
         if not run_sql_results["ok"]:
             is_fallback = True
-            # Fallback to SELECT * FROM ...
-            # Replace block between SELECT and FROM with *
+            # Fall back to SELECT * FROM ... by replacing the projection.
+            # Keeps FROM/WHERE clauses while maximising the chance of valid SQL.
 
             sql = re.sub(
                 r"select\s+.*?\s+from",
@@ -68,7 +73,7 @@ def geo_reason():
                 )
         results = run_sql_results.get("results", [])
 
-        # Load from config
+        # Infer the LLM model from configuration data.
         llm_config = current_app.config.get("LLM_CONFIG", {})
         model_provider = llm_config.get("default", "unknown")
         model_used = llm_config.get(model_provider, {}).get("default_model", "unknown")
