@@ -8,7 +8,8 @@ export type TopNavLink = {
     | "History"
     | "Result"
     | "Tutorials"
-    | "About";
+    | "About"
+    | "Raw";
   onClick?: () => void;
 };
 
@@ -21,7 +22,7 @@ export type TopNavProps = {
   onSignOut?: () => void;
 };
 
-// Map labels to default paths (Import removed)
+// Default label → path mapping
 const LABEL_TO_PATH: Record<TopNavLink["label"], string> = {
   Home: "/",
   Dashboard: "/dashboard",
@@ -29,9 +30,10 @@ const LABEL_TO_PATH: Record<TopNavLink["label"], string> = {
   Result: "/result",
   Tutorials: "/tutorials",
   About: "/about",
+  Raw: "/raw", // route Raw to /raw (App also supports /rawvalue)
 };
 
-// Hook to track current path (syncs with history.pushState)
+// Track current path (syncs with pushState/popstate)
 function useActivePath() {
   const [path, setPath] = useState<string>(() => window.location.pathname);
   useEffect(() => {
@@ -42,7 +44,6 @@ function useActivePath() {
   return path;
 }
 
-// Theme toggle button (dark/light)
 function ThemeToggle() {
   const [isDark, setIsDark] = useState<boolean>(() =>
     document.documentElement.classList.contains("dark")
@@ -73,7 +74,6 @@ function ThemeToggle() {
   );
 }
 
-// Right side controls: theme toggle, sign out (if authed), user avatar
 function TopRightArea({
   onAvatarClick,
   onSignOut,
@@ -108,7 +108,6 @@ function TopRightArea({
   );
 }
 
-// Main TopNav component
 export default function TopNav({
   brand = "GeoQuery",
   links,
@@ -120,9 +119,6 @@ export default function TopNav({
   const activePath = useActivePath();
   const [open, setOpen] = useState(false);
 
-  // Filter links:
-  // 1) Always hide Dashboard (per latest decision)
-  // 2) Hide History when not authenticated (keep original behavior)
   const filtered = useMemo(() => {
     return links
       .filter((l) => l.label !== "Dashboard")
@@ -130,7 +126,6 @@ export default function TopNav({
       .map((l) => ({ ...l, href: LABEL_TO_PATH[l.label] }));
   }, [links, isAuthenticated]);
 
-  // Handle navigation (pushState)
   const handleNavigate = (href: string, onClick?: () => void) => {
     if (onClick) {
       onClick();
@@ -165,10 +160,13 @@ export default function TopNav({
           </a>
         </div>
 
-        {/* Desktop nav links */}
+        {/* Desktop links */}
         <div className="ml-6 hidden md:flex items-center gap-1">
           {filtered.map(({ label, href, onClick }) => {
-            const active = activePath === href;
+            const isRaw = label === "Raw";
+            const active = isRaw
+              ? activePath === "/raw" || activePath === "/rawvalue"
+              : activePath === href;
             return (
               <button
                 key={label}
@@ -186,7 +184,7 @@ export default function TopNav({
 
         <div className="flex-1" />
 
-        {/* Right side controls (desktop) */}
+        {/* Right controls (desktop) */}
         <div className="hidden md:flex items-center">
           {rightArea ?? (
             <TopRightArea
@@ -197,7 +195,7 @@ export default function TopNav({
           )}
         </div>
 
-        {/* Mobile menu toggle */}
+        {/* Mobile menu */}
         <button
           type="button"
           className="ml-2 inline-flex md:hidden items-center justify-center h-9 w-9 rounded-md border border-border"
@@ -209,12 +207,15 @@ export default function TopNav({
         </button>
       </nav>
 
-      {/* Mobile nav drawer */}
+      {/* Mobile drawer */}
       {open && (
         <div className="md:hidden border-t border-border bg-background">
           <div className="px-4 py-3 space-y-1">
             {filtered.map(({ label, href, onClick }) => {
-              const active = activePath === href;
+              const isRaw = label === "Raw";
+              const active = isRaw
+                ? activePath === "/raw" || activePath === "/rawvalue"
+                : activePath === href;
               return (
                 <button
                   key={label}
@@ -228,7 +229,6 @@ export default function TopNav({
                 </button>
               );
             })}
-            {/* Mobile right area */}
             <div className="pt-2 flex items-center gap-3">
               {rightArea ?? (
                 <div className="flex items-center gap-3">
@@ -237,7 +237,7 @@ export default function TopNav({
                     <button
                       type="button"
                       onClick={onSignOut}
-                      className="inline-flex items-center justify中心 h-9 px-3 rounded-md border border-border bg-background hover:bg-accent text-sm font-medium"
+                      className="inline-flex items-center justify-center h-9 px-3 rounded-md border border-border bg-background hover:bg-accent text-sm font-medium"
                       aria-label="Sign out"
                     >
                       Sign out
