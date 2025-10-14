@@ -60,6 +60,17 @@ This backend powers the capstone Language-Based Geographic Reasoning platform. I
    pytest
    ```
 
+## Environment Variables
+
+Copy `.env.example` to `.env` and populate the following:
+
+- `POSTGRES_DSN` *(required)* – Connection string for SQLAlchemy/PostGIS. Point it at the SSH tunnel (`postgresql://user:pass@localhost:5433/db`) or any compatible Postgres instance.
+- `OPENAI_API_KEY`, `OPENAI_DEFAULT_MODEL` *(optional)* – Enable OpenAI-backed SQL generation.
+- `GEMINI_API_KEY`, `GEMINI_DEFAULT_MODEL` *(optional)* – Enable Google Gemini as an alternate provider.
+- `FLASK_CONFIG` *(optional, default `development`)* – Selects the config class from `config.py`.
+- `APP_HOST`, `APP_PORT` *(optional)* – Override the default host (`0.0.0.0`) and port (`8000`).
+- `SECRET_KEY` *(optional)* – Custom Flask secret key.
+
 ## Demo Endpoint
 
 - `POST /api/query/mock` – Demonstrates the SQL generation response format without requiring a live LLM or database.
@@ -109,3 +120,10 @@ This backend powers the capstone Language-Based Geographic Reasoning platform. I
 - ✅ Executes SQL safely via `sql_service` using SQLAlchemy.
 - ✅ Falls back to `SELECT * ...` when the initial SQL fails.
 - ✅ Returns standardized error responses through `_err`.
+
+## Operations & Tooling Highlights
+
+- Operational scripts in `app/script/` support batch LLM runs, schema sampling, and table-card imports (e.g., `run_init_tasks_llm.py`, `import_table_name.py`).
+- The `data/` directory holds staging assets such as Natural Earth extracts prior to loading into PostGIS.
+- Additional configuration profiles can be added to `config.py` if you need staging or production variants.
+- Automated tests under `tests/` cover SQL services, routing flows, and the table-card pipeline for regression confidence.
