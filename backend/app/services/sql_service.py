@@ -38,7 +38,7 @@ Usage example:
 """
 
 
-# Get the real column names
+# Retrieve the actual column names.
 @lru_cache(maxsize=128)
 def get_columns(table: str) -> Iterable[str]:
     """
@@ -46,7 +46,7 @@ def get_columns(table: str) -> Iterable[str]:
     For column verification of /tables interface and build_select_sql
     """
     if table not in ALLOWED_TABLES:
-        # Be consistent with DTO's confession list
+        # Align with the whitelist defined in the DTO.
         raise ValueError(f"table '{table}' is not allowed")
 
     sql = """
@@ -81,7 +81,7 @@ def execute(sql: str) -> tuple[list[dict[str, Any]], dict[str, Any]]:
     return [dict(r) for r in rows], meta
 
 
-# Interface
+# Public interface.
 def run_sql(sql: str) -> dict[str, Any]:
     """
     Unified entry point: validate + execute SQL, return a standard response.

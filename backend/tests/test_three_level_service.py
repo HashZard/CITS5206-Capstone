@@ -4,7 +4,7 @@ import sys
 
 import pytest
 
-# 添加项目根目录到 Python 路径（使得 `config.py` 与 `app` 可被导入）
+# Add the project root to sys.path so `config.py` and `app` can be imported.
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), ".."))
 
 from app import create_app
@@ -20,7 +20,8 @@ def _print(title: str, payload):
 
 
 pytestmark = pytest.mark.skipif(
-    not os.getenv("POSTGRES_DSN"), reason="需要设置 POSTGRES_DSN 环境变量"
+    not os.getenv("POSTGRES_DSN"),
+    reason="POSTGRES_DSN environment variable is required",
 )
 
 
@@ -37,7 +38,7 @@ def test_get_l2_cards_by_l1():
     with app.app_context():
         l1s = ThreeLevelService.get_all_l1_categories()
         if not l1s:
-            pytest.skip("数据库中暂无 L1 类别数据")
+            pytest.skip("No L1 category data available in the database")
         l1_id = l1s[0].id
         l2s = ThreeLevelService.get_l2_cards_by_l1(l1_id)
         _print(f"L2 Cards by L1 #{l1_id} (top 5)", [x.__dict__ for x in l2s[:5]])
@@ -49,10 +50,10 @@ def test_get_l3_tables_by_l2_and_get_by_name():
     with app.app_context():
         l1s = ThreeLevelService.get_all_l1_categories()
         if not l1s:
-            pytest.skip("数据库中暂无 L1 类别数据")
+            pytest.skip("No L1 category data available in the database")
         l2s = ThreeLevelService.get_l2_cards_by_l1(l1s[0].id)
         if not l2s:
-            pytest.skip("数据库中暂无 L2 卡片数据")
+            pytest.skip("No L2 card data available in the database")
         l3s = ThreeLevelService.get_l3_tables_by_l2(l2s[0].id)
         _print(f"L3 Tables by L2 #{l2s[0].id} (top 5)", [x.__dict__ for x in l3s[:5]])
         assert isinstance(l3s, list)
@@ -67,11 +68,11 @@ def test_get_l3_tables_by_l2_and_get_by_name():
 def test_get_prompt_template_and_search():
     app = create_app("development")
     with app.app_context():
-        # prompt template（存在与否依赖数据库，可容忍 None）
+        # Prompt template availability depends on database contents; None is acceptable.
         tmpl = ThreeLevelService.get_prompt_template(stage="step1", lang="en")
         _print("Prompt Template(step1, en)", tmpl.__dict__ if tmpl else None)
 
-        # keyword search：以常见词作为示例；若为空仅打印
+        # Keyword search using a common term; if empty we only log.
         results = ThreeLevelService.search_tables_by_keyword("lake")
         _print(
             "Search tables by keyword 'lake' (top 5)", [x.__dict__ for x in results[:5]]
@@ -83,7 +84,7 @@ def test_get_full_hierarchy():
     app = create_app("development")
     with app.app_context():
         data = ThreeLevelService.get_full_hierarchy()
-        # 仅校验结构类型，避免对数据规模做强约束
+        # Validate the response shape without asserting on data volume.
         assert isinstance(data, dict)
         assert "hierarchy" in data
         _print(

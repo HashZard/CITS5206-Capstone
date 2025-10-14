@@ -1,39 +1,39 @@
 from __future__ import annotations
 
 """
-从 JSON 文件导入三层架构（L1/L2/L3）映射关系
+Import three-level hierarchy (L1/L2/L3) mappings from a JSON file.
 
-功能说明:
+Features:
 ----------
-1. 导入三层架构的映射关系，包括：
-   - L1 类别（顶层分类）
-   - L2 卡片（中层概述）
-   - L1-L2 映射关系
-   - L2-L3 映射关系
-2. 支持增量导入或完全重置
-3. 提供预览模式
-4. 保留 L3 表数据不变
+1. Import hierarchy relationships, including:
+   - L1 categories (top-level classification)
+   - L2 cards (mid-level overview)
+   - L1–L2 mappings
+   - L2–L3 mappings
+2. Support incremental imports or full resets.
+3. Provide a preview mode.
+4. Leave existing L3 table data untouched.
 
-必要条件:
+Prerequisites:
 ----------
-1. 数据库中已存在所有被引用的 L3 表
-2. 数据库连接配置正确（POSTGRES_DSN 环境变量）
-3. JSON 文件符合指定格式
+1. All referenced L3 tables already exist in the database.
+2. The database connection is configured via the `POSTGRES_DSN` environment variable.
+3. The JSON file follows the expected structure.
 
-JSON 格式示例:
+Sample JSON structure:
 -------------
 {
   "l1": [
     {
-      "name": "L1 category name",        # L1 类别名称（必填）
-      "description": "L1 description",    # L1 描述（选填）
-      "keywords": ["kw1", "kw2"],        # L1 关键词（选填）
-      "l2": [                            # L2 卡片列表（必填）
+      "name": "L1 category name",        # Required L1 category name.
+      "description": "L1 description",   # Optional L1 description.
+      "keywords": ["kw1", "kw2"],        # Optional L1 keywords.
+      "l2": [                            # Required list of L2 cards.
         {
-          "name": "L2 card name",        # L2 卡片名称（必填）
-          "description": "L2 description",# L2 描述（选填）
-          "keywords": ["kwA", "kwB"],    # L2 关键词（选填）
-          "l3": [                        # L3 表名列表（必填）
+          "name": "L2 card name",        # Required L2 card name.
+          "description": "L2 description",# Optional L2 description.
+          "keywords": ["kwA", "kwB"],    # Optional L2 keywords.
+          "l3": [                        # Required list of L3 table names.
             "table_name_1",
             "table_name_2"
           ]
@@ -43,63 +43,63 @@ JSON 格式示例:
   ]
 }
 
-使用方法:
+Usage:
 ----------
-1. 预览模式（不实际修改数据库）:
+1. Preview mode (no database changes):
    python -m app.script.import_three_level_mapping mapping.json --dry-run
 
-2. 标准导入（清空现有数据后导入）:
+2. Standard import (clear existing data before import):
    python -m app.script.import_three_level_mapping mapping.json
 
-3. 增量导入（保留现有数据）:
+3. Incremental import (keep existing data):
    python -m app.script.import_three_level_mapping mapping.json --keep-existing
 
-4. 指定配置:
+4. Specify configuration profile:
    python -m app.script.import_three_level_mapping mapping.json --config production
 
-参数说明:
+Argument reference:
 ----------
-json_file        JSON 映射文件的路径（必填）
---dry-run        预览模式，只显示将要执行的操作
---keep-existing  保留现有数据（默认会清空）
---config         Flask 配置名（默认 development）
+json_file        Path to the JSON mapping file (required).
+--dry-run        Preview mode that only logs planned actions.
+--keep-existing  Preserve existing data (default is to clear everything).
+--config         Flask configuration name (default development).
 
-数据处理说明:
+Data processing workflow:
 ------------
-1. 清空操作（默认）会按顺序清空:
-   - map_l2_l3（L2-L3 映射表）
-   - map_l1_l2（L1-L2 映射表）
-   - l2_card（L2 卡片表）
-   - l1_category（L1 类别表）
-   注意：l3_table 表的数据会保留
+1. Clearing (default) removes data in order:
+   - map_l2_l3 (L2–L3 mapping table)
+   - map_l1_l2 (L1–L2 mapping table)
+   - l2_card (L2 card table)
+   - l1_category (L1 category table)
+   Note: The l3_table data is preserved.
 
-2. 导入操作:
-   - 检查 L3 表是否存在
-   - 创建 L1 类别（如果不存在）
-   - 创建 L2 卡片（如果不存在）
-   - 建立 L1-L2 映射
-   - 建立 L2-L3 映射
+2. Import steps:
+   - Validate that referenced L3 tables exist.
+   - Create L1 categories when missing.
+   - Create L2 cards when missing.
+   - Create L1–L2 mappings.
+   - Create L2–L3 mappings.
 
-错误处理:
+Error handling:
 ---------
-1. 找不到 L3 表时会记录警告但继续处理
-2. JSON 解析错误会终止程序
-3. 数据库错误会记录但尽可能继续处理
-4. 所有错误和警告都会记录到日志
+1. Missing L3 tables produce warnings but processing continues.
+2. JSON parsing errors abort the program.
+3. Database errors are logged and processing continues when possible.
+4. All warnings and errors are recorded in the logs.
 
-示例 JSON:
+Example JSON:
 ---------
 {
   "l1": [
     {
-      "name": "地理特征",
-      "description": "地球表面的自然地理特征",
-      "keywords": ["地理", "地形", "地貌"],
+      "name": "Geographic Features",
+      "description": "Natural geographic features on the Earth's surface",
+      "keywords": ["geography", "terrain", "landform"],
       "l2": [
         {
-          "name": "水体",
-          "description": "各类水体的地理信息",
-          "keywords": ["湖泊", "河流", "海洋"],
+          "name": "Water Bodies",
+          "description": "Geospatial information for different water bodies",
+          "keywords": ["lakes", "rivers", "oceans"],
           "l3": [
             "ne_10m_lakes",
             "ne_10m_rivers_lake_centerlines"
@@ -130,16 +130,15 @@ from app.models.three_level_models import (
     dict_to_l2_card,
 )
 
-
 def load_json_file(file_path: str) -> dict:
-    """加载并解析 JSON 文件"""
+    """Load and parse the JSON mapping file."""
     with open(file_path, "r", encoding="utf-8") as f:
         return json.load(f)
 
 
 def get_or_create_l1(l1_data: dict, dry_run: bool = False) -> int:
-    """获取或创建 L1 类别，返回 id"""
-    # 构建基础 L1 数据
+    """Fetch or create an L1 category and return its id."""
+    # Build the base L1 payload.
     l1 = {
         "name": l1_data["name"],
         "description": l1_data.get("description", ""),
@@ -149,18 +148,18 @@ def get_or_create_l1(l1_data: dict, dry_run: bool = False) -> int:
     }
 
     if dry_run:
-        logging.info(f"[dry-run] 将创建 L1: {l1}")
+        logging.info(f"[dry-run] Will create L1: {l1}")
         return -1
 
     try:
         with db.engine.begin() as conn:
-            # 先查找是否存在
+            # Check if the category already exists.
             sql = text("SELECT id FROM l1_category WHERE name = :name")
             result = conn.execute(sql, {"name": l1["name"]}).first()
             if result:
                 return result[0]
 
-            # 不存在则创建
+            # Create a new category when missing.
             sql = text(
                 """
                 INSERT INTO l1_category (
@@ -174,16 +173,16 @@ def get_or_create_l1(l1_data: dict, dry_run: bool = False) -> int:
             )
             result = conn.execute(sql, l1).first()
             if not result:
-                raise ValueError(f"创建 L1 类别失败: {l1['name']}")
+                raise ValueError(f"Failed to create L1 category: {l1['name']}")
             return result[0]
     except Exception as e:
-        logging.error(f"处理 L1 类别 {l1['name']} 时发生错误: {e}")
+        logging.error(f"Error processing L1 category {l1['name']}: {e}")
         raise
 
 
 def get_or_create_l2(l2_data: dict, dry_run: bool = False) -> int:
-    """获取或创建 L2 卡片，返回 id"""
-    # 构建基础 L2 数据
+    """Fetch or create an L2 card and return its id."""
+    # Build the base L2 payload.
     l2 = {
         "name": l2_data["name"],
         "description_short": l2_data.get("description", ""),
@@ -193,18 +192,18 @@ def get_or_create_l2(l2_data: dict, dry_run: bool = False) -> int:
     }
 
     if dry_run:
-        logging.info(f"[dry-run] 将创建 L2: {l2}")
+        logging.info(f"[dry-run] Will create L2: {l2}")
         return -1
 
     try:
         with db.engine.begin() as conn:
-            # 先查找是否存在
+            # Check if the card already exists.
             sql = text("SELECT id FROM l2_card WHERE name = :name")
             result = conn.execute(sql, {"name": l2["name"]}).first()
             if result:
                 return result[0]
 
-            # 不存在则创建
+            # Create a new card when missing.
             sql = text(
                 """
                 INSERT INTO l2_card (
@@ -218,15 +217,15 @@ def get_or_create_l2(l2_data: dict, dry_run: bool = False) -> int:
             )
             result = conn.execute(sql, l2).first()
             if not result:
-                raise ValueError(f"创建 L2 卡片失败: {l2['name']}")
+                raise ValueError(f"Failed to create L2 card: {l2['name']}")
             return result[0]
     except Exception as e:
-        logging.error(f"处理 L2 卡片 {l2['name']} 时发生错误: {e}")
+        logging.error(f"Error processing L2 card {l2['name']}: {e}")
         raise
 
 
 def get_l3_ids(table_names: List[str]) -> List[int]:
-    """获取 L3 表的 id 列表"""
+    """Return the list of L3 table ids for the given table names."""
     if not table_names:
         return []
 
@@ -244,9 +243,9 @@ def get_l3_ids(table_names: List[str]) -> List[int]:
 
 
 def create_l1_l2_mapping(l1_id: int, l2_id: int, dry_run: bool = False) -> None:
-    """创建 L1-L2 映射关系"""
+    """Create an L1–L2 mapping record."""
     if dry_run:
-        logging.info(f"[dry-run] 将创建 L1-L2 映射: {l1_id} -> {l2_id}")
+        logging.info(f"[dry-run] Will create L1-L2 mapping: {l1_id} -> {l2_id}")
         return
 
     sql = text(
@@ -262,9 +261,9 @@ def create_l1_l2_mapping(l1_id: int, l2_id: int, dry_run: bool = False) -> None:
 
 
 def create_l2_l3_mapping(l2_id: int, l3_id: int, dry_run: bool = False) -> None:
-    """创建 L2-L3 映射关系"""
+    """Create an L2–L3 mapping record."""
     if dry_run:
-        logging.info(f"[dry-run] 将创建 L2-L3 映射: {l2_id} -> {l3_id}")
+        logging.info(f"[dry-run] Will create L2-L3 mapping: {l2_id} -> {l3_id}")
         return
 
     sql = text(
@@ -280,102 +279,108 @@ def create_l2_l3_mapping(l2_id: int, l3_id: int, dry_run: bool = False) -> None:
 
 
 def clear_existing_data(dry_run: bool = False) -> None:
-    """清空现有的 L1、L2 及映射数据"""
+    """Clear existing L1, L2, and mapping data."""
     if dry_run:
-        logging.info("[dry-run] 将清空以下表:")
-        logging.info("- map_l2_l3 (L2-L3 映射)")
-        logging.info("- map_l1_l2 (L1-L2 映射)")
-        logging.info("- l2_card (L2 卡片)")
-        logging.info("- l1_category (L1 类别)")
+        logging.info("[dry-run] Will clear the following tables:")
+        logging.info("- map_l2_l3 (L2-L3 mapping)")
+        logging.info("- map_l1_l2 (L1-L2 mapping)")
+        logging.info("- l2_card (L2 cards)")
+        logging.info("- l1_category (L1 categories)")
         return
 
     with db.engine.begin() as conn:
-        # 按依赖关系顺序清空表
-        # 1. 先清空映射表
+        # Clear tables in dependency order.
+        # 1. Remove mapping data first.
         conn.execute(text("DELETE FROM map_l2_l3"))
         conn.execute(text("DELETE FROM map_l1_l2"))
-        # 2. 再清空 L1 和 L2 表
+        # 2. Remove L1 and L2 data next.
         conn.execute(text("DELETE FROM l2_card"))
         conn.execute(text("DELETE FROM l1_category"))
 
-        # 重置序列（如果使用）
+        # Reset sequences when applicable.
         conn.execute(text("ALTER SEQUENCE l1_category_id_seq RESTART WITH 1"))
         conn.execute(text("ALTER SEQUENCE l2_card_id_seq RESTART WITH 1"))
 
-        logging.info("已清空所有相关表")
+        logging.info("All related tables cleared")
 
 
 def process_mapping(mapping: dict, dry_run: bool = False) -> None:
-    """处理三层映射关系"""
-    # 首先清空现有数据
+    """Process all hierarchy mappings in the JSON document."""
+    # Clear existing data first.
     clear_existing_data(dry_run)
     for l1_item in mapping.get("l1", []):
         try:
-            # 创建或获取 L1
+            # Create or fetch L1 entries.
             l1_id = get_or_create_l1(l1_item, dry_run)
 
-            # 处理 L2 列表
+            # Iterate over associated L2 cards.
             for l2_item in l1_item.get("l2", []):
-                # 创建或获取 L2
+                # Create or fetch L2 entries.
                 l2_id = get_or_create_l2(l2_item, dry_run)
 
-                # 创建 L1-L2 映射
+                # Create the L1–L2 mapping.
                 create_l1_l2_mapping(l1_id, l2_id, dry_run)
 
-                # 获取 L3 ID 并创建 L2-L3 映射
+                # Resolve L3 ids and create L2–L3 mappings.
                 l3_table_names = l2_item.get("l3", [])
                 l3_ids = [] if dry_run else get_l3_ids(l3_table_names)
 
                 if len(l3_ids) != len(l3_table_names):
                     missing = set(l3_table_names) - set(l3_ids)
-                    logging.warning(f"部分 L3 表未找到: {missing}")
+                    logging.warning(f"Some L3 tables were not found: {missing}")
 
                 for l3_id in l3_ids:
                     create_l2_l3_mapping(l2_id, l3_id, dry_run)
 
         except SQLAlchemyError as e:
-            logging.error(f"处理 L1 {l1_item['name']} 时发生错误: {e}")
+            logging.error(f"Error processing L1 {l1_item['name']}: {e}")
             continue
 
 
 def main() -> None:
-    parser = argparse.ArgumentParser(description="导入三层架构映射关系")
-    parser.add_argument("json_file", help="JSON 映射文件路径")
-    parser.add_argument("--dry-run", action="store_true", help="仅打印，不更新数据库")
+    parser = argparse.ArgumentParser(description="Import three-level hierarchy mappings")
+    parser.add_argument("json_file", help="Path to the JSON mapping file")
+    parser.add_argument(
+        "--dry-run",
+        action="store_true",
+        help="Log planned actions without updating the database",
+    )
     parser.add_argument(
         "--keep-existing",
         action="store_true",
-        help="保留现有数据（默认会清空已有数据）",
+        help="Keep existing data (default clears existing records)",
     )
-    parser.add_argument("--config", default="development", help="Flask 配置名")
+    parser.add_argument(
+        "--config", default="development", help="Flask configuration name"
+    )
     args = parser.parse_args()
 
     logging.basicConfig(
         level=logging.INFO, format="%(asctime)s %(levelname)s %(message)s"
     )
 
-    # 检查文件是否存在
+    # Verify that the file exists.
     if not Path(args.json_file).is_file():
-        logging.error(f"文件不存在: {args.json_file}")
+        logging.error(f"File not found: {args.json_file}")
         return
 
     try:
-        # 加载 JSON 文件
+        # Load the JSON file.
         mapping = load_json_file(args.json_file)
 
-        # 创建 Flask 应用上下文
+        # Create a Flask application context.
         app = create_app(args.config)
         with app.app_context():
             if not args.keep_existing:
-                # 清空现有数据
+                # Clear existing data.
                 clear_existing_data(args.dry_run)
-            # 处理映射关系
+            # Process the mappings.
             process_mapping(mapping, args.dry_run)
 
     except json.JSONDecodeError:
-        logging.error(f"无法解析 JSON 文件: {args.json_file}")
+        logging.error(f"Failed to parse JSON file: {args.json_file}")
     except Exception as e:
-        logging.error(f"处理过程中发生错误: {e}")
+        logging.error(f"Error encountered during processing: {e}")
 
 
 if __name__ == "__main__":

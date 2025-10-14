@@ -1,7 +1,7 @@
 """
-三层架构数据模型 (L1-L2-L3)
-基于 initial_table.sql 的表结构设计
-用于承接从 SQL 查询返回的三层架构数据对象
+Three-level hierarchy data models (L1-L2-L3).
+Based on the table structures defined in initial_table.sql.
+Used to capture the objects returned from SQL queries for the hierarchy.
 """
 
 from dataclasses import dataclass
@@ -10,7 +10,7 @@ from datetime import datetime
 
 @dataclass
 class L1Category:
-    """L1 顶层类别数据模型"""
+    """Data model for L1 top-level categories."""
 
     id: int
     name: str
@@ -29,7 +29,7 @@ class L1Category:
 
 @dataclass
 class L2Card:
-    """L2 概述卡数据模型"""
+    """Data model for L2 overview cards."""
 
     id: int
     name: str
@@ -50,7 +50,7 @@ class L2Card:
 
 @dataclass
 class L3Table:
-    """L3 表内核数据模型"""
+    """Data model for L3 table cores."""
 
     id: int
     table_name: str
@@ -74,7 +74,7 @@ class L3Table:
 
 @dataclass
 class MapL1L2:
-    """L1 与 L2 的映射关系"""
+    """Mapping between L1 categories and L2 cards."""
 
     l1_id: int
     l2_id: int
@@ -83,7 +83,7 @@ class MapL1L2:
 
 @dataclass
 class MapL2L3:
-    """L2 与 L3 的映射关系"""
+    """Mapping between L2 cards and L3 tables."""
 
     l2_id: int
     l3_id: int
@@ -92,7 +92,7 @@ class MapL2L3:
 
 @dataclass
 class PromptTemplate:
-    """Prompt 模板数据模型"""
+    """Data model for prompt templates."""
 
     id: int
     stage: str  # L1 | L2 | L3 | CLARIFY | SQL_GEN
@@ -104,9 +104,9 @@ class PromptTemplate:
     updated_at: datetime | None = None
 
 
-# 三层架构数据转换工具函数
+# Conversion helpers for the three-level hierarchy.
 def dict_to_l1_category(data: dict) -> L1Category:
-    """将字典转换为 L1Category 对象"""
+    """Convert a dictionary to an L1Category instance."""
     return L1Category(
         id=data["id"],
         name=data["name"],
@@ -121,7 +121,7 @@ def dict_to_l1_category(data: dict) -> L1Category:
 
 
 def dict_to_l2_card(data: dict) -> L2Card:
-    """将字典转换为 L2Card 对象"""
+    """Convert a dictionary to an L2Card instance."""
     return L2Card(
         id=data["id"],
         name=data["name"],
@@ -136,8 +136,8 @@ def dict_to_l2_card(data: dict) -> L2Card:
 
 
 def dict_to_l3_table(data: dict) -> L3Table:
-    """将字典转换为 L3Table 对象"""
-    # 处理 JSONB 字段
+    """Convert a dictionary to an L3Table instance."""
+    # Handle JSONB fields.
     core_fields = data.get("core_fields", [])
     if isinstance(core_fields, str):
         import json
@@ -161,70 +161,70 @@ def dict_to_l3_table(data: dict) -> L3Table:
 
 
 def dict_to_map_l1_l2(data: dict) -> MapL1L2:
-    """将字典转换为 MapL1L2 对象"""
+    """Convert a dictionary to a MapL1L2 instance."""
     return MapL1L2(
         l1_id=data["l1_id"], l2_id=data["l2_id"], weight=data.get("weight", 100)
     )
 
 
 def dict_to_map_l2_l3(data: dict) -> MapL2L3:
-    """将字典转换为 MapL2L3 对象"""
+    """Convert a dictionary to a MapL2L3 instance."""
     return MapL2L3(
         l2_id=data["l2_id"], l3_id=data["l3_id"], weight=data.get("weight", 100)
     )
 
 
-# 示例：
+# Example:
 # demo = PromptTemplate(
 #     id=1,
 #     stage="L1",
 #     lang="zh",
-#     system_text="请根据以下卡片信息...",
+#     system_text="Please reference the following card information...",
 #     context_tmpl="{{cards_json}}",
-#     user_tmpl="用户输入：{{query}}",
+#     user_tmpl="User input: {{query}}",
 #     json_schema=None,
 #     updated_at="2024-06-01T12:00:00+08:00"
 # )
 def dict_to_prompt_template(data: dict) -> PromptTemplate:
-    """将字典转换为 PromptTemplate 对象"""
+    """Convert a dictionary to a PromptTemplate instance."""
     return PromptTemplate(
-        id=data["id"],  # 主键ID
-        stage=data["stage"],  # 阶段（如 L1/L2/L3/CLARIFY/SQL_GEN）
-        lang=data.get("lang", "en"),  # 语言（默认'en'）
-        system_text=data.get("system_text", ""),  # 系统提示文本
-        context_tmpl=data.get("context_tmpl", ""),  # 上下文模板
-        user_tmpl=data.get("user_tmpl", ""),  # 用户输入模板
-        json_schema=data.get("json_schema"),  # JSON Schema（可选）
-        updated_at=data.get("updated_at"),  # 更新时间
+        id=data["id"],  # Primary key ID.
+        stage=data["stage"],  # Stage such as L1/L2/L3/CLARIFY/SQL_GEN.
+        lang=data.get("lang", "en"),  # Language (defaults to 'en').
+        system_text=data.get("system_text", ""),  # System prompt text.
+        context_tmpl=data.get("context_tmpl", ""),  # Context template.
+        user_tmpl=data.get("user_tmpl", ""),  # User prompt template.
+        json_schema=data.get("json_schema"),  # JSON schema (optional).
+        updated_at=data.get("updated_at"),  # Last updated timestamp.
     )
 
 
-# 三层架构批量转换函数
+# Batch conversion helpers for the three-level hierarchy.
 def rows_to_l1_categories(rows: list[dict]) -> list[L1Category]:
-    """批量转换 L1Category 列表"""
+    """Convert a list of dictionaries to L1Category instances."""
     return [dict_to_l1_category(row) for row in rows]
 
 
 def rows_to_l2_cards(rows: list[dict]) -> list[L2Card]:
-    """批量转换 L2Card 列表"""
+    """Convert a list of dictionaries to L2Card instances."""
     return [dict_to_l2_card(row) for row in rows]
 
 
 def rows_to_l3_tables(rows: list[dict]) -> list[L3Table]:
-    """批量转换 L3Table 列表"""
+    """Convert a list of dictionaries to L3Table instances."""
     return [dict_to_l3_table(row) for row in rows]
 
 
 def rows_to_map_l1_l2(rows: list[dict]) -> list[MapL1L2]:
-    """批量转换 MapL1L2 列表"""
+    """Convert a list of dictionaries to MapL1L2 instances."""
     return [dict_to_map_l1_l2(row) for row in rows]
 
 
 def rows_to_map_l2_l3(rows: list[dict]) -> list[MapL2L3]:
-    """批量转换 MapL2L3 列表"""
+    """Convert a list of dictionaries to MapL2L3 instances."""
     return [dict_to_map_l2_l3(row) for row in rows]
 
 
 def rows_to_prompt_templates(rows: list[dict]) -> list[PromptTemplate]:
-    """批量转换 PromptTemplate 列表"""
+    """Convert a list of dictionaries to PromptTemplate instances."""
     return [dict_to_prompt_template(row) for row in rows]

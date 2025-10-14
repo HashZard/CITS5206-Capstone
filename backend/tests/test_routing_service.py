@@ -1,56 +1,56 @@
 """
-路由服务测试模块
+Routing service test module.
 
-本模块提供了两种测试模式：
-1. 完整路由测试 (test_routing_with_real_llm)
-2. 逐步调试测试 (test_routing_step_by_step)
+This module provides two execution modes:
+1. Full routing validation (`test_routing_with_real_llm`).
+2. Step-by-step debugging (`test_routing_step_by_step`).
 
-执行方法:
+How to run:
 --------
-1. 设置必要的环境变量:
+1. Set the required environment variables:
    export POSTGRES_DSN="postgresql://username:password@localhost:5432/dbname"
    export OPENAI_API_KEY="your-api-key"
-   # 或者
+   # or
    export GEMINI_API_KEY="your-api-key"
 
-2. 运行测试:
-   # 方式一：使用 pytest
+2. Execute the tests:
+   # Option 1: via pytest
    pytest test_routing_service.py -v
 
-   # 方式二：直接运行（完整测试）
+   # Option 2: run the module directly (full test)
    python -m tests.test_routing_service
 
-   # 方式三：直接运行（逐步调试）
+   # Option 3: run step-by-step mode
    python -m tests.test_routing_service step
 
-功能说明:
+Feature overview:
 --------
-1. 完整路由测试 (test_routing_with_real_llm):
-   - 测试整个路由流程
-   - 执行多个测试用例
-   - 输出完整的执行结果
-   - 包含性能统计
+1. Full routing test (`test_routing_with_real_llm`):
+   - Exercises the entire routing pipeline.
+   - Runs multiple test cases.
+   - Prints detailed results.
+   - Records performance metrics.
 
-2. 逐步调试测试 (test_routing_step_by_step):
-   - 分步执行每个路由阶段
-   - 显示详细的中间结果
-   - 适合调试和开发
-   - 使用固定的测试查询
+2. Step-by-step debugging (`test_routing_step_by_step`):
+   - Executes each routing stage independently.
+   - Shows intermediate outputs in detail.
+   - Useful for development and troubleshooting.
+   - Uses a fixed set of test queries.
 
-输出说明:
+Output hints:
 --------
-- ✅ 表示测试通过
-- ❌ 表示测试失败
-- 包含执行时间统计
-- 显示各层选择结果
-- 输出生成的 SQL
+- ✅ indicates the test passed.
+- ❌ indicates the test failed.
+- Execution time statistics are reported.
+- L1/L2/L3 selections are displayed.
+- The generated SQL is printed.
 
-注意事项:
+Reminders:
 --------
-1. 需要正确配置数据库连接
-2. 需要有效的 LLM API 密钥
-3. 数据库中需要有测试数据
-4. API 调用可能产生费用
+1. Configure the database connection correctly.
+2. Provide a valid LLM API key.
+3. Ensure the database contains test data.
+4. API calls may incur costs.
 """
 
 import json
@@ -72,45 +72,43 @@ def _print_result(payload: dict[str, Any]) -> None:
 
 def test_routing_with_real_llm():
     """
-    使用真实 LLM API 测试完整路由流程。
+    Validate the full routing pipeline using a real LLM API.
 
-    本函数测试整个查询路由过程，包括：
-    1. L1 (顶层) 类别选择
-    2. L2 (中层) 卡片选择
-    3. L3 (底层) 表选择
-    4. SQL 查询生成
+    The procedure covers:
+    1. Selecting L1 (top-level) categories.
+    2. Selecting L2 (mid-level) cards.
+    3. Selecting L3 (table-level) entries.
+    4. Generating SQL queries.
 
-    测试流程:
-    1. 验证环境变量
-    2. 对每个测试用例:
-       - 执行完整路由
-       - 验证输出格式
-       - 记录执行时间
-       - 输出详细结果
+    Test flow:
+    1. Verify required environment variables.
+    2. For each test case:
+       - Execute the full routing flow.
+       - Validate the output structure.
+       - Record the elapsed time.
+       - Print detailed results.
 
-    输出包含:
-    - 测试用例信息
-    - 执行状态 (成功/失败)
-    - 执行时间
-    - L1/L2/L3 选择结果
-    - 生成的 SQL
+    Output includes:
+    - Test case metadata.
+    - Execution status (success/failure).
+    - Timing statistics.
+    - L1/L2/L3 selections.
+    - Generated SQL statement.
 
-    Args: None
-    Returns: None
     Raises:
-        pytest.skip: 当缺少必要的环境变量时
+        pytest.skip: When required environment variables are missing.
     """
-    # 检查环境变量
+    # Check environment variables.
     required_env_vars = ["POSTGRES_DSN"]
     llm_vars = ["OPENAI_API_KEY", "GEMINI_API_KEY"]
 
     if not any(os.getenv(var) for var in llm_vars):
-        pytest.skip("需要设置 OPENAI_API_KEY 或 GEMINI_API_KEY 环境变量")
+        pytest.skip("OPENAI_API_KEY or GEMINI_API_KEY environment variable is required")
 
     if not os.getenv("POSTGRES_DSN"):
-        pytest.skip("需要设置 POSTGRES_DSN 环境变量")
+        pytest.skip("POSTGRES_DSN environment variable is required")
 
-    # User questions for testing
+    # User questions for testing.
     test_cases = [
         "Highlight all mountain ranges or ranges.",
     ]
@@ -122,23 +120,23 @@ def test_routing_with_real_llm():
             print(f"\n=== Test case {i+1}: {user_question} ===")
 
             try:
-                # log the start time
+                # Log the start time.
                 start_time = time.time()
 
-                # start routing
+                # Start routing.
                 result = routing_service.route(user_question, limit=50)
 
-                # log the end time
+                # Log the end time.
                 end_time = time.time()
                 elapsed_ms = int((end_time - start_time) * 1000)
 
-                # validate result structure
+                # Validate result structure.
                 assert "inputs" in result
                 assert "outputs" in result
                 assert all(f"step{j}" in result["inputs"] for j in range(1, 5))
                 assert all(f"step{j}" in result["outputs"] for j in range(1, 5))
 
-                # validate step outputs
+                # Validate step outputs.
                 step1_out = result["outputs"]["step1"]
                 assert "l1_selected" in step1_out
                 assert isinstance(step1_out["l1_selected"], list)
@@ -158,7 +156,7 @@ def test_routing_with_real_llm():
 
                 sql = step4_out["final_sql"]
 
-                # printer result
+                # Print the structured result payload.
                 log_entry = {
                     "test_case": i + 1,
                     "user_question": user_question,
@@ -169,10 +167,10 @@ def test_routing_with_real_llm():
                 }
                 _print_result(log_entry)
 
-                print(f"✅ 成功 - 耗时: {elapsed_ms}ms")
-                print(f"L1 选择: {[item['name'] for item in step1_out['l1_selected']]}")
-                print(f"L2 选择: {[item['name'] for item in step2_out['l2_selected']]}")
-                print(f"L3 表: {step3_out['l3_selected']['table_name']}")
+                print(f"✅ Success - elapsed: {elapsed_ms}ms")
+                print(f"L1 selections: {[item['name'] for item in step1_out['l1_selected']]}")
+                print(f"L2 selections: {[item['name'] for item in step2_out['l2_selected']]}")
+                print(f"L3 table: {step3_out['l3_selected']['table_name']}")
                 print(f"SQL: {sql}")
             except Exception as e:
                 log_entry = {
@@ -184,8 +182,8 @@ def test_routing_with_real_llm():
                 }
                 _print_result(log_entry)
 
-                print(f"❌ 失败: {e}")
-                # Do not raise an exception to continue testing
+                print(f"❌ Failed: {e}")
+                # Do not raise an exception so the loop continues.
                 continue
 
         print(f"\n📝 Test cases complete.")
@@ -193,60 +191,58 @@ def test_routing_with_real_llm():
 
 def test_routing_step_by_step():
     """
-    逐步测试每个路由步骤，便于调试。
+    Exercise each routing step individually to assist debugging.
 
-    此函数分别测试路由服务的每个步骤：
+    The routine inspects every stage of the routing service:
 
-    1. Step 1 - L1 选择:
-       - 获取所有 L1 类别
-       - 构建提示
-       - 调用 LLM
-       - 输出选择结果
+    1. Step 1 – L1 selection:
+       - Retrieve all L1 categories.
+       - Build the prompt.
+       - Invoke the LLM.
+       - Display the selections.
 
-    2. Step 2 - L2 选择:
-       - 根据选中的 L1 获取相关 L2 卡片
-       - 构建提示
-       - 调用 LLM
-       - 输出选择结果
+    2. Step 2 – L2 selection:
+       - Retrieve L2 cards based on the chosen L1 categories.
+       - Build the prompt.
+       - Invoke the LLM.
+       - Display the selections.
 
-    3. Step 3 - L3 选择:
-       - 根据选中的 L2 获取相关 L3 表
-       - 构建提示
-       - 调用 LLM
-       - 输出选择结果
+    3. Step 3 – L3 selection:
+       - Retrieve L3 tables based on the chosen L2 cards.
+       - Build the prompt.
+       - Invoke the LLM.
+       - Display the selections.
 
-    4. Step 4 - SQL 生成:
-       - 获取选中表的 schema
-       - 构建提示
-       - 调用 LLM
-       - 输出生成的 SQL
+    4. Step 4 – SQL generation:
+       - Retrieve the schema for the chosen table.
+       - Build the prompt.
+       - Invoke the LLM.
+       - Display the generated SQL.
 
-    每个步骤都会输出:
-    - 输入提示 (system & user)
-    - LLM 原始响应
-    - 解析后的结果
+    Each step prints:
+    - The prompts (system and user).
+    - The raw LLM response.
+    - The parsed output.
 
-    使用固定的测试查询："Find all major lakes in North America"
+    A fixed test query is used: "Find all major lakes in North America".
 
-    Args: None
-    Returns: None
     Raises:
-        pytest.skip: 当缺少必要的环境变量时
-        Exception: 当任何步骤失败时
+        pytest.skip: When required environment variables are missing.
+        Exception: When any step fails.
     """
     if not any(os.getenv(var) for var in ["OPENAI_API_KEY", "GEMINI_API_KEY"]):
-        pytest.skip("需要设置 LLM API 密钥")
+        pytest.skip("LLM API key is required")
 
     if not os.getenv("POSTGRES_DSN"):
-        pytest.skip("需要设置 POSTGRES_DSN 环境变量")
+        pytest.skip("POSTGRES_DSN environment variable is required")
 
     user_question = "Find all major lakes in North America"
     app = create_app("development")
 
     with app.app_context():
         try:
-            # 测试 Step 1: L1 选择
-            print("\n=== Step 1: L1 选择 ===")
+            # Step 1: evaluate L1 selection.
+            print("\n=== Step 1: L1 Selection ===")
             from app.services.three_level_service import ThreeLevelService
 
             l1_objs = ThreeLevelService.get_all_l1_categories()
@@ -274,10 +270,10 @@ def test_routing_step_by_step():
                 }
             )
 
-            print(f"L1 选择结果: {d1}")
+            print(f"L1 selection result: {d1}")
 
-            # 测试 Step 2: L2 选择
-            print("\n=== Step 2: L2 选择 ===")
+            # Step 2: evaluate L2 selection.
+            print("\n=== Step 2: L2 Selection ===")
             l1_ids = [int(i["id"]) for i in d1.get("l1_selected", [])]
             l2_all = []
             for l1_id in l1_ids:
@@ -308,10 +304,10 @@ def test_routing_step_by_step():
                 }
             )
 
-            print(f"L2 选择结果: {d2}")
+            print(f"L2 selection result: {d2}")
 
-            # 测试 Step 3: L3 选择
-            print("\n=== Step 3: L3 选择 ===")
+            # Step 3: evaluate L3 selection.
+            print("\n=== Step 3: L3 Selection ===")
             l2_ids = [int(i["id"]) for i in d2.get("l2_selected", [])]
             l3_all = []
             for l2_id in l2_ids:
@@ -344,10 +340,10 @@ def test_routing_step_by_step():
                 }
             )
 
-            print(f"L3 选择结果: {d3}")
+            print(f"L3 selection result: {d3}")
 
-            # 测试 Step 4: SQL 生成
-            print("\n=== Step 4: SQL 生成 ===")
+            # Step 4: evaluate SQL generation.
+            print("\n=== Step 4: SQL Generation ===")
             l3_selected = d3.get("l3_selected", {})
             table_name = l3_selected.get("table_name")
 
@@ -369,15 +365,15 @@ def test_routing_step_by_step():
                     }
                 )
 
-                print(f"SQL 生成结果: {d4}")
+                print(f"SQL generation result: {d4}")
             else:
-                print("❌ 未选择 L3 表，跳过 SQL 生成")
+                print("❌ No L3 table selected, skip SQL generation")
 
         except Exception as e:
             _print_result({"error": str(e), "timestamp": datetime.utcnow().isoformat()})
             raise
 
-        print(f"\n📝 逐步测试完成")
+        print("\n📝 Step-by-step test complete")
 
 
 if __name__ == "__main__":

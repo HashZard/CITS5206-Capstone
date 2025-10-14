@@ -60,7 +60,7 @@ def async_to_sync(func):
             asyncio.set_event_loop(loop)
 
         if loop.is_running():
-            # If there is a running event loop, create a new event loop
+            # If there is a running event loop, create a new event loop.
             import threading
 
             result = {}
@@ -139,7 +139,7 @@ class GeminiProvider(LLMProvider):
 
     async def generate(self, request: LLMRequest) -> LLMResponse:
         try:
-            # Debug print: full request
+            # Debug print of the full request.
             print("\n===== LLM Request (Gemini) =====")
             print(
                 {
@@ -158,7 +158,7 @@ class GeminiProvider(LLMProvider):
             logger.error(f"Gemini API Error: {e}")
             raise
 
-        # Debug print: raw response
+        # Debug print of the raw response.
         try:
             print("===== LLM Response (Gemini) =====")
             print(response)
@@ -195,14 +195,14 @@ class LLMService:
 
         config = app.config.get("LLM_CONFIG", {})
 
-        # Initialize Providers
+        # Initialize providers.
         for provider_name, provider_config in config.items():
             if provider_name == "openai":
                 self.providers[provider_name] = OpenAIProvider(provider_config)
             elif provider_name == "gemini":
                 self.providers[provider_name] = GeminiProvider(provider_config)
 
-        # Set Default Provider
+        # Set the default provider.
         self.default_provider = config.get(
             "default", list(self.providers.keys())[0] if self.providers else None
         )

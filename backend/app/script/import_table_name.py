@@ -1,40 +1,39 @@
 from __future__ import annotations
 
 """
-Init Tasks Helper
+Init Tasks Helper.
 
-本脚本用于：
-1) 扫描 schema=ne_data 下所有表；
-2) 在 public.init_tasks 中补齐缺失记录（可选，状态为 --status，默认 pending）；
-3) 为需要的表采样 sample_data（已精简：移除 geometry.coordinates，仅保留 type 与 properties）；
-4) 为需要的表生成最小化 schema_definition（仅包含列 name 与 data_type）。
+This script can:
+1) Scan every table under the schema `ne_data`.
+2) Optionally insert missing entries into `public.init_tasks` (status defaults to --status, pending by default).
+3) Sample `sample_data` for target tables (geometry coordinates are stripped, keeping only type and properties).
+4) Generate a minimal `schema_definition` for target tables (containing only column `name` and `data_type`).
 
-先决条件：
-- 环境变量 POSTGRES_DSN 已配置；
-- 已安装项目依赖，并在 backend 目录下执行。
+Prerequisites:
+- The `POSTGRES_DSN` environment variable is configured.
+- Project dependencies are installed and commands are executed from the backend directory.
 
-命令行参数：
-- --dry-run           仅打印计划操作，不写库
-- --status            新增记录的初始状态（默认 pending）
-- --sample-limit      每表采样条数（默认 10）
-- --only-sample      仅执行采样/生成 schema，不新增 init_tasks 记录
-- --no-schema         跳过 schema_definition 填充
-- --config            Flask 配置名（默认 development）
+Command-line arguments:
+- --dry-run           Print planned operations without writing to the database.
+- --status            Initial status for new records (default pending).
+- --sample-limit      Number of sampled rows per table (default 10).
+- --only-sample       Only perform sampling/schema generation without inserting init_tasks records.
+- --no-schema         Skip populating `schema_definition`.
+- --config            Flask configuration name (default development).
 
-使用示例（在 backend 目录）：
-- 预览所有操作（不写库）：
+Usage examples (run from the backend directory):
+- Preview all operations (no writes):
   .venv/bin/python -m app.script.import_table_name --dry-run
 
-- 仅采样（不新增记录），每表 5 条：
+- Sample only (no new records), five rows per table:
   .venv/bin/python -m app.script.import_table_name --only-sample --sample-limit 5
 
-- 插入缺失记录为 init，然后采样与生成 schema：
+- Insert missing records as init, then sample and generate schema:
   .venv/bin/python -m app.script.import_table_name --status init --sample-limit 10
 
-- 仅生成 schema（不建议修改采样状态）：
-  方式一：先确保 sample_data 已填充，再执行（默认会做 schema）
-  方式二：如需立刻只做 schema，可先将需跳过采样的表置为 status='skip'，再去掉 --no-schema；
-           或者设置 --sample-limit 0（会将 sample_data 写为空数组，且状态置为 sampled）。
+- Generate schema only (not recommended to alter sampling status):
+  Option A: Ensure `sample_data` is already populated; run without additional flags (schema generation runs by default).
+  Option B: To generate schema immediately, mark tables to skip sampling with status='skip', remove --no-schema, or set --sample-limit 0 (sets sample_data to an empty array and status to sampled).
 """
 import argparse
 import logging
@@ -48,7 +47,7 @@ from app.extensions import db
 
 
 def fetch_tables() -> List[str]:
-    """获取 schema=ne_data 下的所有表名"""
+    """Return every table name under the schema ne_data."""
     sql = """
     SELECT table_name
     FROM information_schema.tables
@@ -62,9 +61,9 @@ def fetch_tables() -> List[str]:
 
 
 def ensure_sample_data_jsonb() -> None:
-    """确保 public.init_tasks.sample_data 列存在且为 JSONB。"""
+    """Ensure public.init_tasks.sample_data exists and is typed as JSONB."""
     with db.engine.begin() as conn:
-        # 1) 创建 sample_data 列（如不存在）为 JSONB，默认空数组
+        # 1) Create the sample_data column as JSONB with a default empty array when missing.
         conn.execute(
             text(
                 """
@@ -74,7 +73,7 @@ def ensure_sample_data_jsonb() -> None:
             )
         )
 
-        # 2) 若列存在但类型不是 JSONB，则转换为 JSONB
+        # 2) Convert the column to JSONB if it already exists with another type.
         conn.execute(
             text(
                 """
@@ -97,9 +96,9 @@ def ensure_sample_data_jsonb() -> None:
 
 
 def ensure_schema_definition_jsonb() -> None:
-    """确保 public.init_tasks.schema_definition 列存在且为 JSONB。"""
+    """Ensure public.init_tasks.schema_definition exists and is typed as JSONB."""
     with db.engine.begin() as conn:
-        # 创建列（如不存在）
+        # Create the column if it is missing.
         conn.execute(
             text(
                 """
@@ -108,7 +107,7 @@ def ensure_schema_definition_jsonb() -> None:
                 """
             )
         )
-        # 若类型不是 jsonb，则转换
+        # Convert the column to JSONB when necessary.
         conn.execute(
             text(
                 """
@@ -132,15 +131,15 @@ def ensure_schema_definition_jsonb() -> None:
 def insert_init_tasks(
     tables: List[str], status: str = "pending", dry_run: bool = False
 ) -> int:
-    """把表名批量插入到 public.init_tasks 中（去重）。返回成功插入数量。"""
+    """Insert table names into public.init_tasks, ignoring duplicates, and return the count added."""
     if not tables:
         return 0
 
     if dry_run:
-        logging.info("[dry-run] 将插入 init_tasks 缺失记录数: %d", len(tables))
+        logging.info("[dry-run] Will insert missing init_tasks records: %d", len(tables))
         return 0
 
-    # 批量插入，冲突忽略
+    # Bulk insert and ignore conflicts.
     insert_sql = text(
         """
         INSERT INTO public.init_tasks (table_name, status)
@@ -152,14 +151,14 @@ def insert_init_tasks(
     params = [{"table_name": t, "status": status} for t in tables]
     with db.engine.begin() as conn:
         result = conn.execute(insert_sql, params)
-        # 在 executemany 情况下，rowcount 语义可能依赖驱动，这里做容错
+        # Rowcount semantics vary under executemany; be defensive.
         inserted = result.rowcount if result.rowcount is not None else 0
-    logging.info("已插入 init_tasks 缺失记录: %d", inserted)
+    logging.info("Inserted missing init_tasks records: %d", inserted)
     return inserted
 
 
 def sample_table_as_jsonb(schema: str, table: str, limit: int) -> List[dict]:
-    """随机抽样 limit 行，返回精简后的 JSON（移除坐标，只保留几何摘要与属性）。"""
+    """Randomly sample `limit` rows and return simplified JSON without geometry coordinates."""
     sql = text(
         f"""
         WITH base AS (
@@ -215,7 +214,7 @@ def get_existing_task_tables() -> set[str]:
     with db.engine.connect() as conn:
         rows = conn.execute(sql).mappings().all()
     existing = {r["table_name"] for r in rows}
-    logging.info("当前 init_tasks 已有记录数: %d", len(existing))
+    logging.info("Current init_tasks record count: %d", len(existing))
     return existing
 
 
@@ -235,7 +234,7 @@ def needs_sampling(table: str) -> bool:
 def upsert_and_get_sampling_targets(
     all_tables: List[str], init_status: str, insert_missing: bool
 ) -> List[str]:
-    """一次 SQL：可选插入缺失表（设为 init_status），并返回需要采样的表（排除 status=skip，sample_data 非空的不返回）。"""
+    """Optionally insert missing tables (using init_status) and return those requiring sampling while skipping status=skip or non-empty sample_data."""
 
     if not all_tables:
         return []
@@ -286,27 +285,27 @@ def upsert_and_get_sampling_targets(
     with db.engine.connect() as conn:
         rows = conn.execute(sql, params).all()
     targets = [r[0] for r in rows]
-    logging.info("需要采样 sample_data 的目标表数量: %d", len(targets))
+    logging.info("Number of tables requiring sample_data sampling: %d", len(targets))
     return targets
 
 
 def fill_sample_data_for_tables(
     tables: List[str], limit: int, dry_run: bool
 ) -> Tuple[int, List[str]]:
-    """对传入的目标表执行采样更新；调用方需已筛除 skip/已有 sample_data 的记录。"""
+    """Run sampling updates for the target tables; callers must pre-filter skip or populated records."""
     updated = 0
     skipped: List[str] = []
     for table in tables:
         try:
             if not table_has_rows("ne_data", table):
                 skipped.append(table)
-                logging.info("跳过表(无数据): %s", table)
+                logging.info("Skipping table (no data): %s", table)
                 continue
 
             if dry_run:
                 updated += 1
                 logging.info(
-                    "[dry-run] 将更新 sample_data: %s (limit=%d)", table, limit
+                    "[dry-run] Will update sample_data: %s (limit=%d)", table, limit
                 )
                 continue
 
@@ -323,7 +322,7 @@ def fill_sample_data_for_tables(
                     ),
                     {"sample": Json(sample_rows), "table": table},
                 )
-                # 写入后验证存储条数
+                # Verify the number of records stored after writing.
                 row = (
                     conn.execute(
                         text(
@@ -340,14 +339,14 @@ def fill_sample_data_for_tables(
                 stored_n = row["n"] if row else None
             updated += 1
             logging.info(
-                "完成 sample_data 更新: %s, 采样行数=%d, 存储条数=%s",
+                "Sample data update complete: %s, sampled rows=%d, stored rows=%s",
                 table,
                 len(sample_rows),
                 stored_n,
             )
         except Exception:
             skipped.append(table)
-            logging.exception("更新表发生异常: %s", table)
+            logging.exception("Exception while updating table: %s", table)
             continue
     return updated, skipped
 
@@ -359,7 +358,7 @@ def json_dumps(obj) -> str:
 
 
 def get_schema_targets(all_tables: List[str]) -> List[str]:
-    """返回需要填充 schema_definition 的表（排除 skip，且 schema_definition 为空或 NULL）。"""
+    """Return tables that require schema_definition to be filled (excluding skip and non-empty definitions)."""
     sql = text(
         """
         WITH input(table_name) AS (
@@ -378,7 +377,7 @@ def get_schema_targets(all_tables: List[str]) -> List[str]:
 
 
 def build_table_schema_json(schema: str, table: str) -> dict:
-    """读取 information_schema.columns，返回最小结构：仅 name 与 data_type。"""
+    """Read information_schema.columns and return the minimal structure with name and data_type."""
     sql = text(
         """
         SELECT column_name, data_type
@@ -396,7 +395,7 @@ def build_table_schema_json(schema: str, table: str) -> dict:
 def fill_schema_definition_for_tables(
     tables: List[str], dry_run: bool
 ) -> Tuple[int, List[str]]:
-    """为传入表填充 schema_definition。"""
+    """Populate schema_definition for the provided tables."""
     ensure_schema_definition_jsonb()
     updated = 0
     skipped: List[str] = []
@@ -404,7 +403,7 @@ def fill_schema_definition_for_tables(
         try:
             if dry_run:
                 updated += 1
-                logging.info("[dry-run] 将更新 schema_definition: %s", table)
+                logging.info("[dry-run] Will update schema_definition: %s", table)
                 continue
             schema_json = build_table_schema_json("ne_data", table)
             with db.engine.begin() as conn:
@@ -420,13 +419,13 @@ def fill_schema_definition_for_tables(
                 )
             updated += 1
             logging.info(
-                "完成 schema_definition 更新: %s, 列数=%d",
+                "Schema definition update complete: %s, column count=%d",
                 table,
                 len(schema_json.get("columns", [])),
             )
         except Exception:
             skipped.append(table)
-            logging.exception("更新 schema_definition 发生异常: %s", table)
+            logging.exception("Exception while updating schema_definition: %s", table)
             continue
     return updated, skipped
 
@@ -436,28 +435,39 @@ def main() -> None:
         description="Scan ne_data tables and import into public.init_tasks, then sample sample_data"
     )
     parser.add_argument(
-        "--dry-run", action="store_true", help="不执行写入，仅打印即将进行的操作"
+        "--dry-run",
+        action="store_true",
+        help="Log planned operations without writing to the database",
     )
     parser.add_argument(
-        "--status", default="pending", help="插入的默认 status 字段值，默认 pending"
+        "--status",
+        default="pending",
+        help="Default status value for inserted records (default pending)",
     )
     parser.add_argument(
-        "--sample-limit", type=int, default=10, help="每表抽样行数，默认 10"
+        "--sample-limit",
+        type=int,
+        default=10,
+        help="Number of sampled rows per table (default 10)",
     )
     parser.add_argument(
         "--only-sample",
         action="store_true",
-        help="只执行 sample_data 填充，跳过 init_tasks 插入",
+        help="Only populate sample_data and skip inserting init_tasks records",
     )
     parser.add_argument(
-        "--no-schema", action="store_true", help="跳过 schema_definition 填充"
+        "--no-schema",
+        action="store_true",
+        help="Skip populating schema_definition",
     )
     parser.add_argument(
-        "--config", default="development", help="Flask 配置名，默认 development"
+        "--config",
+        default="development",
+        help="Flask configuration name (default development)",
     )
     args = parser.parse_args()
 
-    # 基本日志配置
+    # Configure basic logging.
     logging.basicConfig(
         level=logging.INFO,
         format="%(asctime)s %(levelname)s %(message)s",
@@ -468,59 +478,64 @@ def main() -> None:
         ensure_sample_data_jsonb()
         ensure_schema_definition_jsonb()
         tables = fetch_tables()
-        logging.info("ne_data 表总数: %d", len(tables))
+        logging.info("Total tables in ne_data: %d", len(tables))
 
-        # 一次 SQL：插入缺失（可选）并挑选需要采样的表（排除 status=skip，sample_data 非空）
+        # Run a single SQL statement to insert missing rows (optional) and select sampling targets (skip status=skip and non-empty sample_data).
         targets = upsert_and_get_sampling_targets(
             tables,
             init_status=args.status,
             insert_missing=(not args.only_sample and not args.dry_run),
         )
         if args.dry_run:
-            # dry-run 模式下仍报告如果执行将会插入多少（估算：缺失数=all - 已有）
+            # In dry-run mode, still report the potential insert count (estimated as all minus existing).
             if not args.only_sample:
                 existing = get_existing_task_tables()
                 logging.info(
-                    "[dry-run] 将新增 init_tasks 记录数: %d",
+                    "[dry-run] Will insert init_tasks records: %d",
                     len([t for t in tables if t not in existing]),
                 )
-            logging.info("[dry-run] 需要采样 sample_data 的表数量: %d", len(targets))
+            logging.info(
+                "[dry-run] Number of tables requiring sample_data sampling: %d",
+                len(targets),
+            )
 
-        # 对目标表逐表采样与更新
+        # Sample and update each target table.
         updated_count, skipped = fill_sample_data_for_tables(
             targets, limit=args.sample_limit, dry_run=args.dry_run
         )
         if args.dry_run:
             logging.info(
-                "[dry-run] 将更新 sample_data 的表数量: %d; 跳过: %d",
+                "[dry-run] Will update sample_data for %d tables; skipped: %d",
                 updated_count,
                 len(skipped),
             )
         else:
             logging.info(
-                "已更新 sample_data 的表数量: %d; 跳过: %d", updated_count, len(skipped)
+                "Updated sample_data for %d tables; skipped: %d",
+                updated_count,
+                len(skipped),
             )
 
-        # 第三步：为非 skip 且 schema_definition 为空的记录填充列定义
+        # Step three: populate column definitions for non-skip rows with empty schema_definition.
         if not args.no_schema:
             schema_targets = get_schema_targets(tables)
             if args.dry_run:
                 logging.info(
-                    "[dry-run] 需要更新 schema_definition 的表数量: %d",
-                    len(schema_targets),
-                )
+                "[dry-run] Number of tables requiring schema_definition update: %d",
+                len(schema_targets),
+            )
             schema_updated, schema_skipped = fill_schema_definition_for_tables(
                 schema_targets, dry_run=args.dry_run
             )
             if args.dry_run:
                 logging.info(
-                    "[dry-run] 将更新 schema_definition 的表数量: %d; 跳过: %d",
+                    "[dry-run] Will update schema_definition for %d tables; skipped: %d",
                     schema_updated,
                     len(schema_skipped),
                 )
             else:
                 logging.info(
-                    "已更新 schema_definition 的表数量: %d; 跳过: %d",
+                    "Updated schema_definition for %d tables; skipped: %d",
                     schema_updated,
                     len(schema_skipped),
                 )
