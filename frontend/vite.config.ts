@@ -32,7 +32,7 @@ export default defineConfig({
       "/api": {
         target: "http://127.0.0.1:8000",
         changeOrigin: true,
-        // 不要重写路径，后端期望 /api/query
+        // Do not rewrite the path; the backend expects /api/query
         secure: false,
         ws: true,
         configure: (proxy, _options) => {
