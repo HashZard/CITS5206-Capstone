@@ -1,7 +1,7 @@
 /**
- * ExportButton 导出按钮
- * - 替换所有 Copy 按钮
- * - 点击后打开导出弹窗
+ * ExportButton - Export button
+ * - Replaces all "Copy" buttons
+ * - Opens the export modal when clicked
  */
 import React from 'react';
 import { FileDown } from 'lucide-react';

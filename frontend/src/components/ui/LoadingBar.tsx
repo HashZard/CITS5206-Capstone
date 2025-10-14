@@ -1,19 +1,19 @@
 /**
- * LoadingBar 加载进度条组件
+ * LoadingBar - Loading progress bar component
  * 
- * 功能：显示优雅的加载进度动画
- * - 水平进度条，从0%平滑动画到90%
- * - 数据返回后快速完成到100%并淡出
- * - 支持自定义加载文本和颜色主题
- * - 完全无障碍设计，支持屏幕阅读器
- * - 错误状态自动隐藏
+ * Function: Displays a polished loading progress animation
+ * - Horizontal progress bar smoothly animates from 0% to 90%
+ * - Quickly completes to 100% and fades out after data returns
+ * - Supports custom loading text and color themes
+ * - Fully accessible design with screen reader support
+ * - Automatically hides on error states
  * 
- * 无障碍特性：
- * - role="status" 用于状态更新通知
- * - aria-live="polite" 确保屏幕阅读器友好播报
- * - aria-label 提供进度描述
+ * Accessibility:
+ * - role="status" for status update announcements
+ * - aria-live="polite" to ensure screen-reader friendly announcements
+ * - aria-label provides progress description
  * 
- * 使用场景：API调用、数据加载、长时间操作等待
+ * Use cases: API calls, data loading, long-running operations
  */
 
 import React, { useEffect, useState } from "react";
@@ -35,7 +35,7 @@ export const LoadingBar: React.FC<LoadingBarProps> = ({
   const [isVisible, setIsVisible] = useState(false);
   const [isCompleting, setIsCompleting] = useState(false);
 
-  // 颜色主题配置
+  // Color theme configuration
   const colorClasses = {
     purple: {
       bg: 'bg-purple-100',
@@ -63,19 +63,19 @@ export const LoadingBar: React.FC<LoadingBarProps> = ({
 
   useEffect(() => {
     if (isLoading && !isVisible) {
-      // 开始加载：显示并重置进度
+      // Start loading: show and reset progress
       setIsVisible(true);
       setProgress(0);
       setIsCompleting(false);
       
-      // 模拟进度增长：平滑动画到90%
+      // Simulate progress growth: smoothly animate to 90%
       const progressInterval = setInterval(() => {
         setProgress(prev => {
           if (prev >= 90) {
             clearInterval(progressInterval);
             return 90;
           }
-          // 使用非线性增长，开始快后面慢
+          // Non-linear growth: fast at the start, slower later
           const increment = Math.max(0.5, (90 - prev) * 0.1);
           return Math.min(90, prev + increment);
         });
@@ -83,11 +83,11 @@ export const LoadingBar: React.FC<LoadingBarProps> = ({
 
       return () => clearInterval(progressInterval);
     } else if (!isLoading && isVisible && !isCompleting) {
-      // 完成加载：快速到100%然后淡出
+      // Finish loading: quickly go to 100% then fade out
       setIsCompleting(true);
       setProgress(100);
       
-      // 延迟淡出
+      // Delay fade-out
       const fadeOutTimer = setTimeout(() => {
         setIsVisible(false);
         setIsCompleting(false);
@@ -108,12 +108,12 @@ export const LoadingBar: React.FC<LoadingBarProps> = ({
       aria-label={`Loading progress: ${Math.round(progress)}%`}
       data-export-ignore
     >
-      {/* 背景遮罩 */}
+      {/* Background mask */}
       <div className="absolute inset-0 bg-white/80 backdrop-blur-sm" />
       
-      {/* 进度条容器 */}
+      {/* Progress bar container */}
       <div className="relative max-w-4xl mx-auto px-4 py-8">
-        {/* 加载文本 */}
+        {/* Loading text */}
         <div className="text-center mb-4">
           <h3 className={`text-lg font-medium ${colors.text}`}>
             {message}
@@ -123,21 +123,21 @@ export const LoadingBar: React.FC<LoadingBarProps> = ({
           </p>
         </div>
 
-        {/* 进度条 */}
+        {/* Progress bar */}
         <div className="relative">
-          {/* 进度条背景 */}
+          {/* Progress bar background */}
           <div className={`w-full h-2 ${colors.bg} rounded-full overflow-hidden shadow-inner`}>
-            {/* 进度条填充 */}
+            {/* Progress bar fill */}
             <div 
               className={`h-full ${colors.bar} rounded-full transition-all duration-300 ease-out relative overflow-hidden`}
               style={{ width: `${progress}%` }}
             >
-              {/* 光泽动画效果 */}
+              {/* Sheen animation effect */}
               <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/30 to-transparent animate-shimmer" />
             </div>
           </div>
           
-          {/* 进度百分比 */}
+          {/* Progress percentage */}
           <div className="flex justify-between items-center mt-2">
             <span className="text-xs text-slate-400">Processing...</span>
             <span className="text-xs text-slate-600 font-medium">
@@ -146,7 +146,7 @@ export const LoadingBar: React.FC<LoadingBarProps> = ({
           </div>
         </div>
 
-        {/* 加载点动画 */}
+        {/* Loading dots animation */}
         <div className="flex justify-center items-center mt-4 space-x-1">
           {[0, 1, 2].map((i) => (
             <div
@@ -168,7 +168,7 @@ export const LoadingBar: React.FC<LoadingBarProps> = ({
   );
 };
 
-// CSS动画样式（需要添加到全局CSS或Tailwind配置）
+// CSS animation styles (add to global CSS or Tailwind config)
 const styles = `
 @keyframes fade-in {
   from { opacity: 0; transform: translateY(-10px); }
@@ -198,5 +198,5 @@ const styles = `
 }
 `;
 
-// 导出样式供全局使用
+// Export styles for global use
 export const loadingBarStyles = styles;

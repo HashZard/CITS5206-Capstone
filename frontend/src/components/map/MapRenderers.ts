@@ -232,7 +232,7 @@ export const renderEconomyVisualization = (
   sortedItems.forEach((item, index) => {
     const gdp = item.raw?.gdp_md || 0;
     const gdpText = gdp > 0 ? formatGDP(gdp) : undefined;
-    const priority = items.length - index; // GDP越高优先级越高
+    const priority = items.length - index; // Higher GDP has higher priority
 
     if (item.geometry) {
       // Use geometry to render labels
@@ -259,7 +259,7 @@ export const renderEconomyVisualization = (
   });
 };
 
-// 地形特征可视化渲染器
+// Terrain feature visualization renderer
 export const renderTerrainVisualization = (
   ctx: CanvasRenderingContext2D, 
   items: RowItem[], 
@@ -282,11 +282,11 @@ export const renderTerrainVisualization = (
     const fillStyle = terrainColors[featurecla] || 'rgba(139, 69, 19, 0.7)';
     
     if (item.geometry) {
-      // 绘制真实地形几何边界
+      // Draw real terrain geometric boundaries
       console.log(`Drawing terrain geometry for ${item.name} (${featurecla})`);
       drawGeometry(ctx, item.geometry, w, h, fillStyle, '#654321');
     } else if (typeof item.lat === 'number' && typeof item.lon === 'number') {
-      // 回退到符号显示
+      // Fallback to symbol display
       const x = ((item.lon + 180) / 360) * w;
       const y = ((90 - item.lat) / 180) * h;
       const scalerank = item.raw?.scalerank || 10;
@@ -294,7 +294,7 @@ export const renderTerrainVisualization = (
       
       ctx.fillStyle = fillStyle;
       
-      // 山峰用三角形，其他用圆形
+      // Use triangles for peaks; circles for others
       if (featurecla.includes('Peak')) {
         ctx.beginPath();
         ctx.moveTo(x, y - size);
@@ -345,7 +345,7 @@ export const renderTerrainVisualization = (
   });
 };
 
-// 通用可视化渲染器
+// General visualization renderer
 export const renderGeneralVisualization = (
   ctx: CanvasRenderingContext2D, 
   items: RowItem[], 
@@ -354,7 +354,7 @@ export const renderGeneralVisualization = (
 ) => {
   console.log('General visualization - items count:', items.length);
   
-  // 如果没有数据，显示一些测试点
+  // If there is no data, show some test points
   if (items.length === 0) {
     console.log('No items, showing test points');
     const testPoints = [
@@ -387,7 +387,7 @@ export const renderGeneralVisualization = (
     ctx.font = "18px system-ui";
     ctx.textAlign = "center";
     ctx.textBaseline = "middle";
-    ctx.fillText("显示测试数据点", w / 2, h / 2 + 100);
+    ctx.fillText("Show test data points", w / 2, h / 2 + 100);
     return;
   }
   
