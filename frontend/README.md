@@ -1,87 +1,76 @@
-# GeoQuery Platform
-React TypeScript Vite Tailwind CSS Shadcn/ui
+# GeoQuery Platform Frontend
 
-A modern geographic query platform that transforms natural language into powerful geographic insights. Built with React, TypeScript, and modern web technologies for seamless spatial data analysis and visualisation.
+Tech Stack: React · TypeScript · Vite · Tailwind CSS · Shadcn/ui
 
-✨ Features
-- Natural language geographic queries
-- Interactive map visualization
-- Smart analytics and insights
-- Responsive design with Tailwind CSS
-- Modern UI components with Shadcn/ui
-- TypeScript for type safety
-- Fast development with Vite
-- Real-time data processing
+A modern geographic query platform that transforms natural language into powerful geographic insights. Built with React, TypeScript, and modern web technologies for seamless spatial data analysis and visualization.
 
-🚀 Quick Start
+## ✨ Features
 
-## How to run the website:
-A) Tunnel (optional, keep open)
-ssh -i "C:\Users\user\.ssh\Capstone.pem" -L 5433:localhost:5432 ubuntu@3.107.231.45 -N
+- **Natural Language Processing**: Transform natural language queries into geographic insights
+- **Interactive Map Visualization**: Real-time map rendering with advanced geographic data
+- **Smart Analytics**: AI-powered query classification and routing
+- **Responsive Design**: Modern UI with Tailwind CSS and Shadcn/ui components
+- **Type Safety**: Full TypeScript implementation for robust development
+- **Real-time Processing**: Fast query execution with live results
+- **Export Capabilities**: PDF and data export functionality
+- **User Management**: Authentication and user session handling
 
+## 🚀 Complete Setup & Run Instructions
 
-B) Backend (keep open)
-cd backend
-python run.py
+### Prerequisites
 
+Before starting, ensure you have the following installed:
 
-C) Frontend
+- **Node.js 18+** ([Download here](https://nodejs.org/))
+- **npm** (comes with Node.js) or **yarn**
+- **Git** ([Download here](https://git-scm.com/))
+
+### Step 1: Clone the Repository
+
+```bash
+git clone https://github.com/HashZard/CITS5206-Capstone.git
+cd CITS5206-Capstone-new
+```
+
+### Step 2: Database Setup (on backend README.md)
+
+### Step 3: Backend Setup (on backend README.md)
+
+### Step 4: Frontend Setup
+
+Open another new terminal and navigate to the frontend directory:
+
+```bash
 cd frontend
-npm install
-npm run dev
-
-Then navigate to the URL printed by Vite (e.g. http://localhost:3000/)
-
-## Prerequisites
-- Node.js 18+ 
-- npm or yarn
-
-## Installation
-
-### Clone repository
-```bash
-git clone <your-repository-url>
-cd capstone-website/frontend
 ```
 
-### Install dependencies
+Install dependencies:
+
 ```bash
 npm install
 ```
 
-### Environment Setup
-Create a `.env` file in the root directory:
+### Step 5: Environment Configuration
+
+Create a `.env` file in the frontend directory:
+
 ```bash
 # API Configuration
 VITE_API_BASE_URL=http://localhost:5000
 VITE_APP_NAME=GeoQuery
 
-# Optional: Analytics
-VITE_GA_TRACKING_ID=your-ga-tracking-id
-```
+### Step 6: Start the Development Server
 
-### Start development server
 ```bash
 npm run dev
 ```
 
-This will:
-- Start the development server at `http://localhost:3000`
-- Enable hot module replacement (HMR)
-- Open the application in your browser
+The frontend will start on `http://localhost:5173` (or the next available port)
 
-## 🛠️ Available Scripts
+### Step 7: Access the Application
 
-```bash
-# Development
-npm run dev          # Start development server
-npm run build        # Build for production
-npm run preview      # Preview production build
-npm run lint         # Run ESLint
-
-# Component Management
-npx shadcn@latest add [component]  # Add new Shadcn/ui component
-```
+Open your browser and navigate to:
+- **Frontend**: http://localhost:5173
 
 ## 📁 Project Structure
 
@@ -89,9 +78,30 @@ npx shadcn@latest add [component]  # Add new Shadcn/ui component
 frontend/
 ├── src/
 │   ├── components/
-│   │   └── ui/              # Shadcn/ui components
+│   │   ├── layout/           # Layout components (TopNav, Footer)
+│   │   ├── map/             # Map visualization components
+│   │   ├── result/          # Query result display components
+│   │   ├── suggest/         # Query suggestion components
+│   │   └── ui/              # Reusable UI components (Shadcn/ui)
 │   ├── lib/
-│   │   └── utils.ts         # Utility functions
+│   │   ├── auth.ts          # Authentication utilities
+│   │   ├── classify.ts      # Query classification logic
+│   │   └── text/            # Text processing utilities
+│   ├── pages/               # Application pages
+│   │   ├── About.tsx
+│   │   ├── History.tsx
+│   │   ├── Import.tsx
+│   │   ├── Login.tsx
+│   │   ├── Register.tsx
+│   │   ├── Result.tsx
+│   │   ├── Tutorials.tsx
+│   │   └── User.tsx
+│   ├── services/            # API services
+│   │   ├── queryService.ts
+│   │   └── shareService.ts
+│   ├── types/               # TypeScript type definitions
+│   ├── utils/               # Utility functions
+│   ├── data/                # Seed data and configurations
 │   ├── App.tsx              # Main application component
 │   ├── main.tsx             # Application entry point
 │   └── index.css            # Global styles
@@ -105,63 +115,92 @@ frontend/
 
 ## 🎨 Design System
 
+### Tailwind CSS Configuration
+- **Custom Color Palette**: Brand-specific colors for geographic themes
+- **Responsive Breakpoints**: Mobile-first responsive design
+- **Animation Utilities**: Smooth transitions and micro-interactions
+- **Dark Mode Support**: Built-in dark/light theme switching
+
+### Shadcn/ui Components
+Pre-configured and ready-to-use components:
+- **Form Components**: Input, Label, Button with validation
+- **Layout Components**: Card, Dialog, NavigationMenu
+- **Interactive Components**: DropdownMenu, Toast notifications
+- **Data Display**: Tables, Charts, Export functionality
+
 ## 🔧 Configuration
 
-### Tailwind CSS
-The project uses Tailwind CSS v3.4.4 with custom configuration:
-- Custom color palette
-- Responsive breakpoints
-- Animation utilities
-- Dark mode support
+### Vite Configuration
+- **Fast HMR**: Hot Module Replacement for instant updates
+- **TypeScript Support**: Full type checking and IntelliSense
+- **Path Aliases**: `@/` maps to `src/` directory
+- **Optimized Builds**: Tree shaking and code splitting
+- **Node Polyfills**: Support for Node.js modules in browser
 
-### Shadcn/ui
-Pre-configured components available:
-- Button, Card, Input, Label
-- Dialog, DropdownMenu, NavigationMenu
-- Form components with validation
+### ESLint Configuration
+- **TypeScript Rules**: Strict type checking
+- **React Hooks**: Proper hook usage patterns
+- **Code Quality**: Consistent code style enforcement
 
-### Vite
-- Fast HMR (Hot Module Replacement)
-- TypeScript support
-- Path aliases (`@/` → `src/`)
-- Optimized builds
-
-## 🚀 Deployment
-
-### Build for Production
+**Dependencies Issues**
 ```bash
-npm run build
+# Clear npm cache
+npm cache clean --force
+
+# Delete node_modules and reinstall
+rm -rf node_modules package-lock.json
+npm install
 ```
 
-### Preview Production Build
-```bash
-npm run preview
-```
+### Additional Libraries
+- **Axios** - HTTP client for API requests
+- **React Hook Form** - Form handling with validation
+- **Zod** - Schema validation
+- **Lucide React** - Beautiful icon library
+- **html2canvas & jsPDF** - Export functionality
+- **wkx** - Well-Known Text (WKT) geometry handling
 
-### Deploy to Vercel
-```bash
-npm install -g vercel
-vercel
-```
-
-## 📚 Technologies Used
-
-- **React 18** - UI library
-- **TypeScript 5** - Type safety
-- **Vite** - Build tool and dev server
-- **Tailwind CSS** - Utility-first CSS framework
-- **Shadcn/ui** - Component library
-- **Lucide React** - Icon library
+### Development Tools
+- **ESLint** - Code linting and quality
 - **PostCSS** - CSS processing
+- **Autoprefixer** - CSS vendor prefixing
+- **Vite Plugin Node Polyfills** - Node.js compatibility
 
 ## 🤝 Contributing
 
-1. Fork the repository
-2. Create a feature branch (`git checkout -b feature/AmazingFeature`)
-3. Commit your changes (`git commit -m 'Add some AmazingFeature'`)
-4. Push to the branch (`git push origin feature/AmazingFeature`)
-5. Open a Pull Request
+### Development Workflow
+
+1. **Fork the repository**
+2. **Create a feature branch**
+   ```bash
+   git checkout -b feature/amazing-feature
+   ```
+3. **Make your changes**
+4. **Run tests and linting**
+   ```bash
+   npm run lint
+   ```
+5. **Commit your changes**
+   ```bash
+   git commit -m 'Add amazing feature'
+   ```
+6. **Push to the branch**
+   ```bash
+   git push origin feature/amazing-feature
+   ```
+7. **Open a Pull Request**
+
+### Code Style Guidelines
+
+- Use TypeScript for all new code
+- Follow the existing component structure
+- Use Tailwind CSS for styling
+- Write descriptive commit messages
+- Add JSDoc comments for complex functions
 
 ---
 
-**CITS5206 Information Technology Capstone Project**
+**CITS5206 Information Technology Capstone Project**  
+*University of Western Australia*
+
+Built with ❤️ by the GeoQuery Team
