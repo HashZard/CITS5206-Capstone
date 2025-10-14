@@ -29,7 +29,7 @@ Before starting, ensure you have the following installed:
 
 ```bash
 git clone https://github.com/HashZard/CITS5206-Capstone.git
-cd CITS5206-Capstone-new
+cd CITS5206-Capstone
 ```
 
 ### Step 2: Database Setup (on backend README.md)
@@ -52,12 +52,7 @@ npm install
 
 ### Step 5: Environment Configuration
 
-Create a `.env` file in the frontend directory:
-
-```bash
-# API Configuration
-VITE_API_BASE_URL=http://localhost:5000
-VITE_APP_NAME=GeoQuery
+No `.env` file is required for the default local setup. During development, all `/api` requests are proxied to the backend running at `http://127.0.0.1:8000` (see `vite.config.ts`). If you need to override defaults, create a `.env` file in `frontend/` and add any custom variables you reference in code.
 
 ### Step 6: Start the Development Server
 
@@ -65,12 +60,12 @@ VITE_APP_NAME=GeoQuery
 npm run dev
 ```
 
-The frontend will start on `http://localhost:5173` (or the next available port)
+The frontend will start on `http://localhost:3000` (or the next available port)
 
 ### Step 7: Access the Application
 
 Open your browser and navigate to:
-- **Frontend**: http://localhost:5173
+- **Frontend**: http://localhost:3000
 
 ## 📁 Project Structure
 
