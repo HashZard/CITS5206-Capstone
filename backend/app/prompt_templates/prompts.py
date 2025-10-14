@@ -86,6 +86,7 @@ SQL_PROMPT_TEMPLATE = (
     "- Do not SELECT *; only include necessary fields.\n"
     "- If spatial, assume SRID=4326.\n"
     "- Respect constraints.limit if provided; otherwise use default limit.\n"
+    "- If the table contains a geometry column (such as geometry, geom, the_geom, etc.), you MUST include this column in the SELECT fields, regardless of the user's question. This is mandatory.\n"
     "- Output JSON with keys:\n"
     "  - final_sql: {sql:string, params:object}\n"
     "  - assumptions: array of strings\n"
@@ -93,7 +94,7 @@ SQL_PROMPT_TEMPLATE = (
     "Output Example:\n"
     "{\n"
     '  "final_sql": {\n'
-    '    "sql": "SELECT gid, name, name_alt FROM public.ne_10m_lakes WHERE (name ILIKE :q OR COALESCE(name_alt,\'\') ILIKE :q) LIMIT :limit;",\n'
+    '    "sql": "SELECT gid, name, name_alt, geometry FROM public.ne_10m_lakes WHERE (name ILIKE :q OR COALESCE(name_alt,\'\') ILIKE :q) LIMIT :limit;",\n'
     '    "params": { "q": "%Victoria%", "limit": 100 }\n'
     "  },\n"
     '  "assumptions": ["Multilingual names handled by name and name_alt fields"],\n'

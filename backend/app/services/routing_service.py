@@ -12,11 +12,11 @@ from app.services.three_level_service import ThreeLevelService
 
 # -------- Utils --------
 def parse_json_safely(text: str):
-    """容错解析：去除 ```json 代码块、截取花括号范围，避免模型输出包裹导致的解析失败。"""
+    """Fault-tolerant parsing that strips ```json fences and trims braces to avoid failures when the model wraps output."""
     import json as _json
 
     s = (text or "").strip()
-    # 去除围栏 ``` 或 ```json
+    # Remove fenced code block markers such as ``` or ```json.
     if s.startswith("```"):
         s = s.split("```", 2)
         if len(s) == 3:
@@ -24,7 +24,7 @@ def parse_json_safely(text: str):
         else:
             s = s[-1]
     s = s.strip()
-    # 截取第一个 { 到最后一个 }
+    # Extract the substring between the first '{' and the last '}'.
     start = s.find("{")
     end = s.rfind("}")
     candidate = s[start : end + 1] if start != -1 and end != -1 and end > start else s
@@ -188,15 +188,15 @@ def build_step4_prompt(
         - Decide the LIMIT value based on the user's question; otherwise use the provided optional constraints.
         - Do not generate DDL, EXPLAIN, or comments in SQL.
         - Only one query should be returned inside "final_sql".
-        
+        - If the table contains a geometry column (such as geometry, geom, the_geom, etc.), you MUST include this column in the SELECT fields, regardless of the user's question. This is mandatory.
+
         PostGIS Best Practices:
         - All geometry columns are in SRID 4326 (latitude/longitude).
         - **For accurate area or distance calculations** (e.g., using ST_Area, ST_Distance, ST_DWithin), cast the geometry column to the `geography` type. This correctly handles calculations on the earth's curved surface and returns results in meters.
             - Correct: `ST_Area(geom::geography)`
             - Correct: `ST_DWithin(geom_a::geography, geom_b::geography, 1000)` (for a 1km distance)
         - **Do not use `ST_Transform`** to a projected CRS (like 3857) for the purpose of calculation. Use the `geography` type instead.
-        - **Ensure precision in calculations.** When performing division or rounding on the output of a spatial function like `ST_Area`, cast the result to `numeric` to avoid floating-point inaccuracies.
-            - Example: `ROUND(ST_Area(geom::geography)::numeric / 1000000.0, 2) AS area_in_km2`
+        - **Ensure to use type casts when necessary.** For example, to avoid integer out of range, add ::bigint in `ST_Area(geometry::geography) < 5000::bigint * 1000000::bigint`; or when performing division or rounding on the output of a spatial function like `ST_Area`, cast the result to `numeric` to avoid floating-point inaccuracies.
         
         Example of correct JSON:
         {

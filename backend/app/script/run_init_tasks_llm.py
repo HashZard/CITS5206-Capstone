@@ -1,54 +1,52 @@
 from __future__ import annotations
 
 """
-init_tasks 三/四步 LLM 流水线执行脚本（中文说明）
+init_tasks three/four-step LLM pipeline script.
 
-用途：
-- 串联 `app/prompt_templates/instruction.md` 中定义的 4 个步骤（Step1~Step4），
-  将中间结果与最终结果写回 `public.init_tasks`。
+Purpose:
+- Chain the four steps (Step1–Step4) defined in `app/prompt_templates/instruction.md`
+  and write intermediate and final results back to `public.init_tasks`.
 
-前置条件：
-- 已配置数据库连接环境变量 `POSTGRES_DSN`；
-- 数据表 `public.init_tasks` 已存在，且至少包含以下列：
+Prerequisites:
+- The environment variable `POSTGRES_DSN` is configured for the database connection.
+- The table `public.init_tasks` already exists and contains at least these columns:
   - table_name (TEXT, UNIQUE)
   - status (TEXT)
   - is_done (BOOLEAN)
-  - schema_definition (JSONB 或 TEXT)
-  - sample_data (JSONB 或 TEXT)
-  - step1_result / step2_result / step3_result / step4_tablecard (JSONB 或 TEXT)
-- LLM 的 API Key 与模型信息已在 `config.py` → `LLM_CONFIG` 配置，并通过环境变量提供。
+  - schema_definition (JSONB or TEXT)
+  - sample_data (JSONB or TEXT)
+  - step1_result / step2_result / step3_result / step4_tablecard (JSONB or TEXT)
+- LLM API keys and model details are configured in `config.py` → `LLM_CONFIG` and provided via environment variables.
 
-命令行参数：
-- --table <name>      仅处理单张表（会跳过 status='skip' 的表）
-- --pending           批量模式：处理所有 is_done=false 的表
-- --dry-run           只打印/记录日志，不写数据库
-- --model             指定 LLM 模型（覆盖默认配置）
-- --temperature       LLM 温度
-- --max-tokens        LLM 输出最大 tokens
-- --max-chars         传入提示中各块文本的最大字符数（默认 8000）
-- --sample-items      当 sample_data 为数组时，最多传入的条目数（默认 10）
-- --config            Flask 配置名（默认 development）
+Command-line arguments:
+- --table <name>      Process a single table (tables with status='skip' are ignored).
+- --pending           Batch mode: process all tables where is_done=false.
+- --dry-run           Log planned operations without writing to the database.
+- --model             Specify the LLM model (overrides the default configuration).
+- --temperature       LLM sampling temperature.
+- --max-tokens        Maximum number of tokens to request from the LLM.
+- --max-chars         Maximum characters passed to each prompt section (default 8000).
+- --sample-items      Maximum number of entries used when sample_data is an array (default 10).
+- --config            Flask configuration name (default development).
 
-行为说明：
-- 幂等：每行只会为“尚未生成”的步骤调用 LLM，已有结果则跳过。
-- 容错：若 LLM 输出被 Markdown 代码块包裹，脚本会剥离围栏并尝试解析 JSON；
-  解析失败则以 {"raw": "..."} 形式存储，避免写入失败。
-- 完成：Step4 成功后会将 is_done=true，status='done'。
+Behavior:
+- Idempotent: each row only invokes the LLM for missing steps; existing results are reused.
+- Fault-tolerant: if the LLM wraps output in Markdown code fences, the script strips the fences and attempts to parse JSON; failures fall back to storing {"raw": "..."} to avoid writes failing.
+- Completion: once Step4 succeeds the row is marked with is_done=true and status='done'.
 
-示例：
-- 单表（development 配置）
-  .venv/bin/python -m app.script.run_init_tasks_llm --table ne_10m_time_zones --config development
+Examples:
+- Single table (development configuration)
+  .venv/bin/python -m app.script.run_init_tasks_llm --table ne_10m_lakes_historic --config development
 
-- 批量（处理所有待完成表）
+- Batch mode (process all pending tables)
   .venv/bin/python -m app.script.run_init_tasks_llm --pending
 
-- 仅预览（不写库）
+- Preview only (no database writes)
   .venv/bin/python -m app.script.run_init_tasks_llm --table ne_10m_lakes --dry-run
 
-注意：
-- 本脚本通过 `app.extensions.llm_service.generate(...)` 调用后端统一 LLM 服务，
-  模型与提供商由 `LLM_CONFIG` 决定，可用 --model 临时覆盖。
-- 若数据库中相关列为 TEXT 而非 JSONB，脚本同样可运行；如需 JSONB 能力，建议在数据库层调整列类型。
+Notes:
+- This script calls the shared backend LLM service via `app.extensions.llm_service.generate(...)`; the provider/model are driven by `LLM_CONFIG` and can be overridden temporarily with --model.
+- The script still works if related columns are TEXT instead of JSONB; switch to JSONB at the database layer if JSONB features are required.
 """
 import argparse
 import json
@@ -88,7 +86,7 @@ def fetch_task(table_name: str | None, only_pending: bool) -> list[Dict[str, Any
 
 
 def update_task(table_name: str, fields: Dict[str, Any]) -> None:
-    # 确保 JSONB 列以 JSON 参数传递
+    # Ensure JSONB columns are passed as JSON parameters.
     json_keys = {"step1_result", "step2_result", "step3_result", "step4_tablecard"}
     params: Dict[str, Any] = {}
     for k, v in fields.items():
@@ -119,7 +117,7 @@ def call_llm(
     max_tokens: int | None,
 ) -> str:
     logging.info(
-        "[LLM请求] system_prompt=%s, user=%s, model=%s, temperature=%s, max_tokens=%s",
+        "[LLM request] system_prompt=%s, user=%s, model=%s, temperature=%s, max_tokens=%s",
         system,
         user,
         model,
@@ -133,7 +131,7 @@ def call_llm(
         temperature=temperature,
         max_tokens=max_tokens,
     )
-    logging.info("[LLM响应] content=%s", resp.content)
+    logging.info("[LLM response] content=%s", resp.content)
     return resp.content
 
 
@@ -151,12 +149,12 @@ def _strip_code_fences(s: str) -> str:
 
 
 def _parse_json_output(s: str) -> Any:
-    # 去掉 Markdown 代码块围栏，并尝试解析 JSON；失败则尽量提取第一个 JSON 对象或数组
+    # Remove Markdown code fences and attempt to parse JSON; if parsing fails, extract the first JSON object or array fragment.
     cleaned = _strip_code_fences(s)
     try:
         return json.loads(cleaned)
     except Exception:
-        # 宽松提取：寻找首个 '{' 或 '[' 与对应的末尾 '}' 或 ']' 片段
+        # Lenient extraction: locate the first '{' or '[' and the corresponding closing brace/bracket.
         start_obj = cleaned.find("{")
         start_arr = cleaned.find("[")
         start = (
@@ -165,14 +163,14 @@ def _parse_json_output(s: str) -> Any:
             else -1
         )
         if start != -1:
-            # 试着从末尾向前找到配对结束符
+            # Search backwards for a matching closing delimiter.
             for end in range(len(cleaned), start, -1):
                 fragment = cleaned[start:end]
                 try:
                     return json.loads(fragment)
                 except Exception:
                     continue
-        # 仍失败则返回原始字符串
+        # If parsing still fails, return the raw string.
         return {"raw": s}
 
 
@@ -196,12 +194,12 @@ def _truncate_text(s: str, max_chars: int) -> str:
 def _prepare_inputs_for_step1(
     table: Dict[str, Any], max_chars: int, sample_items: int
 ) -> tuple[str, str]:
-    # schema_definition
+    # Schema definition.
     schema = table.get("schema_definition") or {}
     schema_s = _ensure_str(schema)
     schema_s = _truncate_text(schema_s, max_chars)
 
-    # sample_data
+    # Sample data.
     sample = table.get("sample_data") or []
     if isinstance(sample, list):
         sample = sample[:sample_items]
@@ -261,11 +259,11 @@ def step3(
     if isinstance(step2_r, dict):
         merged_result = step2_r.get("merged_result")
         if merged_result is None:
-            raise ValueError("step2_result 中没有 merged_result 字段")
+            raise ValueError("step2_result is missing the merged_result field")
         merged_result_text = _truncate_text(_ensure_str(merged_result), max_chars)
         prompts = render_step3_prompt(step2_result=merged_result_text)
     else:
-        raise ValueError("step2_result 类型不支持，必须为 dict")
+        raise ValueError("step2_result must be a dict")
     content = call_llm(
         prompts["system"], prompts["user"], model, temperature, max_tokens
     )
@@ -275,11 +273,11 @@ def step3(
 
 def save_l3_table(table_name: str, llm_output: Dict[str, Any]) -> None:
     """
-    将 LLM 输出保存到 l3_table 表。
+    Persist LLM output into the l3_table table.
 
     Args:
-        table_name: 表名
-        llm_output: LLM 输出的表卡片数据
+        table_name: Name of the table being processed.
+        llm_output: Table card data returned by the LLM.
     """
     l3_data = {
         "table_name": table_name,
@@ -330,10 +328,10 @@ def step4(
         cleaned_fields = step3_r["cleaned_result"]
         if cleaned_fields is None:
             raise ValueError(
-                "step3_result 中没有 cleaned_result 或 cleaned_fields 字段"
+                "step3_result is missing the cleaned_result or cleaned_fields field"
             )
     else:
-        raise ValueError("step3_result 类型不支持，必须为 dict")
+        raise ValueError("step3_result must be a dict")
     step3_r_text = _truncate_text(_ensure_str(cleaned_fields), max_chars)
     prompts = render_step4_prompt(
         table_name=table["table_name"], step3_result=step3_r_text
@@ -356,22 +354,22 @@ def process_table(
     dry_run: bool = False,
 ) -> None:
     """
-    处理单个表的 LLM 流水线并更新到数据库。
+    Run the LLM pipeline for a single table and persist results.
 
     Args:
-        table: 表信息字典
-        model: LLM 模型名称
-        temperature: LLM 采样温度
-        max_tokens: LLM 最大输出 tokens
-        max_chars: 文本最大字符数
-        sample_items: 样本数据最大条数
-        dry_run: 是否仅预览不写库
+        table: Table metadata dictionary.
+        model: LLM model name.
+        temperature: LLM sampling temperature.
+        max_tokens: Maximum number of tokens requested from the LLM.
+        max_chars: Maximum characters allowed in prompt sections.
+        sample_items: Maximum sample records to include.
+        dry_run: Whether to log only without committing database writes.
     """
     logging.info("Processing table: %s", table["table_name"])
     fields: Dict[str, Any] = {}
 
     try:
-        # Step 1: 基础分析
+        # Step 1: basic analysis.
         if not table.get("step1_result"):
             r = step1(table, model, temperature, max_tokens, max_chars, sample_items)
             fields.update(r)
@@ -387,7 +385,7 @@ def process_table(
             else:
                 time.sleep(1.0)
 
-        # Step 2: 合并结果
+        # Step 2: merge results.
         if not table.get("step2_result"):
             table.update(fields)
             r = step2(table, model, temperature, max_tokens, max_chars)
@@ -404,7 +402,7 @@ def process_table(
             else:
                 time.sleep(1.0)
 
-        # Step 3: 清洗数据
+        # Step 3: clean the data.
         if not table.get("step3_result"):
             table.update(fields)
             r = step3(table, model, temperature, max_tokens, max_chars)
@@ -421,7 +419,7 @@ def process_table(
             else:
                 time.sleep(1.0)
 
-        # Step 4: 生成表卡片
+        # Step 4: generate the table card.
         if not table.get("step4_tablecard"):
             table.update(fields)
             r = step4(table, model, temperature, max_tokens, max_chars)
@@ -438,7 +436,7 @@ def process_table(
             else:
                 time.sleep(1.0)
 
-        # 更新任务状态和 l3_table
+        # Update task status and the l3_table entry.
         if not dry_run:
             if fields:
                 update_task(table["table_name"], fields)
@@ -457,26 +455,35 @@ def process_table(
 
 def main() -> None:
     parser = argparse.ArgumentParser(description="Run init_tasks LLM pipeline")
-    parser.add_argument("--table", help="指定单表处理", default=None)
+    parser.add_argument("--table", help="Process a single table", default=None)
     parser.add_argument(
-        "--pending", action="store_true", help="扫描 is_done=false 的所有表并处理"
-    )
-    parser.add_argument("--dry-run", action="store_true", help="仅打印，不落库")
-    parser.add_argument("--model", default=None, help="指定 LLM 模型（覆盖默认）")
-    parser.add_argument("--temperature", type=float, default=None, help="LLM 温度")
-    parser.add_argument(
-        "--max-tokens", type=int, default=None, help="LLM 输出最大 tokens"
+        "--pending",
+        action="store_true",
+        help="Process every table where is_done=false",
     )
     parser.add_argument(
-        "--max-chars", type=int, default=8000, help="拼装到提示的最长字符数（每块）"
+        "--dry-run", action="store_true", help="Log actions without database writes"
+    )
+    parser.add_argument("--model", default=None, help="Specify the LLM model (override the default)")
+    parser.add_argument("--temperature", type=float, default=None, help="LLM temperature")
+    parser.add_argument(
+        "--max-tokens", type=int, default=None, help="Maximum LLM output tokens"
+    )
+    parser.add_argument(
+        "--max-chars",
+        type=int,
+        default=8000,
+        help="Maximum characters per prompt section",
     )
     parser.add_argument(
         "--sample-items",
         type=int,
         default=10,
-        help="sample_data 为数组时最多传入的条目数",
+        help="Maximum entries to include when sample_data is an array",
     )
-    parser.add_argument("--config", default="development", help="Flask 配置名")
+    parser.add_argument(
+        "--config", default="development", help="Flask configuration name"
+    )
     args = parser.parse_args()
 
     logging.basicConfig(

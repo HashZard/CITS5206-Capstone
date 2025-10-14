@@ -9,7 +9,7 @@ from tqdm import tqdm
 from app import create_app
 from app.services import routing_service
 
-# Configure loguru
+# Configure loguru.
 logger.remove()
 logger.add(
     "benchmark_{time:YYYY-MM-DD}.log",
@@ -64,7 +64,7 @@ def load_processed_queries(output_path: str) -> dict[str, bool]:
             logger.warning(f"'executed' column not found in {output_path}")
             return {}
 
-        # Only consider successfully executed queries
+        # Only consider successfully executed queries.
         executed_queries = processed_df[processed_df["executed"] == True]
         status_dict = dict(zip(executed_queries["Query"], executed_queries["executed"]))
 
